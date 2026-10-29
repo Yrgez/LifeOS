@@ -1,0 +1,29 @@
+name: life_os
+description: Life OS Ultimate Engine
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+  flutter: '>=3.27.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  shared_preferences: ^2.2.0
+  sqflite_sqlcipher: ^3.4.0 # SQLite с поддержкой шифрования (SQLCipher); без пароля работает как обычный SQLite
+  sqflite_common: '>=2.4.0 <3.0.0' # общие типы базы (репозиторий от плагина не зависит); диапазон — чтобы не конфликтовать с sqflite_sqlcipher
+  path: ^1.9.0
+  local_auth: ^2.3.0 # биометрия / PIN устройства для блокировки приложения
+  flutter_secure_storage: ^9.2.2 # ключ шифрования базы в Android Keystore / iOS Keychain
+  cryptography: ^2.7.0 # шифрование резервных копий (AES-256-GCM, PBKDF2)
+  health: ^12.0.0 # Health Connect (Android); см. docs/HEALTH_SETUP.md
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  sqflite_common_ffi: ^2.3.0 # SQLite на ПК для тестов (нужна системная библиотека sqlite3)
+
+flutter:
+  uses-material-design: true
