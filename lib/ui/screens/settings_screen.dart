@@ -291,7 +291,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           Material(
             color: AppColors.card,
-            borderRadius: BorderRadius.circular(16),
             clipBehavior: Clip.antiAlias,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
