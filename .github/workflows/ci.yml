@@ -69,6 +69,17 @@ jobs:
             flutter create --platforms=android --org com.example --project-name life_os .
           fi
 
+      - name: Поднять minSdk до 26 (требует плагин health)
+        run: |
+          f=android/app/build.gradle.kts
+          if [ -f "$f" ]; then
+            sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 26/' "$f"
+          else
+            f=android/app/build.gradle
+            sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 26/' "$f"
+          fi
+          grep -n "minSdk" "$f"
+
       - run: flutter pub get
 
       - name: Сборка release APK
