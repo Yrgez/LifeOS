@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import '../models/models.dart';
-import 'utils.dart';
 
 /// Чистая статистика журнала: без Flutter и без состояния — легко тестируется.
 

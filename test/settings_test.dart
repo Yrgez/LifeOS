@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:life_os/core/graph_stats.dart';
 import 'package:life_os/data/app_data.dart';
 import 'package:life_os/data/app_repository.dart';
-import 'package:life_os/models/models.dart';
 import 'package:life_os/state/app_controller.dart';
 
 void main() {

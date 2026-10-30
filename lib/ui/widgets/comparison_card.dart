@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
 import '../../core/utils.dart';
-import '../../core/workout_stats.dart';
 import '../../state/app_controller.dart';
 import '../painters/chart_painters.dart';
 import 'form_dialog.dart';

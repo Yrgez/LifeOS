@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/data/app_data.dart';
 import 'package:life_os/data/sqlite_app_repository.dart';
 import 'package:life_os/security/db_encryption.dart';
 import 'package:life_os/security/key_store.dart';

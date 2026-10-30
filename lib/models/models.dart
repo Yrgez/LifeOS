@@ -99,11 +99,11 @@ class MuscleGroup {
     final hist = rawHist is List ? rawHist.map((e) => (e as num).toDouble()).toList() : <double>[maxW];
     return MuscleGroup(
       id: id,
-      name: json['name'],
+      name: json['name'] as String,
       recoveryHours: rh,
       lastTrainedAt: at,
       maxWeight: maxW,
-      lastSets: List<String>.from(json['lastSets'] ?? []),
+      lastSets: List<String>.from((json['lastSets'] as List?) ?? []),
       history1RM: hist,
       // старые сохранения без базового состояния: базой считается текущее
       baseMax: (json['baseMax'] as num?)?.toDouble(),
@@ -186,8 +186,8 @@ class GoalCheckpoint {
 
   Map<String, dynamic> toJson() => {'title': title, 'isCompleted': isCompleted, 'link': link?.toJson()};
   factory GoalCheckpoint.fromJson(Map<String, dynamic> json) => GoalCheckpoint(
-        title: json['title'],
-        isCompleted: json['isCompleted'] ?? false,
+        title: json['title'] as String,
+        isCompleted: json['isCompleted'] as bool? ?? false,
         link: json['link'] is Map ? MetricLink.fromJson(Map<String, dynamic>.from(json['link'] as Map)) : null,
       );
 }
@@ -227,11 +227,11 @@ class GlobalGoal {
 
   factory GlobalGoal.fromJson(Map<String, dynamic> json) {
     final g = GlobalGoal(
-      id: json['id'],
-      title: json['title'],
-      category: json['category'],
+      id: json['id'] as String,
+      title: json['title'] as String,
+      category: json['category'] as String,
       deadline: json['deadlineMs'] is int ? DateTime.fromMillisecondsSinceEpoch(json['deadlineMs'] as int) : null,
-      checkpoints: (json['checkpoints'] as List).map((c) => GoalCheckpoint.fromJson(c)).toList(),
+      checkpoints: (json['checkpoints'] as List).map((c) => GoalCheckpoint.fromJson(Map<String, dynamic>.from(c as Map))).toList(),
     );
     // старые сохранения: уже выполненная цель считается отпразднованной (достижение уже есть или удалено вручную)
     g.celebrated = json['celebrated'] as bool? ?? g.isComplete;
@@ -272,11 +272,11 @@ class AchievementItem {
   Map<String, dynamic> toJson() => {'id': id, 'title': title, 'date': date, 'category': category, 'iconKey': iconKey};
 
   factory AchievementItem.fromJson(Map<String, dynamic> json) => AchievementItem(
-        id: json['id'],
-        title: json['title'],
-        date: json['date'],
-        category: json['category'],
-        iconKey: json['iconKey'] ?? 'star',
+        id: json['id'] as String,
+        title: json['title'] as String,
+        date: json['date'] as String,
+        category: json['category'] as String,
+        iconKey: json['iconKey'] as String? ?? 'star',
       );
 }
 
@@ -289,9 +289,9 @@ class SalaryStep {
 
   Map<String, dynamic> toJson() => {'year': year, 'role': role, 'salary': salary};
   factory SalaryStep.fromJson(Map<String, dynamic> json) => SalaryStep(
-        year: json['year'],
-        role: json['role'],
-        salary: json['salary'],
+        year: json['year'] as String,
+        role: json['role'] as String,
+        salary: (json['salary'] as num).toInt(),
       );
 }
 
@@ -338,9 +338,9 @@ class GraphNode {
       fy = ((j['dy'] as num?)?.toDouble() ?? 240) / 480;
     }
     return GraphNode(
-      id: j['id'],
-      label: j['label'],
-      category: j['category'] ?? 'mind',
+      id: j['id'] as String,
+      label: j['label'] as String,
+      category: j['category'] as String? ?? 'mind',
       position: Offset(clampD(fx, 0.06, 0.94), clampD(fy, 0.06, 0.94)),
       color: Color(j['color'] as int? ?? 0xFF00E676),
     );
@@ -377,8 +377,8 @@ class GraphEdge {
   factory GraphEdge.fromJson(Map<String, dynamic> json) {
     final k = json['kind'] as String?;
     return GraphEdge(
-      json['fromId'] ?? '',
-      json['toId'] ?? '',
+      (json['fromId'] as String?) ?? '',
+      (json['toId'] as String?) ?? '',
       kind: (k != null && EdgeKind.isValid(k)) ? k : EdgeKind.related,
       weight: clampI((json['weight'] as num?)?.toInt() ?? 1, 1, 3),
     );
