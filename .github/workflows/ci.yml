@@ -109,7 +109,41 @@ jobs:
           }
           EOF
           fi
-          tail -15 android/build.gradle* | head -30
+
+      - name: Настроить Health Connect (разрешения и MainActivity)
+        run: |
+          python3 - <<'EOF'
+          p = 'android/app/src/main/AndroidManifest.xml'
+          s = open(p, encoding='utf-8').read()
+          if 'health.READ_STEPS' not in s:
+              perms = (
+                  '    <uses-permission android:name="android.permission.health.READ_STEPS"/>\n'
+                  '    <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED"/>\n'
+                  '    <queries>\n'
+                  '        <package android:name="com.google.android.apps.healthdata"/>\n'
+                  '    </queries>\n'
+              )
+              s = s.replace('<application', perms + '    <application', 1)
+              extra = (
+                  '    <intent-filter>\n'
+                  '                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"/>\n'
+                  '            </intent-filter>\n'
+                  '        </activity>\n'
+                  '        <activity-alias android:name="ViewPermissionUsageActivity" android:exported="true" '
+                  'android:targetActivity=".MainActivity" android:permission="android.permission.START_VIEW_PERMISSION_USAGE">\n'
+                  '            <intent-filter>\n'
+                  '                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE"/>\n'
+                  '                <category android:name="android.intent.category.HEALTH_PERMISSIONS"/>\n'
+                  '            </intent-filter>\n'
+                  '        </activity-alias>'
+              )
+              s = s.replace('</activity>', extra, 1)
+              open(p, 'w', encoding='utf-8').write(s)
+          EOF
+          f=$(find android/app/src/main -name 'MainActivity.*' | head -1)
+          sed -i 's/FlutterActivity/FlutterFragmentActivity/g' "$f"
+          echo "--- $f"; cat "$f"
+          echo "--- manifest"; cat android/app/src/main/AndroidManifest.xml
 
       - run: flutter pub get
 
