@@ -289,8 +289,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.only(left: 4, bottom: 6),
             child: Text(title, style: const TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
           ),
-          Container(
-            decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
+          Material(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(16),
+            clipBehavior: Clip.antiAlias,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: Colors.white10),
+            ),
             child: Column(
               children: [
                 for (int i = 0; i < tiles.length; i++) ...[
@@ -311,7 +317,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
       subtitle: Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 11)),
       value: value,
-      activeColor: AppColors.green,
+      activeThumbColor: AppColors.green,
       onChanged: onChanged,
     );
   }
