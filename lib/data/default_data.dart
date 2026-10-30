@@ -87,7 +87,7 @@ Map<String, MuscleGroup> _muscles() => {
         GraphNode(id: 'n_activity', label: 'Шаги: 8.4k', category: 'health', position: const Offset(0.84, 0.90), color: Colors.cyanAccent),
       ];
 
-  List<GraphEdge> defaultGraphEdges() => const [
+  List<GraphEdge> defaultGraphEdges() => [
         GraphEdge('n_goal_salary', 'n_salary', kind: EdgeKind.supports, weight: 2),
         GraphEdge('n_salary', 'n_capital', kind: EdgeKind.supports, weight: 3),
         GraphEdge('n_capital', 'n_cushion', kind: EdgeKind.supports, weight: 2),
@@ -145,7 +145,7 @@ List<GraphNode> blankGraphNodes() {
   ];
 }
 
-List<GraphEdge> blankGraphEdges() => const [
+List<GraphEdge> blankGraphEdges() => [
       GraphEdge('n_salary', 'n_capital', kind: EdgeKind.supports, weight: 3),
       GraphEdge('n_sleep', 'n_chest', kind: EdgeKind.supports, weight: 2),
       GraphEdge('n_sleep', 'n_salary', kind: EdgeKind.supports),
