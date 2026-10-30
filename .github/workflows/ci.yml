@@ -80,6 +80,37 @@ jobs:
           fi
           grep -n "minSdk" "$f"
 
+      - name: Собрать все плагины под compileSdk 36
+        run: |
+          if [ -f android/build.gradle.kts ]; then
+            cat >> android/build.gradle.kts <<'EOF'
+
+          subprojects {
+              val fixSdk: Project.() -> Unit = {
+                  if (name != "app") {
+                      val ext = extensions.findByName("android")
+                      if (ext != null) {
+                          ext.javaClass.getMethod("setCompileSdkVersion", Int::class.javaPrimitiveType).invoke(ext, 36)
+                      }
+                  }
+              }
+              if (state.executed) fixSdk() else afterEvaluate { fixSdk() }
+          }
+          EOF
+          else
+            cat >> android/build.gradle <<'EOF'
+
+          subprojects {
+              afterEvaluate { p ->
+                  if (p.name != 'app' && p.hasProperty('android')) {
+                      p.android.compileSdkVersion 36
+                  }
+              }
+          }
+          EOF
+          fi
+          tail -15 android/build.gradle* | head -30
+
       - run: flutter pub get
 
       - name: Сборка release APK
