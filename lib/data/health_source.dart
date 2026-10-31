@@ -3,7 +3,8 @@ class HealthDay {
   final DateTime day; // только дата
   final int? steps;
   final int? activeCalories;
-  const HealthDay(this.day, {this.steps, this.activeCalories});
+  final int? protein; // граммы белка за день из записей питания (Samsung Health и др.)
+  const HealthDay(this.day, {this.steps, this.activeCalories, this.protein});
 }
 
 /// Граница между приложением и платформенным источником (Health Connect).
