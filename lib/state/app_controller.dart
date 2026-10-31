@@ -911,6 +911,8 @@ class AppController extends ChangeNotifier {
           if (idx == 6) {
             if (d.steps != null) _d.dailySteps = d.steps!;
             if (d.activeCalories != null) _d.activeCalories = d.activeCalories!;
+            final p = d.protein;
+            if (p != null && p > 0) _d.proteinGrams = p;
           }
         }
         _d.lastHealthSyncMs = now.millisecondsSinceEpoch;
