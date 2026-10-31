@@ -77,6 +77,14 @@ class HealthConnectSource implements HealthDataSource {
           kcalByDay[key] = (kcalByDay[key] ?? 0) + v.numericValue.toDouble();
         }
       }
+      // Диагностика: видно, отдаёт ли источник активные калории вообще.
+      if (points.isEmpty) {
+        AppLog.e('Диагностика Health Connect: записей активных калорий нет — источник (например, Samsung Health) '
+            'не передаёт их в Health Connect');
+      } else {
+        final src = points.map((p) => p.sourceName).toSet().join(', ');
+        AppLog.e('Диагностика Health Connect: активных калорий — записей ${points.length}, источники: $src');
+      }
     } catch (e, st) {
       AppLog.e('Health Connect: не удалось прочитать активные калории', e, st);
     }
@@ -117,10 +125,38 @@ class HealthConnectSource implements HealthDataSource {
       } catch (e, st) {
         AppLog.e('Health Connect: не удалось прочитать шаги за ${d.toIso8601String()}', e, st);
       }
+      if (d == days.last) await _logStepsDiagnostics(d, now, steps);
       final kcal = kcalByDay[d];
       final protein = proteinByDay[d];
       out.add(HealthDay(d, steps: steps, activeCalories: kcal?.round(), protein: protein?.round()));
     }
     return out;
+  }
+
+  /// Сверка шагов за сегодня: агрегат платформы против суммы отдельных записей (с источниками).
+  /// Пишет строку в журнал приложения — по ней видно, откуда расхождение с Samsung Health.
+  Future<void> _logStepsDiagnostics(DateTime day, DateTime now, int? aggregate) async {
+    try {
+      var pts = await _health.getHealthDataFromTypes(
+        types: const [HealthDataType.STEPS],
+        startTime: day,
+        endTime: now,
+      );
+      pts = _health.removeDuplicates(pts);
+      double sum = 0;
+      final bySource = <String, double>{};
+      for (final p in pts) {
+        final v = p.value;
+        if (v is NumericHealthValue) {
+          sum += v.numericValue.toDouble();
+          bySource[p.sourceName] = (bySource[p.sourceName] ?? 0) + v.numericValue.toDouble();
+        }
+      }
+      final src = bySource.entries.map((e) => '${e.key}: ${e.value.round()}').join('; ');
+      AppLog.e('Диагностика Health Connect: шаги сегодня — агрегат $aggregate, сумма записей ${sum.round()} '
+          '(записей ${pts.length}; $src)');
+    } catch (e, st) {
+      AppLog.e('Health Connect: диагностика шагов не удалась', e, st);
+    }
   }
 }
