@@ -138,6 +138,27 @@ void main() {
       await c.connectHealth();
       expect(c.proteinGrams, 160);
     });
+
+    test('белок из источника заменяет значение за сегодня', () async {
+      src.data = {
+        DateTime(2026, 10, 24): HealthDay(DateTime(2026, 10, 24), steps: 5000, protein: 120),
+      };
+      final c = make();
+      await c.load();
+      await c.connectHealth();
+      expect(c.proteinGrams, 120);
+    });
+
+    test('нулевой белок из источника не затирает ручной ввод', () async {
+      src.data = {
+        DateTime(2026, 10, 24): HealthDay(DateTime(2026, 10, 24), steps: 5000, protein: 0),
+      };
+      final c = make();
+      await c.load();
+      c.updateHealth(protein: 160);
+      await c.connectHealth();
+      expect(c.proteinGrams, 160);
+    });
   });
 
   group('автосинхронизация', () {
