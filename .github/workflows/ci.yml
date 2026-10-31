@@ -119,6 +119,7 @@ jobs:
               perms = (
                   '    <uses-permission android:name="android.permission.health.READ_STEPS"/>\n'
                   '    <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED"/>\n'
+                  '    <uses-permission android:name="android.permission.health.READ_NUTRITION"/>\n'
                   '    <queries>\n'
                   '        <package android:name="com.google.android.apps.healthdata"/>\n'
                   '    </queries>\n'
