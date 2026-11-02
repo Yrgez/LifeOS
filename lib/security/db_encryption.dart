@@ -265,14 +265,33 @@ class DbEncryptionManager {
         }
         counts[t] = copied;
       }
+      // A database may be using WAL mode. Do not rename either database until every
+      // committed WAL frame has been checkpointed into its main file.
+      await _checkpoint(src);
+      await _checkpoint(dst);
       return counts;
     } finally {
+      // Close failures must abort migration: silently continuing could leave committed
+      // data in a sidecar that is later deleted or detached by a rename.
       try {
         await src.close();
-      } catch (_) {}
-      try {
+      } finally {
         await dst?.close();
-      } catch (_) {}
+      }
+    }
+  }
+
+  Future<void> _checkpoint(Database db) async {
+    final rows = await db.rawQuery('PRAGMA wal_checkpoint(TRUNCATE)');
+    if (rows.isEmpty) {
+      throw EncryptionException('SQLite не вернула результат WAL checkpoint');
+    }
+    final result = rows.first;
+    final busy = (result['busy'] as num?)?.toInt() ?? 0;
+    final log = (result['log'] as num?)?.toInt() ?? -1;
+    final checkpointed = (result['checkpointed'] as num?)?.toInt() ?? -1;
+    if (busy != 0 || (log >= 0 && checkpointed != log)) {
+      throw EncryptionException('Не удалось полностью перенести WAL в основной файл SQLite');
     }
   }
 

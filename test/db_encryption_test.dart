@@ -177,6 +177,31 @@ void main() {
       final key = await keys.read(DbEncryptionManager.keyName);
       expect(await opens(key), isTrue);
     });
+
+    test('миграция сохраняет committed данные из базы в WAL mode', () async {
+      final db = await fakeOpen(path);
+      await db.execute('PRAGMA journal_mode = WAL');
+      await db.execute('PRAGMA wal_autocheckpoint = 0');
+      await db.insert('kv', {'k': 'netWorth', 'v': '987654'});
+      await db.insert('workout_sets', {
+        'id': 'wal-set',
+        'muscle_id': 'back',
+        'ts': 1700000000000,
+        'weight': 72.5,
+        'reps': 8,
+      });
+      // The transaction is committed while WAL mode is active.
+      final mode = (await db.rawQuery('PRAGMA journal_mode')).first.values.first;
+      expect(mode.toString().toLowerCase(), 'wal');
+      await db.close();
+
+      await manager().setEncrypted(true);
+      final key = await keys.read(DbEncryptionManager.keyName);
+      final migrated = await content(key);
+      expect(migrated['kv'], contains(containsPair('v', '987654')));
+      expect(migrated['workout_sets'], contains(containsPair('id', 'wal-set')));
+      expect(leftovers(), isFalse);
+    });
   });
 
   group('отказ без потери данных', () {
