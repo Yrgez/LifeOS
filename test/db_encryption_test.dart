@@ -222,6 +222,26 @@ void main() {
       expect(await markersClear(), isTrue);
     });
 
+    test('ошибка удаления WAL sidecar прерывает миграцию до переименования исходной базы', () async {
+      await seed(sets: 5, txs: 5);
+      final before = await content(null);
+      final sidecar = Directory('\${path}-wal');
+      final failing = manager(hook: (step) {
+        if (step == MigrationStep.afterCopy) sidecar.createSync();
+      });
+
+      await expectLater(failing.setEncrypted(true), throwsA(isA<EncryptionException>()));
+
+      // The directory simulates an undeletable sidecar. Remove the fixture before
+      // reopening SQLite so the test can verify the untouched original database.
+      sidecar.deleteSync();
+      expect(File(path).existsSync(), isTrue);
+      expect(File('\${path}.premigrate').existsSync(), isFalse);
+      expect(await keys.read(DbEncryptionManager.keyName), isNull);
+      expect(await content(null), before);
+      expect(await markersClear(), isTrue);
+    });
+
     test('неизвестная таблица в базе: миграция отклоняется (данные не теряются молча)', () async {
       await seed(sets: 5, txs: 5, extraTable: true);
       await expectLater(manager().setEncrypted(true), throwsA(predicate((e) => e is EncryptionException && e.message.contains('extra'))));
