@@ -54,6 +54,7 @@ class AppController extends ChangeNotifier {
   bool _loaded = false;
   bool _disposed = false;
   bool _loadFailed = false;
+  bool _writesBlocked = false;
   bool _syncing = false;
   String? _healthMessage;
   Timer? _saveTimer;
@@ -66,6 +67,15 @@ class AppController extends ChangeNotifier {
 
   /// true — последняя попытка чтения хранилища провалилась (UI показывает предупреждение).
   bool get loadFailed => _loadFailed;
+
+  /// Запрещает сохранение, если предварительная проверка целостности/миграции не завершилась.
+  /// Снимается только созданием нового контроллера после успешного восстановления при запуске.
+  void blockWrites(String reason) {
+    _writesBlocked = true;
+    _loadFailed = true;
+    AppLog.e('Запись отключена: $reason');
+    _notify();
+  }
 
   int get netWorth => _d.netWorth;
   int get monthlyIncome => _d.monthlyIncome;
@@ -196,7 +206,7 @@ class AppController extends ChangeNotifier {
 
   Future<void> flush() async {
     _saveTimer?.cancel();
-    if (!_loaded) return;
+    if (!_loaded || _writesBlocked) return;
     final changes = _pending;
     _pending = ChangeSet();
     try {
@@ -223,6 +233,7 @@ class AppController extends ChangeNotifier {
 
   void _scheduleSave() {
     _saveTimer?.cancel();
+    if (_writesBlocked) return;
     _saveTimer = Timer(saveDelay, () => unawaited(flush())); // дебаунс: серия правок = одна запись
   }
 
