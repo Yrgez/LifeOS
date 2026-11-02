@@ -184,10 +184,12 @@ class DbEncryptionManager {
         _shred(path);
         File(_old).renameSync(path);
       }
+      // Keep the marker and pending key if any rollback step fails. recover() needs them
+      // to decide which database/key pair is valid on the next launch.
+      await _clearMarkers();
     } catch (e, st) {
-      AppLog.e('Шифрование: откат не завершён', e, st);
+      AppLog.e('Шифрование: откат не завершён; метки восстановления сохранены', e, st);
     }
-    await _clearMarkers();
   }
 
   Future<void> _clearMarkers() async {
