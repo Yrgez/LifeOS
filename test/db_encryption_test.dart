@@ -52,12 +52,13 @@ void main() {
   late String path;
   late MemoryKeyStore keys;
 
-  DbEncryptionManager manager({DbOpener? open, FutureOr<void> Function(MigrationStep)? hook}) => DbEncryptionManager(
+  DbEncryptionManager manager({DbOpener? open, FutureOr<void> Function(MigrationStep)? hook, Future<void> Function(Database)? closeDatabase}) => DbEncryptionManager(
         open: open ?? fakeOpen,
         keys: keys,
         path: path,
         tables: SqliteAppRepository.tables,
         debugHook: hook,
+        closeDatabase: closeDatabase,
       );
 
   DbEncryptionManager crashAt(MigrationStep step) => manager(hook: (s) {
@@ -271,6 +272,23 @@ void main() {
       expect(await markersClear(), isTrue);
     });
 
+    test('ошибка закрытия БД при итоговой проверке прерывает миграцию и возвращает исходную базу', () async {
+      await seed(sets: 5, txs: 5);
+      final before = await content(null);
+      final failing = manager(closeDatabase: (db) async {
+        await db.close();
+        throw StateError('close failed');
+      });
+
+      await expectLater(failing.setEncrypted(true), throwsA(isA<EncryptionException>()));
+
+      expect(await keys.read(DbEncryptionManager.keyName), isNull);
+      expect(await opens(null), isTrue);
+      expect(await content(null), before);
+      expect(leftovers(), isFalse);
+      expect(await markersClear(), isTrue);
+    });
+
     test('ошибка после фиксации нового ключа при включении: откатываются база и ключ', () async {
       await seed(sets: 5, txs: 5);
       final before = await content(null);
@@ -460,6 +478,24 @@ void main() {
       expect(await keys.read(DbEncryptionManager.keyName), key);
       expect(await content(key), before);
       expect(leftovers(), isFalse);
+    });
+
+    test('recover не принимает новую базу, если закрытие после probe завершилось ошибкой', () async {
+      await seed(sets: 5, txs: 5);
+      final before = await content(null);
+      await expectLater(crashAt(MigrationStep.afterSwapped).setEncrypted(true), throwsA(isA<MigrationInterrupted>()));
+
+      final failingClose = manager(closeDatabase: (db) async {
+        await db.close();
+        throw StateError('close failed');
+      });
+      await failingClose.recover();
+
+      expect(await keys.read(DbEncryptionManager.keyName), isNull);
+      expect(await opens(null), isTrue);
+      expect(await content(null), before);
+      expect(leftovers(), isFalse);
+      expect(await markersClear(), isTrue);
     });
 
     test('recover на чистом состоянии ничего не меняет', () async {
