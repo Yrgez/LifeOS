@@ -365,7 +365,11 @@ class DbEncryptionManager {
     final files = ['$file-wal', '$file-shm', '$file-journal', file];
     for (final f in files) {
       final fl = File(f);
-      if (!fl.existsSync()) continue;
+      final type = FileSystemEntity.typeSync(f, followLinks: false);
+      if (type == FileSystemEntityType.notFound) continue;
+      if (type != FileSystemEntityType.file) {
+        throw EncryptionException('Неожиданный тип файла базы данных $f: $type');
+      }
       try {
         final len = fl.lengthSync();
         final raf = fl.openSync(mode: FileMode.write);
@@ -390,11 +394,11 @@ class DbEncryptionManager {
       try {
         fl.deleteSync();
       } catch (e) {
-        if (fl.existsSync()) {
+        if (FileSystemEntity.typeSync(f, followLinks: false) != FileSystemEntityType.notFound) {
           throw EncryptionException('Не удалось удалить файл базы данных ${fl.path}: $e');
         }
       }
-      if (fl.existsSync()) {
+      if (FileSystemEntity.typeSync(f, followLinks: false) != FileSystemEntityType.notFound) {
         throw EncryptionException('Файл базы данных ${fl.path} остался после удаления');
       }
     }
