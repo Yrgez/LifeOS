@@ -151,7 +151,7 @@ class DbEncryptionManager {
       rethrow; // обрыв: откатывать нечем и некому — разберётся recover() при следующем запуске
     } catch (e, st) {
       AppLog.e('Шифрование: миграция не удалась, исходная база восстановлена', e, st);
-      await _rollback();
+      await _rollback(previousKey: key);
       throw e is EncryptionException ? e : EncryptionException('Не удалось ${enable ? 'включить' : 'отключить'} шифрование: $e');
     }
 
@@ -170,8 +170,15 @@ class DbEncryptionManager {
 
   // ---------------- внутреннее ----------------
 
-  Future<void> _rollback() async {
+  Future<void> _rollback({required String? previousKey}) async {
     try {
+      // Restore the key before restoring the old file. If the process stops between these
+      // operations, recover() can still identify and finish the valid new database from the marker.
+      if (previousKey == null) {
+        await keys.delete(keyName);
+      } else {
+        await keys.write(keyName, previousKey);
+      }
       _shred(_tmp);
       if (File(_old).existsSync()) {
         _shred(path);
