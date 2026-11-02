@@ -291,13 +291,19 @@ void main() {
       expect(await count('workout_sets'), 3);
     });
 
-    test('повреждённая запись пропускается, остальное читается', () async {
+    test('повреждённая JSON-запись останавливает загрузку, исходные строки сохраняются', () async {
       final d = rich();
       await repoOn(db).save(d);
       await db.insert('docs', {'coll': 'goals', 'id': 'broken', 'pos': 99, 'body': '{не json'});
-      final back = (await repoOn(db).load())!;
-      expect(back.goals.length, d.goals.length);
-      expect(back.workoutSets.length, 3);
+
+      await expectLater(repoOn(db).load(), throwsA(isA<FormatException>()));
+
+      // Ошибка чтения не должна превращаться в частично загруженное состояние,
+      // которое приложение затем сохранит поверх исходных данных.
+      expect(await count('docs'), greaterThan(d.goals.length));
+      expect(await count('workout_sets'), 3);
+      final raw = await db.query('docs', where: 'coll = ? AND id = ?', whereArgs: ['goals', 'broken']);
+      expect(raw.single['body'], '{не json');
     });
 
     test('база новее приложения: открытие отклоняется, файл не пересоздаётся', () async {
