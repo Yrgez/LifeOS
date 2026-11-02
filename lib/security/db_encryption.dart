@@ -97,6 +97,12 @@ class DbEncryptionManager {
         } else {
           _shred(path); // новая база не открывается — возвращаем исходную
           File(_old).renameSync(path);
+          // The restored file is the pre-migration database. When enabling
+          // encryption, the committed key belongs only to the rejected copy.
+          // When disabling encryption, keyName still holds the old DB key.
+          if (marker == 'to_encrypted') {
+            await keys.delete(keyName);
+          }
         }
       }
     }
