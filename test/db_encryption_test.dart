@@ -32,6 +32,19 @@ Future<Database> fakeOpen(String path, {String? password}) async {
   return db;
 }
 
+class FailingDeleteKeyStore extends MemoryKeyStore {
+  bool failDbKeyDelete = false;
+
+  @override
+  Future<void> delete(String name) async {
+    if (name == DbEncryptionManager.keyName && failDbKeyDelete) {
+      failDbKeyDelete = false;
+      throw StateError('key store temporarily unavailable');
+    }
+    await super.delete(name);
+  }
+}
+
 void main() {
   setUpAll(sqfliteFfiInit);
 
@@ -225,6 +238,36 @@ void main() {
       expect(await keys.read(DbEncryptionManager.keyName), isNull);
       expect(await opens(null), isTrue);
       expect(await content(null), before);
+      expect(leftovers(), isFalse);
+      expect(await markersClear(), isTrue);
+    });
+
+    test('неудачный откат сохраняет метки, recover завершает восстановление', () async {
+      await seed(sets: 5, txs: 5);
+      final failingKeys = FailingDeleteKeyStore();
+      keys = failingKeys;
+      final failing = DbEncryptionManager(
+        open: fakeOpen,
+        keys: keys,
+        path: path,
+        tables: SqliteAppRepository.tables,
+        debugHook: (step) {
+          if (step == MigrationStep.afterKeyCommitted) {
+            failingKeys.failDbKeyDelete = true;
+            throw StateError('ошибка после фиксации');
+          }
+        },
+      );
+
+      await expectLater(failing.setEncrypted(true), throwsA(isA<EncryptionException>()));
+      expect(await keys.read(DbEncryptionManager.markerName), 'to_encrypted');
+      expect(await keys.read(DbEncryptionManager.pendingKeyName), isNotNull);
+      expect(File('$path.premigrate').existsSync(), isTrue);
+
+      await manager().recover();
+      final key = await keys.read(DbEncryptionManager.keyName);
+      expect(key, isNotNull);
+      expect(await opens(key), isTrue);
       expect(leftovers(), isFalse);
       expect(await markersClear(), isTrue);
     });
