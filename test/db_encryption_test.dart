@@ -498,6 +498,25 @@ void main() {
       expect(await markersClear(), isTrue);
     });
 
+    test('recover отклоняет неизвестную метку и сохраняет обе базы и метаданные', () async {
+      await seed(sets: 5, txs: 5);
+      final before = await content(null);
+      File('$path.premigrate').writeAsBytesSync(File(path).readAsBytesSync());
+      await keys.write(DbEncryptionManager.markerName, 'unexpected_marker');
+      await keys.write(DbEncryptionManager.pendingKeyName, 'pending-value');
+
+      await expectLater(
+        manager().recover(),
+        throwsA(isA<EncryptionException>()),
+      );
+
+      expect(File(path).existsSync(), isTrue);
+      expect(File('$path.premigrate').existsSync(), isTrue);
+      expect(await content(null), before);
+      expect(await keys.read(DbEncryptionManager.markerName), 'unexpected_marker');
+      expect(await keys.read(DbEncryptionManager.pendingKeyName), 'pending-value');
+    });
+
     test('recover на чистом состоянии ничего не меняет', () async {
       await seed(sets: 5, txs: 5);
       await manager().setEncrypted(true);
