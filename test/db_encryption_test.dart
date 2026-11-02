@@ -32,25 +32,25 @@ Future<Database> fakeOpen(String path, {String? password}) async {
   return db;
 }
 
+class FailingDeleteKeyStore extends MemoryKeyStore {
+  bool failDbKeyDelete = false;
+
+  @override
+  Future<void> delete(String name) async {
+    if (name == DbEncryptionManager.keyName && failDbKeyDelete) {
+      failDbKeyDelete = false;
+      throw StateError('key store temporarily unavailable');
+    }
+    await super.delete(name);
+  }
+}
+
 void main() {
   setUpAll(sqfliteFfiInit);
 
   late Directory dir;
   late String path;
   late MemoryKeyStore keys;
-
-  class FailingDeleteKeyStore extends MemoryKeyStore {
-    bool failDbKeyDelete = false;
-
-    @override
-    Future<void> delete(String name) async {
-      if (name == DbEncryptionManager.keyName && failDbKeyDelete) {
-        failDbKeyDelete = false;
-        throw StateError('key store temporarily unavailable');
-      }
-      await super.delete(name);
-    }
-  }
 
   DbEncryptionManager manager({DbOpener? open, FutureOr<void> Function(MigrationStep)? hook}) => DbEncryptionManager(
         open: open ?? fakeOpen,
