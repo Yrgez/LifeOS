@@ -95,6 +95,11 @@ class DbEncryptionManager {
           }
           _shred(_old);
         } else {
+          // Restore the pre-migration key state before moving the old file.
+          // If KeyStore fails, keep .premigrate and the marker for a retry.
+          if (marker == 'to_encrypted') {
+            await keys.delete(keyName);
+          }
           _shred(path); // новая база не открывается — возвращаем исходную
           File(_old).renameSync(path);
         }
@@ -203,7 +208,7 @@ class DbEncryptionManager {
     try {
       db = await open(file, password: password);
       await db.rawQuery('SELECT count(*) FROM sqlite_master');
-      return true;
+      return await _integrityOk(db);
     } catch (_) {
       return false;
     } finally {
@@ -211,6 +216,13 @@ class DbEncryptionManager {
         await db?.close();
       } catch (_) {}
     }
+  }
+
+  /// Проверяет внутреннюю согласованность страниц, индексов и таблиц SQLite.
+  /// Успешного SELECT из sqlite_master недостаточно: он не проверяет всю структуру файла.
+  Future<bool> _integrityOk(Database db) async {
+    final rows = await db.rawQuery('PRAGMA integrity_check');
+    return rows.length == 1 && rows.first.values.single.toString().toLowerCase() == 'ok';
   }
 
   Future<int> _count(Database db, String table) async {
@@ -268,6 +280,7 @@ class DbEncryptionManager {
     Database? db;
     try {
       db = await open(file, password: password);
+      if (!await _integrityOk(db)) return false;
       for (final t in tables) {
         if (await _count(db, t) != (expected[t] ?? 0)) return false;
       }
