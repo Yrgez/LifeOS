@@ -137,11 +137,13 @@ class DbEncryptionManager {
       final counts = await _copy(path, key, _tmp, newKey);
       await debugHook?.call(MigrationStep.afterCopy);
 
+      // Both databases are closed and checkpointed by _copy(). Remove sidecars
+      // before either main file is renamed; failure leaves the original in place.
+      _deleteSidecars(path);
+      _deleteSidecars(_tmp);
       File(path).renameSync(_old);
       await debugHook?.call(MigrationStep.afterOldMoved);
-      _deleteSidecars(path);
       File(_tmp).renameSync(path);
-      _deleteSidecars(_tmp);
       await debugHook?.call(MigrationStep.afterSwapped);
 
       if (!await _verify(path, newKey, counts)) throw EncryptionException('Проверка новой базы не пройдена');
@@ -315,10 +317,16 @@ class DbEncryptionManager {
 
   void _deleteSidecars(String file) {
     for (final suffix in const ['-wal', '-shm', '-journal']) {
+      final sidecar = File('$file$suffix');
+      if (!sidecar.existsSync()) continue;
       try {
-        final f = File('$file$suffix');
-        if (f.existsSync()) f.deleteSync();
-      } catch (_) {}
+        sidecar.deleteSync();
+      } catch (e) {
+        throw EncryptionException('Не удалось удалить файл SQLite ${sidecar.path}: $e');
+      }
+      if (sidecar.existsSync()) {
+        throw EncryptionException('Файл SQLite ${sidecar.path} остался после удаления');
+      }
     }
   }
 
