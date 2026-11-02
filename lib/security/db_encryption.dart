@@ -345,13 +345,20 @@ class DbEncryptionManager {
   void _deleteSidecars(String file) {
     for (final suffix in const ['-wal', '-shm', '-journal']) {
       final sidecar = File('$file$suffix');
-      if (!sidecar.existsSync()) continue;
+      final type = FileSystemEntity.typeSync(sidecar.path, followLinks: false);
+      if (type == FileSystemEntityType.notFound) continue;
+      if (type != FileSystemEntityType.file) {
+        throw EncryptionException(
+          'Неожиданный тип файла SQLite ${sidecar.path}: $type',
+        );
+      }
       try {
         sidecar.deleteSync();
       } catch (e) {
         throw EncryptionException('Не удалось удалить файл SQLite ${sidecar.path}: $e');
       }
-      if (sidecar.existsSync()) {
+      if (FileSystemEntity.typeSync(sidecar.path, followLinks: false) !=
+          FileSystemEntityType.notFound) {
         throw EncryptionException('Файл SQLite ${sidecar.path} остался после удаления');
       }
     }
