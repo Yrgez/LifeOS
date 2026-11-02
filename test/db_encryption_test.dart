@@ -289,6 +289,34 @@ void main() {
       expect(await markersClear(), isTrue);
     });
 
+    test('ошибка удаления sidecar старой базы сохраняет backup и recovery-маркеры', () async {
+      await seed(sets: 5, txs: 5);
+      final sidecar = Directory('$path.premigrate-wal');
+      final failing = manager(hook: (step) {
+        if (step == MigrationStep.afterKeyCommitted) sidecar.createSync();
+      });
+
+      await expectLater(
+        failing.setEncrypted(true),
+        throwsA(isA<EncryptionException>()),
+      );
+
+      final key = await keys.read(DbEncryptionManager.keyName);
+      expect(key, isNotNull);
+      expect(await opens(key), isTrue);
+      expect(File('$path.premigrate').existsSync(), isTrue);
+      expect(sidecar.existsSync(), isTrue);
+      expect(await keys.read(DbEncryptionManager.markerName), 'to_encrypted');
+      expect(await keys.read(DbEncryptionManager.pendingKeyName), key);
+
+      sidecar.deleteSync();
+      await manager().recover();
+
+      expect(File('$path.premigrate').existsSync(), isFalse);
+      expect(await markersClear(), isTrue);
+      expect(await opens(key), isTrue);
+    });
+
     test('ошибка после фиксации нового ключа при включении: откатываются база и ключ', () async {
       await seed(sets: 5, txs: 5);
       final before = await content(null);
