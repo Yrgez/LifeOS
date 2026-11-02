@@ -38,9 +38,11 @@ Future<void> main() async {
   final dbPath = p.join(await getDatabasesPath(), 'life_os.db');
   final keys = SecureKeyStore();
   final encryption = DbEncryptionManager(open: openSqlCipher, keys: keys, path: dbPath, tables: SqliteAppRepository.tables);
+  Object? recoveryError;
   try {
     await encryption.recover(); // доводит или откатывает прерванную смену шифрования — до открытия базы
   } catch (e, st) {
+    recoveryError = e;
     AppLog.e('Не удалось восстановить состояние шифрования', e, st);
   }
 
@@ -56,7 +58,10 @@ Future<void> main() async {
     // новая установка начинается с чистого листа; примеры данных — по выбору на экране знакомства
     initialData: (now) => AppData.blank(now: now),
   );
-  await controller.load(); // при сбое (нет ключа, повреждение) приложение стартует в режиме «только чтение»
+  if (recoveryError != null) {
+    controller.blockWrites('не удалось восстановить состояние шифрования: $recoveryError');
+  }
+  await controller.load(); // при сбое загрузки или восстановления запись остаётся отключённой
 
   // ---- безопасность: блокировка, шифрование базы и копий ----
   final lock = AppLock(
