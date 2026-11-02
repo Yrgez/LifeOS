@@ -363,13 +363,14 @@ void main() {
       await seed(sets: 5, txs: 5);
       final before = await content(null);
       await crash(manager(hook: (step) async {
-        if (step == MigrationStep.afterSwapped) {
-          final pending = await keys.read(DbEncryptionManager.pendingKeyName);
-          final db = await fakeOpen(path, password: pending);
+        if (step == MigrationStep.afterKeyCommitted) {
+          final key = await keys.read(DbEncryptionManager.keyName);
+          final db = await fakeOpen(path, password: key);
           await db.execute('PRAGMA writable_schema = ON');
           await db.execute("UPDATE sqlite_master SET rootpage = 999999 WHERE name = 'idx_sets_ts'");
           await db.execute('PRAGMA writable_schema = OFF');
           await db.close();
+          throw MigrationInterrupted();
         }
       }), true);
 
