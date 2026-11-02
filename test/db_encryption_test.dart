@@ -213,6 +213,40 @@ void main() {
       expect(await markersClear(), isTrue);
     });
 
+    test('ошибка после фиксации нового ключа при включении: откатываются база и ключ', () async {
+      await seed(sets: 5, txs: 5);
+      final before = await content(null);
+      final failing = manager(hook: (step) {
+        if (step == MigrationStep.afterKeyCommitted) throw StateError('ошибка после фиксации');
+      });
+
+      await expectLater(failing.setEncrypted(true), throwsA(isA<EncryptionException>()));
+
+      expect(await keys.read(DbEncryptionManager.keyName), isNull);
+      expect(await opens(null), isTrue);
+      expect(await content(null), before);
+      expect(leftovers(), isFalse);
+      expect(await markersClear(), isTrue);
+    });
+
+    test('ошибка после удаления ключа при выключении: восстанавливаются база и ключ', () async {
+      await seed(sets: 5, txs: 5);
+      await manager().setEncrypted(true);
+      final key = await keys.read(DbEncryptionManager.keyName);
+      final before = await content(key);
+      final failing = manager(hook: (step) {
+        if (step == MigrationStep.afterKeyCommitted) throw StateError('ошибка после фиксации');
+      });
+
+      await expectLater(failing.setEncrypted(false), throwsA(isA<EncryptionException>()));
+
+      expect(await keys.read(DbEncryptionManager.keyName), key);
+      expect(await opens(key), isTrue);
+      expect(await content(key), before);
+      expect(leftovers(), isFalse);
+      expect(await markersClear(), isTrue);
+    });
+
     test('сбой при выключении шифрования: зашифрованная база и ключ остаются', () async {
       await seed();
       await manager().setEncrypted(true);
