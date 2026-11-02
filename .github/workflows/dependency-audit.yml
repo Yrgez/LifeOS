@@ -1,0 +1,47 @@
+name: Dependency security audit
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-audit-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  osv-scan:
+    name: OSV dependency scan (read-only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      # Resolve the exact dependency graph used by this CI run. The generated
+      # pubspec.lock is temporary until the project intentionally commits one.
+      - name: Resolve Dart dependencies
+        run: flutter pub get
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.x"
+
+      - name: Install pinned OSV-Scanner
+        run: go install github.com/google/osv-scanner/v2/cmd/osv-scanner@v2.3.3
+
+      - name: Scan resolved dependencies
+        run: "$(go env GOPATH)/bin/osv-scanner" scan source -r .
