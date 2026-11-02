@@ -361,5 +361,25 @@ void main() {
       await c.flush();
       expect(await count('kv'), 0);
     });
+
+    test('повреждённая SQLite-запись блокирует сохранение частичного состояния контроллером', () async {
+      await repoOn(db).save(rich());
+      await db.insert('docs', {'coll': 'goals', 'id': 'broken', 'pos': 99, 'body': '{не json'});
+      final docsBefore = await count('docs');
+      final setsBefore = await count('workout_sets');
+
+      final c = AppController(repoOn(db), saveDelay: Duration.zero);
+      await c.load();
+      expect(c.loadFailed, isTrue);
+      expect(c.loaded, isFalse);
+
+      c.updateWealth(netWorth: 1);
+      await c.flush();
+
+      expect(await count('docs'), docsBefore);
+      expect(await count('workout_sets'), setsBefore);
+      final broken = await db.query('docs', where: 'coll = ? AND id = ?', whereArgs: ['goals', 'broken']);
+      expect(broken.single['body'], '{не json');
+    });
   });
 }
