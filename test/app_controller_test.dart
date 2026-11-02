@@ -305,6 +305,24 @@ void main() {
       expect(repo.saveCalls, 0);
     });
 
+    test('успешный сброс хранилища снимает блокировку и разрешает запись в новую базу', () async {
+      final c = make(data: AppData.defaults(now: now));
+      c.blockWrites('recover failed');
+      await c.load();
+      expect(c.loadFailed, isTrue);
+      expect(repo.saveCalls, 0);
+
+      // Сброс удаляет прежнюю БД; имитируем пустое хранилище перед повторной загрузкой.
+      repo.data = null;
+      await c.onStorageReset();
+      expect(c.loaded, isTrue);
+      expect(c.loadFailed, isFalse);
+      c.updateWealth(netWorth: 123);
+      await c.flush();
+      expect(repo.saveCalls, 1);
+      expect(repo.data!.netWorth, 123);
+    });
+
     test('первый запуск (данных нет) — запись разрешена', () async {
       final c = make();
       await c.load();
