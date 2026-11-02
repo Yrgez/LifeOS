@@ -40,6 +40,7 @@ class DbEncryptionManager {
     required this.path,
     required this.tables,
     this.debugHook,
+    this.closeDatabase,
   });
 
   final DbOpener open;
@@ -53,6 +54,9 @@ class DbEncryptionManager {
   /// Только для тестов: вызывается после каждого шага; [MigrationInterrupted] имитирует мгновенный сбой.
   final FutureOr<void> Function(MigrationStep step)? debugHook;
 
+  /// Optional close override; a close failure must invalidate verification.
+  final Future<void> Function(Database db)? closeDatabase;
+
   static const keyName = 'db_key';
   static const pendingKeyName = 'db_key_pending';
   static const markerName = 'db_migration';
@@ -61,6 +65,16 @@ class DbEncryptionManager {
   String get _old => '$path.premigrate';
 
   Future<String?> currentKey() => keys.read(keyName);
+
+  Future<void> _closeVerificationDb(Database? db) async {
+    if (db == null) return;
+    final closer = closeDatabase;
+    if (closer == null) {
+      await db.close();
+    } else {
+      await closer(db);
+    }
+  }
   Future<bool> isEncrypted() async => (await currentKey()) != null;
 
   // ---------------- восстановление после прерванной миграции ----------------
@@ -207,17 +221,20 @@ class DbEncryptionManager {
   Future<bool> _probe(String file, String? password) async {
     if (!File(file).existsSync()) return false;
     Database? db;
+    var valid = false;
     try {
       db = await open(file, password: password);
       await db.rawQuery('SELECT count(*) FROM sqlite_master');
-      return await _integrityOk(db);
+      valid = await _integrityOk(db);
     } catch (_) {
-      return false;
-    } finally {
-      try {
-        await db?.close();
-      } catch (_) {}
+      valid = false;
     }
+    try {
+      await _closeVerificationDb(db);
+    } catch (_) {
+      valid = false;
+    }
+    return valid;
   }
 
   /// Проверяет внутреннюю согласованность страниц, индексов и таблиц SQLite.
@@ -299,20 +316,27 @@ class DbEncryptionManager {
 
   Future<bool> _verify(String file, String? password, Map<String, int> expected) async {
     Database? db;
+    var valid = false;
     try {
       db = await open(file, password: password);
-      if (!await _integrityOk(db)) return false;
-      for (final t in tables) {
-        if (await _count(db, t) != (expected[t] ?? 0)) return false;
+      valid = await _integrityOk(db);
+      if (valid) {
+        for (final t in tables) {
+          if (await _count(db, t) != (expected[t] ?? 0)) {
+            valid = false;
+            break;
+          }
+        }
       }
-      return true;
     } catch (_) {
-      return false;
-    } finally {
-      try {
-        await db?.close();
-      } catch (_) {}
+      valid = false;
     }
+    try {
+      await _closeVerificationDb(db);
+    } catch (_) {
+      valid = false;
+    }
+    return valid;
   }
 
   void _deleteSidecars(String file) {
