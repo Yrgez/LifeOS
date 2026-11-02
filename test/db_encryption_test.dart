@@ -296,10 +296,13 @@ void main() {
         if (step == MigrationStep.afterKeyCommitted) sidecar.createSync();
       });
 
-      await expectLater(
-        failing.setEncrypted(true),
-        throwsA(isA<EncryptionException>()),
-      );
+      Object? migrationError;
+      try {
+        await failing.setEncrypted(true);
+      } catch (error) {
+        migrationError = error;
+      }
+      expect(migrationError, isA<EncryptionException>());
 
       final key = await keys.read(DbEncryptionManager.keyName);
       expect(key, isNotNull);
