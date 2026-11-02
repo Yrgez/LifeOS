@@ -77,7 +77,7 @@ Future<void> main() async {
     encryption: encryption,
     flushStorage: controller.flush,
     exclusive: repository.exclusive,
-    onStorageReset: controller.onResume, // после сброса хранилища данные читаются (создаются) заново
+    onStorageReset: controller.onStorageReset, // явный сброс снимает блокировку и создаёт новое хранилище
     backupCipher: const BackupCipher(useIsolate: true),
   );
   await security.init();
