@@ -345,13 +345,20 @@ class DbEncryptionManager {
   void _deleteSidecars(String file) {
     for (final suffix in const ['-wal', '-shm', '-journal']) {
       final sidecar = File('$file$suffix');
-      if (!sidecar.existsSync()) continue;
+      final type = FileSystemEntity.typeSync(sidecar.path, followLinks: false);
+      if (type == FileSystemEntityType.notFound) continue;
+      if (type != FileSystemEntityType.file) {
+        throw EncryptionException(
+          'Неожиданный тип файла SQLite ${sidecar.path}: $type',
+        );
+      }
       try {
         sidecar.deleteSync();
       } catch (e) {
         throw EncryptionException('Не удалось удалить файл SQLite ${sidecar.path}: $e');
       }
-      if (sidecar.existsSync()) {
+      if (FileSystemEntity.typeSync(sidecar.path, followLinks: false) !=
+          FileSystemEntityType.notFound) {
         throw EncryptionException('Файл SQLite ${sidecar.path} остался после удаления');
       }
     }
@@ -360,12 +367,19 @@ class DbEncryptionManager {
   /// Затирает файл нулями и удаляет (вместе с WAL/SHM/journal). Это best-effort: на флеш-памяти с журналируемой
   /// файловой системой гарантии физического стирания нет — поэтому исходная база не должна жить дольше необходимого.
   void _shred(String file) {
-    for (final f in [file, '$file-wal', '$file-shm', '$file-journal']) {
+    // Remove sidecars first. If any sidecar cannot be removed, keep the main
+    // database in place so recover() can still identify and retry this backup.
+    final files = ['$file-wal', '$file-shm', '$file-journal', file];
+    for (final f in files) {
+      final fl = File(f);
+      final type = FileSystemEntity.typeSync(f, followLinks: false);
+      if (type == FileSystemEntityType.notFound) continue;
+      if (type != FileSystemEntityType.file) {
+        throw EncryptionException('Неожиданный тип файла базы данных $f: $type');
+      }
       try {
-        final fl = File(f);
-        if (!fl.existsSync()) continue;
         final len = fl.lengthSync();
-        final raf = fl.openSync(mode: FileMode.write); // перезапись (файл усекается и заполняется нулями)
+        final raf = fl.openSync(mode: FileMode.write);
         try {
           final zeros = List<int>.filled(64 * 1024, 0);
           var left = len;
@@ -378,12 +392,21 @@ class DbEncryptionManager {
         } finally {
           raf.closeSync();
         }
+      } catch (e) {
+        AppLog.e('Не удалось затереть файл $f; будет предпринята попытка удаления', e);
+      }
+
+      // Deletion is the fallback when overwrite is unsupported (e.g. flash or
+      // filesystem semantics). Never report success while an artifact remains.
+      try {
         fl.deleteSync();
       } catch (e) {
-        AppLog.e('Не удалось затереть файл $f', e);
-        try {
-          File(f).deleteSync();
-        } catch (_) {}
+        if (FileSystemEntity.typeSync(f, followLinks: false) != FileSystemEntityType.notFound) {
+          throw EncryptionException('Не удалось удалить файл базы данных ${fl.path}: $e');
+        }
+      }
+      if (FileSystemEntity.typeSync(f, followLinks: false) != FileSystemEntityType.notFound) {
+        throw EncryptionException('Файл базы данных ${fl.path} остался после удаления');
       }
     }
   }
