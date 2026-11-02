@@ -161,7 +161,7 @@ class SqliteAppRepository implements AppRepository {
         return jsonDecode(raw);
       } catch (e, st) {
         AppLog.e('SQLite: повреждена запись «$what»; загрузка остановлена во избежание потери данных', e, st);
-        throw FormatException('SQLite: повреждена запись «$what»', raw, e);
+        throw FormatException('SQLite: повреждена запись «$what»: $e', raw);
       }
     }
 
