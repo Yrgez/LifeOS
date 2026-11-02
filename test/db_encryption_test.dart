@@ -225,7 +225,7 @@ void main() {
     test('ошибка удаления WAL sidecar прерывает миграцию до переименования исходной базы', () async {
       await seed(sets: 5, txs: 5);
       final before = await content(null);
-      final sidecar = Directory('\${path}-wal');
+      final sidecar = Directory('${path}-wal');
       final failing = manager(hook: (step) {
         if (step == MigrationStep.afterCopy) sidecar.createSync();
       });
@@ -236,7 +236,7 @@ void main() {
       // reopening SQLite so the test can verify the untouched original database.
       sidecar.deleteSync();
       expect(File(path).existsSync(), isTrue);
-      expect(File('\${path}.premigrate').existsSync(), isFalse);
+      expect(File('${path}.premigrate').existsSync(), isFalse);
       expect(await keys.read(DbEncryptionManager.keyName), isNull);
       expect(await content(null), before);
       expect(await markersClear(), isTrue);
