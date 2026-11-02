@@ -177,6 +177,16 @@ class AppController extends ChangeNotifier {
     _autoSyncHealth();
   }
 
+  /// Вызывается только после успешного явного удаления старого хранилища.
+  /// С этого момента допустимо создать новую пустую базу и снова сохранять данные.
+  Future<void> onStorageReset() async {
+    _writesBlocked = false;
+    _loadFailed = false;
+    _loaded = false;
+    _pending = ChangeSet();
+    await load();
+  }
+
   /// Вызывать при возврате приложения на передний план: новый день, повторная попытка загрузки.
   Future<void> onResume() async {
     if (!_loaded) {
