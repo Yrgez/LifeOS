@@ -83,6 +83,9 @@ class DbEncryptionManager {
   Future<void> recover() async {
     final marker = await keys.read(markerName);
     final pending = await keys.read(pendingKeyName);
+    if (marker != null && marker != 'to_encrypted' && marker != 'to_plain') {
+      throw EncryptionException('Неизвестная метка миграции базы: $marker');
+    }
     _shred(_tmp); // недоделанная копия никому не нужна
     final hasOld = File(_old).existsSync();
     if (marker == null && !hasOld && pending == null) return;
