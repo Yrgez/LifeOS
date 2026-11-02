@@ -164,7 +164,7 @@ class AppController extends ChangeNotifier {
         _pending.markFull(); // в хранилище ничего нет: стартовые данные пишем целиком
       }
       _loaded = true;
-      _loadFailed = false;
+      _loadFailed = _writesBlocked;
     } catch (e, st) {
       _loadFailed = true;
       AppLog.e('Не удалось загрузить данные — запись отключена, чтобы не затереть сохранённое', e, st);
