@@ -288,6 +288,23 @@ void main() {
       expect(repo.saveCalls, 0);
     });
 
+    test('ошибка восстановления шифрования блокирует сохранение даже после успешного чтения', () async {
+      final c = make(data: AppData.defaults(now: now));
+      c.blockWrites('recover failed');
+      await c.load();
+      expect(c.loaded, isTrue);
+      expect(c.loadFailed, isTrue);
+
+      c.updateWealth(netWorth: 999);
+      await c.flush();
+      expect(repo.saveCalls, 0);
+
+      final backup = c.exportBackup();
+      expect(c.importBackup(backup), isTrue);
+      await c.flush();
+      expect(repo.saveCalls, 0);
+    });
+
     test('первый запуск (данных нет) — запись разрешена', () async {
       final c = make();
       await c.load();
