@@ -365,6 +365,10 @@ void main() {
 
       expect(c.importBackup(jsonEncode(backup)), isFalse);
       expect(c.netWorth, 765432);
+
+      backup['netWorth'] = null;
+      expect(c.importBackup(jsonEncode(backup)), isFalse);
+      expect(c.netWorth, 765432);
     });
   });
 
