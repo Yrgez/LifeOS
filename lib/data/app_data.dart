@@ -159,7 +159,14 @@ class AppData {
 
     T pick<T>(String key, T Function(dynamic) parse, T fallback) {
       final v = j[key];
-      if (v == null) return fallback;
+      if (v == null) {
+        // Missing fields are valid in older schemas; explicit null is not valid for
+        // required exported fields. lastHealthSyncMs is intentionally nullable.
+        if (strict && j.containsKey(key) && key != 'lastHealthSyncMs') {
+          throw FormatException('AppData: поле "$key" не может быть null');
+        }
+        return fallback;
+      }
       try {
         return parse(v);
       } catch (e, st) {
