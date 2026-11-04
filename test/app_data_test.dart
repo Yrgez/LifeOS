@@ -93,4 +93,49 @@ void main() {
     expect(d.budgets, isEmpty);
     expect(d.recurring, isEmpty);
   });
+
+  test('strict import rejects journals above their in-memory limits', () {
+    final workout = WorkoutSet(
+      id: 'set',
+      muscleId: 'chest',
+      at: DateTime(2026, 10, 24),
+      weight: 50,
+      reps: 8,
+    ).toJson();
+    final transaction = MoneyTx(
+      id: 'tx',
+      at: DateTime(2026, 10, 24),
+      isIncome: false,
+      amount: 100,
+      categoryId: 'food',
+    ).toJson();
+
+    expect(
+      () => AppData.fromJson(
+        {
+          'schemaVersion': kSchemaVersion,
+          'workoutSets': List<Map<String, dynamic>>.filled(
+            kMaxWorkoutSets + 1,
+            workout,
+          ),
+        },
+        strict: true,
+      ),
+      throwsFormatException,
+    );
+    expect(
+      () => AppData.fromJson(
+        {
+          'schemaVersion': kSchemaVersion,
+          'transactions': List<Map<String, dynamic>>.filled(
+            kMaxTransactions + 1,
+            transaction,
+          ),
+        },
+        strict: true,
+      ),
+      throwsFormatException,
+    );
+  });
+
 }
