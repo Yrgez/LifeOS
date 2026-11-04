@@ -154,7 +154,7 @@ class AppData {
 
   /// Толерантный разбор: отсутствующее или повреждённое поле заменяется значением по умолчанию
   /// (и логируется), остальные поля не страдают.
-  factory AppData.fromJson(Map<String, dynamic> j, {DateTime? now}) {
+  factory AppData.fromJson(Map<String, dynamic> j, {DateTime? now, bool strict = false}) {
     final d = AppData.defaults(now: now);
 
     T pick<T>(String key, T Function(dynamic) parse, T fallback) {
@@ -164,6 +164,7 @@ class AppData {
         return parse(v);
       } catch (e, st) {
         AppLog.e('AppData: поле "$key" повреждено, использовано значение по умолчанию', e, st);
+        if (strict) rethrow;
         return fallback;
       }
     }
