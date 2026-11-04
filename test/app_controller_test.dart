@@ -353,6 +353,17 @@ void main() {
       expect(c.importBackup('{"schemaVersion": 999}'), isFalse);
       expect(c.netWorth, before);
     });
+
+    test('повреждённое поле резервной копии отклоняется без замены текущих данных', () async {
+      final c = make();
+      await c.load();
+      c.updateWealth(netWorth: 765432);
+      final backup = jsonDecode(c.exportBackup()) as Map<String, dynamic>;
+      backup['netWorth'] = 'not-a-number';
+
+      expect(c.importBackup(jsonEncode(backup)), isFalse);
+      expect(c.netWorth, 765432);
+    });
   });
 
   test('слушатели уведомляются об изменениях', () async {
