@@ -356,6 +356,19 @@ void main() {
       expect(c.netWorth, before);
     });
 
+    test('некорректная версия схемы резервной копии отклоняется', () async {
+      final c = make();
+      await c.load();
+      c.updateWealth(netWorth: 654321);
+      final backup = jsonDecode(c.exportBackup()) as Map<String, dynamic>;
+
+      for (final invalidVersion in [-1, 0, 3.5, '3']) {
+        backup['schemaVersion'] = invalidVersion;
+        expect(c.importBackup(jsonEncode(backup)), isFalse, reason: 'schemaVersion=$invalidVersion');
+        expect(c.netWorth, 654321);
+      }
+    });
+
     test('повреждённое поле резервной копии отклоняется без замены текущих данных', () async {
       final c = make();
       await c.load();
