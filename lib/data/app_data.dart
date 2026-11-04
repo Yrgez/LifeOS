@@ -154,16 +154,24 @@ class AppData {
 
   /// Толерантный разбор: отсутствующее или повреждённое поле заменяется значением по умолчанию
   /// (и логируется), остальные поля не страдают.
-  factory AppData.fromJson(Map<String, dynamic> j, {DateTime? now}) {
+  factory AppData.fromJson(Map<String, dynamic> j, {DateTime? now, bool strict = false}) {
     final d = AppData.defaults(now: now);
 
     T pick<T>(String key, T Function(dynamic) parse, T fallback) {
       final v = j[key];
-      if (v == null) return fallback;
+      if (v == null) {
+        // Missing fields are valid in older schemas; explicit null is not valid for
+        // required exported fields. lastHealthSyncMs is intentionally nullable.
+        if (strict && j.containsKey(key) && key != 'lastHealthSyncMs') {
+          throw FormatException('AppData: поле "$key" не может быть null');
+        }
+        return fallback;
+      }
       try {
         return parse(v);
       } catch (e, st) {
         AppLog.e('AppData: поле "$key" повреждено, использовано значение по умолчанию', e, st);
+        if (strict) rethrow;
         return fallback;
       }
     }

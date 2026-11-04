@@ -1030,7 +1030,7 @@ class AppController extends ChangeNotifier {
       if (j is! Map<String, dynamic>) return false;
       final v = (j['schemaVersion'] as num?)?.toInt();
       if (v == null || v > kSchemaVersion) return false;
-      _d = AppData.fromJson(j, now: _clock());
+      _d = AppData.fromJson(j, now: _clock(), strict: true);
       _pending.markFull();
       _loaded = true; // пользователь явно задал данные — можно писать
     } catch (e, st) {

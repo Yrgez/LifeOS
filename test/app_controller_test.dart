@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_os/data/app_data.dart';
@@ -352,6 +354,21 @@ void main() {
       expect(c.importBackup('{"netWorth": 1}'), isFalse); // нет schemaVersion
       expect(c.importBackup('{"schemaVersion": 999}'), isFalse);
       expect(c.netWorth, before);
+    });
+
+    test('повреждённое поле резервной копии отклоняется без замены текущих данных', () async {
+      final c = make();
+      await c.load();
+      c.updateWealth(netWorth: 765432);
+      final backup = jsonDecode(c.exportBackup()) as Map<String, dynamic>;
+      backup['netWorth'] = 'not-a-number';
+
+      expect(c.importBackup(jsonEncode(backup)), isFalse);
+      expect(c.netWorth, 765432);
+
+      backup['netWorth'] = null;
+      expect(c.importBackup(jsonEncode(backup)), isFalse);
+      expect(c.netWorth, 765432);
     });
   });
 
