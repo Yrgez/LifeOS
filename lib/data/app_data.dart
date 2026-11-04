@@ -178,6 +178,22 @@ class AppData {
 
     List<T> list<T>(dynamic v, T Function(Map<String, dynamic>) f) =>
         (v as List).map((e) => f(e as Map<String, dynamic>)).toList();
+    List<T> boundedJournal<T>(
+      dynamic v,
+      int maxLength,
+      String field,
+      T Function(Map<String, dynamic>) parse,
+    ) {
+      final entries = v as List;
+      // Existing local data remains readable for compatibility. User-imported backups
+      // must respect the same memory bounds enforced by controller mutations.
+      if (strict && entries.length > maxLength) {
+        throw FormatException(
+          'AppData: поле "$field" превышает допустимый размер ($maxLength)',
+        );
+      }
+      return entries.map((e) => parse(e as Map<String, dynamic>)).toList();
+    }
     List<double> doubles(dynamic v) => fit7((v as List).map((e) => (e as num).toDouble()).toList());
 
     return AppData(
@@ -203,12 +219,12 @@ class AppData {
       graphEvolutionHistory: pick<List<double>>('graphEvolutionHistory', doubles, d.graphEvolutionHistory),
       workoutSets: pick<List<WorkoutSet>>(
         'workoutSets',
-        (v) => (list(v, WorkoutSet.fromJson)..sort((a, b) => a.at.compareTo(b.at))),
+        (v) => (boundedJournal(v, kMaxWorkoutSets, 'workoutSets', WorkoutSet.fromJson)..sort((a, b) => a.at.compareTo(b.at))),
         d.workoutSets,
       ),
       transactions: pick<List<MoneyTx>>(
         'transactions',
-        (v) => (list(v, MoneyTx.fromJson)..sort((a, b) => a.at.compareTo(b.at))),
+        (v) => (boundedJournal(v, kMaxTransactions, 'transactions', MoneyTx.fromJson)..sort((a, b) => a.at.compareTo(b.at))),
         d.transactions,
       ),
       budgets: pick<Map<String, int>>(
