@@ -1028,8 +1028,8 @@ class AppController extends ChangeNotifier {
     try {
       final j = jsonDecode(raw);
       if (j is! Map<String, dynamic>) return false;
-      final v = (j['schemaVersion'] as num?)?.toInt();
-      if (v == null || v > kSchemaVersion) return false;
+      final v = j['schemaVersion'];
+      if (v is! int || v < 1 || v > kSchemaVersion) return false;
       _d = AppData.fromJson(j, now: _clock(), strict: true);
       _pending.markFull();
       _loaded = true; // пользователь явно задал данные — можно писать
