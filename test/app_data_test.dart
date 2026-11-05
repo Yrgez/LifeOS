@@ -138,4 +138,37 @@ void main() {
     );
   });
 
+
+  test('strict import rejects duplicate primary keys in both journals', () {
+    final set = WorkoutSet(
+      id: 'duplicate-set',
+      muscleId: 'chest',
+      at: DateTime(2026, 10, 24),
+      weight: 50,
+      reps: 8,
+    ).toJson();
+    final tx = MoneyTx(
+      id: 'duplicate-tx',
+      at: DateTime(2026, 10, 24),
+      isIncome: false,
+      amount: 100,
+      categoryId: 'food',
+    ).toJson();
+
+    expect(
+      () => AppData.fromJson({
+        'schemaVersion': kSchemaVersion,
+        'workoutSets': [set, Map<String, dynamic>.of(set)],
+      }, strict: true),
+      throwsFormatException,
+    );
+    expect(
+      () => AppData.fromJson({
+        'schemaVersion': kSchemaVersion,
+        'transactions': [tx, Map<String, dynamic>.of(tx)],
+      }, strict: true),
+      throwsFormatException,
+    );
+  });
+
 }
