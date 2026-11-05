@@ -182,8 +182,9 @@ class AppData {
       dynamic v,
       int maxLength,
       String field,
-      T Function(Map<String, dynamic>) parse,
-    ) {
+      T Function(Map<String, dynamic>) parse, {
+      String Function(T)? idOf,
+    }) {
       final entries = v as List;
       // Existing local data remains readable for compatibility. User-imported backups
       // must respect the same memory bounds enforced by controller mutations.
@@ -192,7 +193,24 @@ class AppData {
           'AppData: поле "$field" превышает допустимый размер ($maxLength)',
         );
       }
-      return entries.map((e) => parse(e as Map<String, dynamic>)).toList();
+      final parsed = entries
+          .map((e) => parse(e as Map<String, dynamic>))
+          .toList();
+      // SQLite stores journal IDs as primary keys. ConflictAlgorithm.replace
+      // would silently overwrite an earlier row if an imported backup repeats an ID.
+      // Keep legacy/local parsing tolerant; enforce uniqueness on strict imports only.
+      if (strict && idOf != null) {
+        final seenIds = <String>{};
+        for (final entry in parsed) {
+          final id = idOf(entry);
+          if (!seenIds.add(id)) {
+            throw FormatException(
+              'AppData: поле "$field" содержит повторяющийся id "$id"',
+            );
+          }
+        }
+      }
+      return parsed;
     }
     List<double> doubles(dynamic v) => fit7((v as List).map((e) => (e as num).toDouble()).toList());
 
@@ -219,12 +237,12 @@ class AppData {
       graphEvolutionHistory: pick<List<double>>('graphEvolutionHistory', doubles, d.graphEvolutionHistory),
       workoutSets: pick<List<WorkoutSet>>(
         'workoutSets',
-        (v) => (boundedJournal(v, kMaxWorkoutSets, 'workoutSets', WorkoutSet.fromJson)..sort((a, b) => a.at.compareTo(b.at))),
+        (v) => (boundedJournal(v, kMaxWorkoutSets, 'workoutSets', WorkoutSet.fromJson, idOf: (entry) => entry.id)..sort((a, b) => a.at.compareTo(b.at))),
         d.workoutSets,
       ),
       transactions: pick<List<MoneyTx>>(
         'transactions',
-        (v) => (boundedJournal(v, kMaxTransactions, 'transactions', MoneyTx.fromJson)..sort((a, b) => a.at.compareTo(b.at))),
+        (v) => (boundedJournal(v, kMaxTransactions, 'transactions', MoneyTx.fromJson, idOf: (entry) => entry.id)..sort((a, b) => a.at.compareTo(b.at))),
         d.transactions,
       ),
       budgets: pick<Map<String, int>>(
