@@ -178,6 +178,29 @@ class AppData {
 
     List<T> list<T>(dynamic v, T Function(Map<String, dynamic>) f) =>
         (v as List).map((e) => f(e as Map<String, dynamic>)).toList();
+
+    List<T> uniqueCollection<T>(
+      dynamic v,
+      String field,
+      T Function(Map<String, dynamic>) parse,
+      String Function(T) keyOf,
+    ) {
+      final entries = list(v, parse);
+      // docs uses (collection, id) as its primary key. Reject collisions on
+      // backup import before _docsFrom can collapse records into its Map.
+      if (strict) {
+        final seen = <String>{};
+        for (final entry in entries) {
+          final key = keyOf(entry);
+          if (!seen.add(key)) {
+            throw FormatException(
+              'AppData: поле "$field" содержит повторяющийся ключ "$key"',
+            );
+          }
+        }
+      }
+      return entries;
+    }
     List<T> boundedJournal<T>(
       dynamic v,
       int maxLength,
@@ -227,11 +250,11 @@ class AppData {
         (v) => (v as Map<String, dynamic>).map((k, x) => MapEntry(k, MuscleGroup.fromJson(x as Map<String, dynamic>))),
         d.muscles,
       ),
-      goals: pick<List<GlobalGoal>>('goals', (v) => list(v, GlobalGoal.fromJson), d.goals),
-      achievements: pick<List<AchievementItem>>('achievements', (v) => list(v, AchievementItem.fromJson), d.achievements),
-      salaryHistory: pick<List<SalaryStep>>('salaryHistory', (v) => list(v, SalaryStep.fromJson), d.salaryHistory),
-      graphNodes: pick<List<GraphNode>>('graphNodes', (v) => list(v, GraphNode.fromJson), d.graphNodes),
-      graphEdges: pick<List<GraphEdge>>('graphEdges', (v) => list(v, GraphEdge.fromJson), d.graphEdges),
+      goals: pick<List<GlobalGoal>>('goals', (v) => uniqueCollection(v, 'goals', GlobalGoal.fromJson, (entry) => entry.id), d.goals),
+      achievements: pick<List<AchievementItem>>('achievements', (v) => uniqueCollection(v, 'achievements', AchievementItem.fromJson, (entry) => entry.id), d.achievements),
+      salaryHistory: pick<List<SalaryStep>>('salaryHistory', (v) => uniqueCollection(v, 'salaryHistory', SalaryStep.fromJson, (entry) => entry.year), d.salaryHistory),
+      graphNodes: pick<List<GraphNode>>('graphNodes', (v) => uniqueCollection(v, 'graphNodes', GraphNode.fromJson, (entry) => entry.id), d.graphNodes),
+      graphEdges: pick<List<GraphEdge>>('graphEdges', (v) => uniqueCollection(v, 'graphEdges', GraphEdge.fromJson, (entry) => entry.key), d.graphEdges),
       stepsWeekHistory: pick<List<double>>('stepsWeekHistory', doubles, d.stepsWeekHistory),
       caloriesWeekHistory: pick<List<double>>('caloriesWeekHistory', doubles, d.caloriesWeekHistory),
       graphEvolutionHistory: pick<List<double>>('graphEvolutionHistory', doubles, d.graphEvolutionHistory),
@@ -250,7 +273,7 @@ class AppData {
         (v) => (v as Map).map((k, x) => MapEntry(k as String, (x as num).toInt())),
         d.budgets,
       ),
-      recurring: pick<List<RecurringTx>>('recurring', (v) => list(v, RecurringTx.fromJson), d.recurring),
+      recurring: pick<List<RecurringTx>>('recurring', (v) => uniqueCollection(v, 'recurring', RecurringTx.fromJson, (entry) => entry.id), d.recurring),
       userName: pick<String>('userName', (v) => v as String, d.userName),
       stepsGoal: pick<int>('stepsGoal', (v) => (v as num).toInt(), d.stepsGoal),
       proteinGoal: pick<int>('proteinGoal', (v) => (v as num).toInt(), d.proteinGoal),
