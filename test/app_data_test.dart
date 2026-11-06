@@ -171,4 +171,53 @@ void main() {
     );
   });
 
+
+  test('strict import rejects duplicate IDs in SQLite document collections', () {
+    final data = AppData.defaults(now: DateTime(2026, 10, 24));
+    final goal = GlobalGoal(
+      id: 'duplicate-goal',
+      title: 'Goal',
+      category: 'mind',
+      checkpoints: [],
+    ).toJson();
+    final achievement = const AchievementItem(
+      id: 'duplicate-achievement',
+      title: 'Achievement',
+      date: '2026-10-24',
+      category: 'mind',
+    ).toJson();
+    final salary = const SalaryStep(
+      year: '2026',
+      role: 'Analyst',
+      salary: 100,
+    ).toJson();
+    final node = data.graphNodes.first.toJson();
+    final edge = const GraphEdge('source', 'target').toJson();
+    final recurring = RecurringTx(
+      id: 'duplicate-recurring',
+      categoryId: 'housing',
+      amount: 100,
+      dayOfMonth: 1,
+      start: DateTime(2026, 10, 1),
+    ).toJson();
+
+    final duplicateCollections = <String, List<Map<String, dynamic>>>{
+      'goals': [goal, Map<String, dynamic>.of(goal)],
+      'achievements': [achievement, Map<String, dynamic>.of(achievement)],
+      'salaryHistory': [salary, Map<String, dynamic>.of(salary)],
+      'graphNodes': [node, Map<String, dynamic>.of(node)],
+      'graphEdges': [edge, Map<String, dynamic>.of(edge)],
+      'recurring': [recurring, Map<String, dynamic>.of(recurring)],
+    };
+
+    for (final entry in duplicateCollections.entries) {
+      final backup = data.toJson()..[entry.key] = entry.value;
+      expect(
+        () => AppData.fromJson(backup, strict: true),
+        throwsFormatException,
+        reason: 'duplicate key in ${entry.key}',
+      );
+    }
+  });
+
 }
