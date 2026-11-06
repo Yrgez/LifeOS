@@ -186,11 +186,6 @@ void main() {
       date: '2026-10-24',
       category: 'mind',
     ).toJson();
-    final salary = const SalaryStep(
-      year: '2026',
-      role: 'Analyst',
-      salary: 100,
-    ).toJson();
     final node = data.graphNodes.first.toJson();
     final edge = const GraphEdge('source', 'target').toJson();
     final recurring = RecurringTx(
@@ -204,7 +199,6 @@ void main() {
     final duplicateCollections = <String, List<Map<String, dynamic>>>{
       'goals': [goal, Map<String, dynamic>.of(goal)],
       'achievements': [achievement, Map<String, dynamic>.of(achievement)],
-      'salaryHistory': [salary, Map<String, dynamic>.of(salary)],
       'graphNodes': [node, Map<String, dynamic>.of(node)],
       'graphEdges': [edge, Map<String, dynamic>.of(edge)],
       'recurring': [recurring, Map<String, dynamic>.of(recurring)],
@@ -218,6 +212,21 @@ void main() {
         reason: 'duplicate key in ${entry.key}',
       );
     }
+  });
+
+
+  test('strict import allows multiple salary history entries for the same year', () {
+    final data = AppData.defaults(now: DateTime(2026, 10, 24));
+    final backup = data.toJson()
+      ..['salaryHistory'] = [
+        const SalaryStep(year: '2026', role: 'Analyst', salary: 100).toJson(),
+        const SalaryStep(year: '2026', role: 'Senior Analyst', salary: 150).toJson(),
+      ];
+
+    final imported = AppData.fromJson(backup, strict: true);
+    expect(imported.salaryHistory, hasLength(2));
+    expect(imported.salaryHistory.map((step) => step.role),
+        ['Analyst', 'Senior Analyst']);
   });
 
 }
