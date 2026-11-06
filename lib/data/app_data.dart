@@ -1,4 +1,5 @@
 import '../core/app_log.dart';
+import '../core/finance_categories.dart';
 import '../core/utils.dart';
 import '../models/models.dart';
 import 'default_data.dart';
@@ -273,7 +274,21 @@ class AppData {
         (v) => (v as Map).map((k, x) => MapEntry(k as String, (x as num).toInt())),
         d.budgets,
       ),
-      recurring: pick<List<RecurringTx>>('recurring', (v) => uniqueCollection(v, 'recurring', RecurringTx.fromJson, (entry) => entry.id), d.recurring),
+      recurring: pick<List<RecurringTx>>(
+        'recurring',
+        (v) {
+          final rules = uniqueCollection(v, 'recurring', RecurringTx.fromJson, (entry) => entry.id);
+          if (strict) {
+            for (final rule in rules) {
+              if (finCategory(rule.categoryId) == null) {
+                throw FormatException('AppData: неизвестная категория повторяющейся операции "${rule.categoryId}"');
+              }
+            }
+          }
+          return rules;
+        },
+        d.recurring,
+      ),
       userName: pick<String>('userName', (v) => v as String, d.userName),
       stepsGoal: pick<int>('stepsGoal', (v) => (v as num).toInt(), d.stepsGoal),
       proteinGoal: pick<int>('proteinGoal', (v) => (v as num).toInt(), d.proteinGoal),
