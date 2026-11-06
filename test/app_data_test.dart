@@ -171,4 +171,37 @@ void main() {
     );
   });
 
+
+  test('strict import rejects duplicate IDs in SQLite document collections', () {
+    final data = AppData.defaults(now: DateTime(2026, 10, 24));
+    final goal = data.goals.first.toJson();
+    final achievement = data.achievements.first.toJson();
+    final node = data.graphNodes.first.toJson();
+    final edge = data.graphEdges.first.toJson();
+    final recurring = RecurringTx(
+      id: 'duplicate-recurring',
+      categoryId: 'housing',
+      amount: 100,
+      dayOfMonth: 1,
+      start: DateTime(2026, 10, 1),
+    ).toJson();
+
+    final duplicateCollections = <String, List<Map<String, dynamic>>>{
+      'goals': [goal, Map<String, dynamic>.of(goal)],
+      'achievements': [achievement, Map<String, dynamic>.of(achievement)],
+      'graphNodes': [node, Map<String, dynamic>.of(node)],
+      'graphEdges': [edge, Map<String, dynamic>.of(edge)],
+      'recurring': [recurring, Map<String, dynamic>.of(recurring)],
+    };
+
+    for (final entry in duplicateCollections.entries) {
+      final backup = data.toJson()..[entry.key] = entry.value;
+      expect(
+        () => AppData.fromJson(backup, strict: true),
+        throwsFormatException,
+        reason: 'duplicate key in ${entry.key}',
+      );
+    }
+  });
+
 }
