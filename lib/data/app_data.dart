@@ -143,7 +143,7 @@ class AppData {
         if (includeLogs) 'workoutSets': workoutSets.map((w) => w.toJson()).toList(),
         if (includeLogs) 'transactions': transactions.map((t) => t.toJson()).toList(),
         'budgets': budgets,
-        if (includeLogs) 'recurring': recurring.map((r) => r.toJson()).toList(),
+        'recurring': recurring.map((r) => r.toJson()).toList(),
         'userName': userName,
         'stepsGoal': stepsGoal,
         'proteinGoal': proteinGoal,
