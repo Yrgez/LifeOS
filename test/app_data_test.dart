@@ -220,4 +220,19 @@ void main() {
     }
   });
 
+
+  test('strict import allows multiple salary history entries for the same year', () {
+    final data = AppData.defaults(now: DateTime(2026, 10, 24));
+    final backup = data.toJson()
+      ..['salaryHistory'] = [
+        const SalaryStep(year: '2026', role: 'Analyst', salary: 100).toJson(),
+        const SalaryStep(year: '2026', role: 'Senior Analyst', salary: 150).toJson(),
+      ];
+
+    final imported = AppData.fromJson(backup, strict: true);
+    expect(imported.salaryHistory, hasLength(2));
+    expect(imported.salaryHistory.map((step) => step.role),
+        ['Analyst', 'Senior Analyst']);
+  });
+
 }
