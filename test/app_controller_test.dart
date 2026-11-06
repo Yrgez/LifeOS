@@ -393,4 +393,27 @@ void main() {
     c.updateHealth(steps: 100);
     expect(calls, 1);
   });
+
+  test('импорт отклоняет правило повторения с неизвестной категорией', () async {
+    final sourceData = AppData.defaults(now: now);
+    sourceData.recurring.add(RecurringTx(
+      id: 'rec_unknown_category',
+      categoryId: 'missing_category',
+      amount: 100,
+      dayOfMonth: now.day,
+      start: DateTime(now.year, now.month, now.day),
+    ));
+    final source = make(data: sourceData);
+    await source.load();
+    final backup = source.exportBackup();
+
+    final target = make(data: AppData.defaults(now: now));
+    await target.load();
+    final before = target.netWorth;
+
+    expect(target.importBackup(backup), isFalse);
+    expect(target.netWorth, before);
+    expect(target.recurring, isEmpty);
+  });
+
 }
