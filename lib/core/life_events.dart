@@ -65,13 +65,18 @@ ResourceSummary summarizeResources(
   required DateTime to,
   String? dimension,
   String? processId,
-}) {
+}) =>
+    summarizeEvents(current.where((e) =>
+        !e.at.isBefore(from) &&
+        e.at.isBefore(to) &&
+        (dimension == null || e.touches(dimension)) &&
+        (processId == null || e.processIds.contains(processId))));
+
+/// Сводка по уже отобранным событиям.
+ResourceSummary summarizeEvents(Iterable<LifeEvent> events) {
   var n = 0, min = 0, minK = 0, rub = 0, rubK = 0;
   final energy = <int, int>{};
-  for (final e in current) {
-    if (e.at.isBefore(from) || !e.at.isBefore(to)) continue;
-    if (dimension != null && !e.touches(dimension)) continue;
-    if (processId != null && !e.processIds.contains(processId)) continue;
+  for (final e in events) {
     n++;
     if (e.cost.minutes != null) {
       min += e.cost.minutes!;

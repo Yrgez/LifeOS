@@ -5,7 +5,7 @@ lib/
   main.dart                    точка входа: перехват ошибок, SQLite-хранилище, источник Health Connect
   app.dart                     MaterialApp
   core/                        чистая логика без Flutter-состояния
-    utils, workout_stats, finance_stats, finance_categories, graph_stats, life_events, theme, app_log
+    utils, workout_stats, finance_stats, finance_categories, graph_stats, life_events, resource_stats, theme, app_log
   models/models.dart           модели данных + JSON
   models/life_event.dart       ядро LIFE OS: событие жизни (измерения, ресурсы, версии), чистый Dart
   models/life_process.dart     процесс жизни (длительное направление) и журнал его статусов
@@ -23,9 +23,9 @@ lib/
   state/app_controller.dart    AppController (ChangeNotifier): вся бизнес-логика
   ui/
     app_shell.dart             оболочка: навигация, баннер хранилища, жизненный цикл
-    screens/                   hub, gym, graph, mind, wealth, journal, finance, events, processes, settings, onboarding
+    screens/                   hub, gym, graph, mind, wealth, journal, finance, events, processes, resources, settings, onboarding
     widgets/                   body_map_card, health_card, comparison_card, goals_ui, form_dialog,
-                               log_set_dialog, event_dialog, process_ui, backup_actions, health_actions, confirm_dialog, toast
+                               log_set_dialog, event_dialog, process_ui, resources_card, backup_actions, health_actions, confirm_dialog, toast
     painters/                  chart_painters, body_painter, graph_painter, anatomy_geometry
 test/                          юнит-тесты логики и хранилищ + ui_smoke_test (виджеты, знакомство, настройки)
 docs/HEALTH_SETUP.md           настройка Health Connect на Android
@@ -72,6 +72,9 @@ docs/SECURITY_SETUP.md         настройка и модель угроз: б
 - **Процессы** (`processes_screen.dart`, кнопка на HUB): длительные направления («Изучение Java», «Набор массы»).
   Собственных чисел у процесса нет — вложенные время, деньги и энергия считаются по его событиям. Статусы
   (идёт / на паузе / завершён / прекращён) дописываются в журнал статусов. Экран процесса — шапка + его события.
+- **Ресурсы** (`resources_screen.dart`, карточка на HUB): куда за 7 / 30 / 90 / 365 дней ушли время, деньги и энергия —
+  по измерениям и процессам, с предыдущим периодом той же длины (абсолютные значения, без процентов изменения).
+  Неуказанное считается отдельно («указано в 2 из 5»). Расходы журнала операций показаны отдельным источником.
 - **Журнал тренировок**: история подходов, прогрессия 1RM, объём (без упражнений, шаблонов и таймера).
 - **Цели**: сроки, правка, чекпоинты, в том числе автоматические по метрикам (1RM, капитал, доход).
 - **Финансы**: операции по категориям, лимиты, повторяющиеся операции (создание, правка, удаление правил), правка операций, связь с чистым капиталом.

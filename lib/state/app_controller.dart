@@ -9,6 +9,7 @@ import '../core/app_log.dart';
 import '../core/finance_categories.dart';
 import '../core/finance_stats.dart';
 import '../core/life_events.dart';
+import '../core/resource_stats.dart';
 import '../core/utils.dart';
 import '../core/workout_stats.dart';
 import '../data/app_data.dart';
@@ -668,6 +669,10 @@ class AppController extends ChangeNotifier {
   /// Сводка ресурсов за период [from, to) по актуальным событиям.
   ResourceSummary resourceSummary({required DateTime from, required DateTime to, String? dimension}) =>
       summarizeResources(events, from: from, to: to, dimension: dimension);
+
+  /// Распределение ресурсов за [days] дней, заканчивающихся сегодня: по измерениям, процессам, с прошлым периодом.
+  ResourceBreakdown resourceBreakdownFor(int days) =>
+      resourceBreakdown(current: events, transactions: _d.transactions, now: _clock(), days: days);
 
   /// Фиксирует событие. Возвращает id или null (неверные данные, событие в будущем, журнал полон).
   String? addEvent({

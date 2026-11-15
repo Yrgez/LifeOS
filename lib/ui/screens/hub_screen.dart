@@ -6,6 +6,7 @@ import '../../state/app_controller.dart';
 import '../widgets/body_map_card.dart';
 import '../widgets/comparison_card.dart';
 import '../widgets/health_card.dart';
+import '../widgets/resources_card.dart';
 import 'events_screen.dart';
 import 'processes_screen.dart';
 import 'settings_screen.dart';
@@ -85,6 +86,8 @@ class HubScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
+          ResourcesCard(controller: c),
+          const SizedBox(height: 16),
           HealthCard(controller: c),
           const SizedBox(height: 16),
           ComparisonCard(controller: c),

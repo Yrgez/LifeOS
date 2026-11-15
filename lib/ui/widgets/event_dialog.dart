@@ -12,6 +12,14 @@ Color dimensionColor(String d) => switch (d) {
       _ => AppColors.gold,
     };
 
+/// Заливка столбиков графиков по измерению: приглушённые шаги тех же оттенков
+/// (яркие [dimensionColor] на тёмной поверхности выходят из полосы светлоты; проверено валидатором палитры).
+Color dimensionChartColor(String d) => switch (d) {
+      LifeDimension.body => const Color(0xFF00A653),
+      LifeDimension.mind => const Color(0xFF8B63FF),
+      _ => const Color(0xFFB08A00),
+    };
+
 /// Что ввёл пользователь в диалоге события.
 class EventDraft {
   final String title;

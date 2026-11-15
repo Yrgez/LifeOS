@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:life_os/app.dart';
 import 'package:life_os/data/app_data.dart';
 import 'package:life_os/data/app_repository.dart';
+import 'package:life_os/models/life_event.dart';
 import 'package:life_os/state/app_controller.dart';
 
 /// Дымовые тесты интерфейса: после разбиения на экраны проверяют, что каждая вкладка строится,
@@ -119,6 +120,28 @@ void main() {
     await tester.tap(find.text('Сохранить'));
     await tester.pumpAndSettle();
     expect(c.processById(p.id)!.status, 'paused');
+
+    await shutdown(tester, c);
+  });
+
+  testWidgets('ресурсы: карточка на HUB открывает экран, периоды переключаются', (tester) async {
+    final c = await boot(tester);
+    final p = c.addProcess(title: 'Изучение Java', dimensions: ['mind'])!;
+    c.addEvent(title: 'Урок', dimensions: ['mind', 'material'], processIds: [p], cost: const ResourceCost(minutes: 90, money: 1500, energy: 3));
+    c.addEvent(title: 'Пробежка', dimensions: ['body'], cost: const ResourceCost(minutes: 30));
+    await tester.pumpAndSettle();
+    expect(find.text('РЕСУРСЫ ЗА 7 ДНЕЙ'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('open_resources')));
+    await tester.pumpAndSettle();
+    expect(find.text('ПО ИЗМЕРЕНИЯМ'), findsOneWidget);
+    expect(find.text('Изучение Java'), findsOneWidget);
+    expect(find.text('Вне процессов'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('period_365')));
+    await tester.pumpAndSettle();
+    expect(find.text('ПО ПРОЦЕССАМ'), findsOneWidget);
+    expect(tester.takeException(), isNull);
 
     await shutdown(tester, c);
   });
