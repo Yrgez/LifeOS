@@ -146,6 +146,26 @@ void main() {
     await shutdown(tester, c);
   });
 
+  testWidgets('хроника: карточка на HUB открывает ленту, тихие дни включаются', (tester) async {
+    final c = await boot(tester);
+    c.addEvent(title: 'Первая тренировка', dimensions: ['body']);
+    c.addProcess(title: 'Бег', dimensions: ['body']);
+    await tester.pumpAndSettle();
+    expect(find.text('ХРОНИКА'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('open_chronicle')));
+    await tester.pumpAndSettle();
+    expect(find.text('Первая тренировка'), findsOneWidget);
+    expect(find.text('Начат процесс «Бег»'), findsOneWidget);
+    expect(find.text('Подушка безопасности 1 000 000 ₽'), findsOneWidget); // достижение из примеров, по месяцу
+
+    await tester.tap(find.byKey(const ValueKey('quiet_days')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+
+    await shutdown(tester, c);
+  });
+
   testWidgets('предупреждение о недоступном хранилище', (tester) async {
     final c = await boot(tester, repo: MemoryAppRepository(loadError: StateError('диск')));
     expect(find.textContaining('Хранилище недоступно'), findsOneWidget);

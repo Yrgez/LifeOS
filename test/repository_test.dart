@@ -37,7 +37,7 @@ void main() {
     final d = (await PrefsAppRepository().load())!;
     expect(d.netWorth, 5000000);
     expect(d.monthlyIncome, 400000);
-    expect(d.stepsWeekHistory.last, 7);
+    expect(d.snapshots[d.lastDay]!.steps, 7);
     expect(d.graphNodes.single.position.dx, closeTo(0.5, 1e-9));
     expect(d.muscles['chest']!.recovery, closeTo(0.95, 0.01));
     expect(d.goals, isNotEmpty); // отсутствующее поле → значение по умолчанию

@@ -5,10 +5,11 @@ lib/
   main.dart                    точка входа: перехват ошибок, SQLite-хранилище, источник Health Connect
   app.dart                     MaterialApp
   core/                        чистая логика без Flutter-состояния
-    utils, workout_stats, finance_stats, finance_categories, graph_stats, life_events, resource_stats, theme, app_log
+    utils, workout_stats, finance_stats, finance_categories, graph_stats, life_events, resource_stats, chronicle, theme, app_log
   models/models.dart           модели данных + JSON
   models/life_event.dart       ядро LIFE OS: событие жизни (измерения, ресурсы, версии), чистый Dart
   models/life_process.dart     процесс жизни (длительное направление) и журнал его статусов
+  models/day_snapshot.dart     дневной снимок состояния (шаги, калории, белок, капитал, узлы графа)
   data/
     app_data.dart              AppData — весь сохраняемый срез состояния
     app_repository.dart        интерфейс AppRepository, PrefsAppRepository (прежнее хранилище), MemoryAppRepository
@@ -23,9 +24,9 @@ lib/
   state/app_controller.dart    AppController (ChangeNotifier): вся бизнес-логика
   ui/
     app_shell.dart             оболочка: навигация, баннер хранилища, жизненный цикл
-    screens/                   hub, gym, graph, mind, wealth, journal, finance, events, processes, resources, settings, onboarding
+    screens/                   hub, gym, graph, mind, wealth, journal, finance, events, processes, resources, chronicle, settings, onboarding
     widgets/                   body_map_card, health_card, comparison_card, goals_ui, form_dialog,
-                               log_set_dialog, event_dialog, process_ui, resources_card, backup_actions, health_actions, confirm_dialog, toast
+                               log_set_dialog, event_dialog, process_ui, resources_card, chronicle_card, backup_actions, health_actions, confirm_dialog, toast
     painters/                  chart_painters, body_painter, graph_painter, anatomy_geometry
 test/                          юнит-тесты логики и хранилищ + ui_smoke_test (виджеты, знакомство, настройки)
 docs/HEALTH_SETUP.md           настройка Health Connect на Android
@@ -41,9 +42,9 @@ docs/SECURITY_SETUP.md         настройка и модель угроз: б
 - Смена формата JSON → поднять `kSchemaVersion`; смена SQL-таблиц → поднять `kDbVersion` и добавить шаг в `_onUpgrade`.
 
 ## Хранилище (SQLite, `sqflite`)
-Файл `life_os.db`. Таблицы: `kv` (скаляры и недельные истории), `docs` (мышцы, цели, достижения, зарплата,
-узлы и связи графа, правила повторов, лимиты, процессы), `workout_sets`, `money_tx` и `life_events` (журналы, индексы по времени и категории;
-события хранятся JSON-ом с отдельной колонкой времени).
+Файл `life_os.db`. Таблицы: `kv` (скаляры), `docs` (мышцы, цели, достижения, зарплата,
+узлы и связи графа, правила повторов, лимиты, процессы), `workout_sets`, `money_tx`, `life_events` и `day_snapshots` (журналы, индексы по времени и категории;
+события и снимки хранятся JSON-ом).
 - **Запись инкрементальная на двух уровнях.**
   - Журналы пишутся строго по `ChangeSet`: контроллер отмечает каждую вставку, правку и удаление подхода или операции
     (в том числе вытеснение по пределу и создание повторяющихся операций), репозиторий применяет только это — без обхода
@@ -75,6 +76,11 @@ docs/SECURITY_SETUP.md         настройка и модель угроз: б
 - **Ресурсы** (`resources_screen.dart`, карточка на HUB): куда за 7 / 30 / 90 / 365 дней ушли время, деньги и энергия —
   по измерениям и процессам, с предыдущим периодом той же длины (абсолютные значения, без процентов изменения).
   Неуказанное считается отдельно («указано в 2 из 5»). Расходы журнала операций показаны отдельным источником.
+- **Хроника** (`chronicle_screen.dart`, карточка на HUB): лента по месяцам и дням — события, начало и смены статусов
+  процессов, достижения (по месяцу), состояние дня из снимка. Сама ничего не хранит, только читает журналы.
+- **Дневные снимки** (`day_snapshots`) заменили недельные массивы: одна запись на день, хранится вечно. Текущий день
+  обновляется по мере изменений, прошлые дополняет только Health Connect. День без снимка — «нет данных», не ноль.
+  Старые массивы переносятся при чтении (база v2 → v3, копии схемы ≤ 5); нули в них считаются «неизвестно».
 - **Журнал тренировок**: история подходов, прогрессия 1RM, объём (без упражнений, шаблонов и таймера).
 - **Цели**: сроки, правка, чекпоинты, в том числе автоматические по метрикам (1RM, капитал, доход).
 - **Финансы**: операции по категориям, лимиты, повторяющиеся операции (создание, правка, удаление правил), правка операций, связь с чистым капиталом.

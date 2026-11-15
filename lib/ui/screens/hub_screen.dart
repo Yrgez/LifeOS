@@ -4,6 +4,7 @@ import '../../core/theme.dart';
 import '../../security/security_service.dart';
 import '../../state/app_controller.dart';
 import '../widgets/body_map_card.dart';
+import '../widgets/chronicle_card.dart';
 import '../widgets/comparison_card.dart';
 import '../widgets/health_card.dart';
 import '../widgets/resources_card.dart';
@@ -87,6 +88,8 @@ class HubScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           ResourcesCard(controller: c),
+          const SizedBox(height: 16),
+          ChronicleCard(controller: c),
           const SizedBox(height: 16),
           HealthCard(controller: c),
           const SizedBox(height: 16),

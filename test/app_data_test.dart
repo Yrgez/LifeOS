@@ -12,7 +12,8 @@ void main() {
     expect(back.muscles.keys, d.muscles.keys);
     expect(back.goals.length, d.goals.length);
     expect(back.graphNodes.length, d.graphNodes.length);
-    expect(back.stepsWeekHistory, d.stepsWeekHistory);
+    expect(back.snapshots.values.map((x) => x.signature), d.snapshots.values.map((x) => x.signature));
+    expect(back.snapshots, hasLength(7));
     expect(back.lastDay, '2026-10-24');
   });
 
@@ -33,9 +34,20 @@ void main() {
     expect(d.goals, isNotEmpty);
   });
 
-  test('недельные ряды приводятся к 7 точкам', () {
-    final d = AppData.fromJson({'stepsWeekHistory': [1, 2, 3]});
-    expect(d.stepsWeekHistory.length, 7);
+  test('недельные ряды (схема ≤ 5) переносятся в дневные снимки; ноль = «неизвестно»', () {
+    final d = AppData.fromJson({
+      'lastDay': '2026-10-24',
+      'netWorth': 500,
+      'stepsWeekHistory': [0, 2, 3],
+      'graphEvolutionHistory': [4, 4, 5],
+    });
+    expect(d.snapshots.keys, ['2026-10-22', '2026-10-23', '2026-10-24']);
+    expect(d.snapshots['2026-10-22']!.steps, isNull);
+    expect(d.snapshots['2026-10-22']!.graphNodes, 4);
+    expect(d.snapshots['2026-10-24']!.steps, 3);
+    expect(d.snapshots['2026-10-24']!.netWorth, 500);
+    expect(d.snapshots['2026-10-23']!.netWorth, isNull); // капитал прошлых дней неизвестен
+    expect(AppData.fromJson({'lastDay': '2026-10-24'}).snapshots, isEmpty);
   });
 
   test('журнал подходов сериализуется и сортируется по времени при чтении', () {

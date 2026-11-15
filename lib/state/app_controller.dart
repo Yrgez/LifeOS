@@ -6,6 +6,7 @@ import 'dart:ui' show Offset;
 import 'package:flutter/foundation.dart';
 
 import '../core/app_log.dart';
+import '../core/chronicle.dart';
 import '../core/finance_categories.dart';
 import '../core/finance_stats.dart';
 import '../core/life_events.dart';
@@ -16,6 +17,7 @@ import '../data/app_data.dart';
 import '../data/app_repository.dart';
 import '../data/change_set.dart';
 import '../data/health_source.dart';
+import '../models/day_snapshot.dart';
 import '../models/life_event.dart';
 import '../models/life_process.dart';
 import '../models/models.dart';
@@ -96,9 +98,35 @@ class AppController extends ChangeNotifier {
   List<SalaryStep> get salaryHistory => _d.salaryHistory;
   List<GraphNode> get graphNodes => _d.graphNodes;
   List<GraphEdge> get graphEdges => _d.graphEdges;
-  List<double> get stepsWeekHistory => _d.stepsWeekHistory;
-  List<double> get caloriesWeekHistory => _d.caloriesWeekHistory;
-  List<double> get graphEvolutionHistory => _d.graphEvolutionHistory;
+  /// Дневные снимки (по возрастанию дат). Дня без снимка нет в списке: данных за него нет.
+  List<DaySnapshot> get snapshots => List.unmodifiable(_d.snapshots.values);
+  DaySnapshot? snapshotFor(DateTime day) => _d.snapshots[dayKey(day)];
+
+  Map<String, DaySnapshot> get snapshotsByDay => Map.unmodifiable(_d.snapshots);
+
+  /// Хроника: события, смены статусов процессов и достижения — новые сверху.
+  List<ChronicleEntry> get chronicle => chronicleEntries(currentEvents: events, processes: _d.processes, achievements: _d.achievements);
+
+  /// Снимки последних [n] дней, заканчивая сегодняшним; null — данных за день нет.
+  List<DaySnapshot?> lastDaysSnapshots(int n) {
+    final t = _clock();
+    return [for (var i = n - 1; i >= 0; i--) _d.snapshots[dayKey(DateTime(t.year, t.month, t.day - i))]];
+  }
+
+  // Ряды за 7 дней для мини-графиков. На графике «нет данных» рисуется нулём;
+  // сами снимки различают ноль и отсутствие данных.
+  List<double> get stepsWeekHistory => [for (final x in lastDaysSnapshots(7)) (x?.steps ?? 0).toDouble()];
+  List<double> get caloriesWeekHistory => [for (final x in lastDaysSnapshots(7)) (x?.activeCalories ?? 0).toDouble()];
+
+  /// Число узлов графа по дням: пропущенный день повторяет последнее известное значение
+  /// (узлы между днями не исчезают), до первого известного — текущее число.
+  List<double> get graphEvolutionHistory {
+    final days = lastDaysSnapshots(7);
+    var last = days.firstWhere((x) => x?.graphNodes != null, orElse: () => null)?.graphNodes ?? _d.graphNodes.length;
+    return [
+      for (final x in days) (last = x?.graphNodes ?? last).toDouble(),
+    ];
+  }
 
   /// Журнал подходов (по возрастанию времени). Не изменять напрямую — только через методы контроллера.
   List<WorkoutSet> get sets => List.unmodifiable(_d.workoutSets);
@@ -148,15 +176,15 @@ class AppController extends ChangeNotifier {
   List<double> metricSeries(String key) {
     switch (key) {
       case 'calories':
-        return _d.caloriesWeekHistory;
+        return caloriesWeekHistory;
       case 'chest':
         return progression('chest');
       case 'quads':
         return progression('quads');
       case 'graph':
-        return _d.graphEvolutionHistory;
+        return graphEvolutionHistory;
       default:
-        return _d.stepsWeekHistory;
+        return stepsWeekHistory;
     }
   }
 
@@ -278,18 +306,14 @@ class AppController extends ChangeNotifier {
     }
     final diff = today.difference(last).inDays;
     if (diff <= 0) return; // тот же день (или часы переведены назад) — ничего не трогаем
-    for (int i = 0; i < min(diff, 7); i++) {
-      push7(_d.stepsWeekHistory, 0);
-      push7(_d.caloriesWeekHistory, 0);
-      push7(_d.graphEvolutionHistory, _d.graphNodes.length.toDouble());
-    }
+    // снимок прошедшего дня уже записан; пропущенные дни остаются без снимков — «нет данных»
     _d.dailySteps = 0;
     _d.activeCalories = 0;
     _d.proteinGrams = 0;
     _d.lastDay = dayKey(now);
   }
 
-  /// Подписи «системных» узлов графа и последние точки историй всегда отражают реальные цифры.
+  /// Подписи «системных» узлов графа и снимок текущего дня всегда отражают реальные цифры.
   void _syncDerived() {
     void set(String id, String label) {
       for (final n in _d.graphNodes) {
@@ -304,13 +328,52 @@ class AppController extends ChangeNotifier {
     final chest = _d.muscles['chest'];
     if (chest != null) set('n_chest', 'Грудь (1RM ${chest.maxWeight.toInt()})');
 
-    if (_d.graphEvolutionHistory.isNotEmpty) {
-      _d.graphEvolutionHistory[_d.graphEvolutionHistory.length - 1] = _d.graphNodes.length.toDouble();
-    }
-    if (_d.stepsWeekHistory.isNotEmpty) _d.stepsWeekHistory[_d.stepsWeekHistory.length - 1] = _d.dailySteps.toDouble();
-    if (_d.caloriesWeekHistory.isNotEmpty) _d.caloriesWeekHistory[_d.caloriesWeekHistory.length - 1] = _d.activeCalories.toDouble();
-
+    _touchToday();
     _syncGoals();
+  }
+
+  // ---------------- дневные снимки ----------------
+
+  /// Записывает снимок, если он изменился ([before] — подпись до изменения; null — снимка не было).
+  void _putSnapshot(DaySnapshot x, String? before) {
+    if (before == x.signature) return;
+    if (before == null && _d.snapshots.length >= kMaxSnapshots) {
+      AppLog.e('Дневных снимков больше $kMaxSnapshots — новый день не записан');
+      return;
+    }
+    _d.snapshots[x.day] = x;
+    _pending.upsertSnapshot(x);
+  }
+
+  /// Снимок текущего дня = текущие значения. Нулевые шаги, калории и белок считаются «не введено»,
+  /// пока за день не было ненулевого значения (после него ноль — это исправление пользователя).
+  void _touchToday({String? activitySource}) {
+    final key = dayKey(_clock());
+    final existing = _d.snapshots[key];
+    final x = existing ?? DaySnapshot(day: key);
+    final before = existing?.signature;
+    int? keep(int v, int? old) => v > 0 || old != null ? v : null;
+    x
+      ..steps = keep(_d.dailySteps, x.steps)
+      ..activeCalories = keep(_d.activeCalories, x.activeCalories)
+      ..protein = keep(_d.proteinGrams, x.protein)
+      ..netWorth = _d.netWorth
+      ..graphNodes = _d.graphNodes.length;
+    if (activitySource != null && (x.steps != null || x.activeCalories != null)) x.activitySource = activitySource;
+    _putSnapshot(x, before);
+  }
+
+  /// Данные источника за прошедший день (Health Connect): дополняют снимок того дня.
+  void _recordPastActivity(DateTime day, {int? steps, int? calories}) {
+    if (steps == null && calories == null) return;
+    final key = dayKey(day);
+    final existing = _d.snapshots[key];
+    final x = existing ?? DaySnapshot(day: key);
+    final before = existing?.signature;
+    if (steps != null) x.steps = steps;
+    if (calories != null) x.activeCalories = calories;
+    x.activitySource = 'health';
+    _putSnapshot(x, before);
   }
 
   /// Чекпоинты, привязанные к метрикам, выполняются автоматически; достижение за цель выдаётся один раз
@@ -445,6 +508,7 @@ class AppController extends ChangeNotifier {
         if (steps != null) _d.dailySteps = max(0, steps);
         if (calories != null) _d.activeCalories = max(0, calories);
         if (protein != null) _d.proteinGrams = max(0, protein);
+        if (steps != null || calories != null) _touchToday(activitySource: 'manual');
       });
 
   // ---------------- граф ----------------
@@ -1197,13 +1261,14 @@ class AppController extends ChangeNotifier {
         for (final d in days) {
           final idx = 6 - (dayIndex(today) - dayIndex(d.day));
           if (idx < 0 || idx > 6) continue;
-          if (d.steps != null) _d.stepsWeekHistory[idx] = d.steps!.toDouble();
-          if (d.activeCalories != null) _d.caloriesWeekHistory[idx] = d.activeCalories!.toDouble();
-          if (idx == 6) {
+          if (idx < 6) {
+            _recordPastActivity(d.day, steps: d.steps, calories: d.activeCalories);
+          } else {
             if (d.steps != null) _d.dailySteps = d.steps!;
             if (d.activeCalories != null) _d.activeCalories = d.activeCalories!;
             final p = d.protein;
             if (p != null && p > 0) _d.proteinGrams = p;
+            _touchToday(activitySource: 'health');
           }
         }
         _d.lastHealthSyncMs = now.millisecondsSinceEpoch;
