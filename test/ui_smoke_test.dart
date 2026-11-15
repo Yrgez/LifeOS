@@ -57,6 +57,32 @@ void main() {
     await shutdown(tester, c);
   });
 
+  testWidgets('события жизни: открыть журнал, зафиксировать событие, отменить', (tester) async {
+    final c = await boot(tester);
+    await tester.tap(find.byKey(const ValueKey('open_events')));
+    await tester.pumpAndSettle();
+    expect(find.text('СОБЫТИЯ ЖИЗНИ'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('add_event')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('event_title')), 'Первое занятие Java');
+    await tester.tap(find.byKey(const ValueKey('dim_mind')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('event_save')));
+    await tester.pumpAndSettle();
+    expect(c.events.single.title, 'Первое занятие Java');
+    expect(find.text('Первое занятие Java'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Отменить'));
+    await tester.pumpAndSettle();
+    expect(c.events, isEmpty);
+    expect(c.allEvents, hasLength(1)); // в истории осталось
+
+    await shutdown(tester, c);
+  });
+
   testWidgets('предупреждение о недоступном хранилище', (tester) async {
     final c = await boot(tester, repo: MemoryAppRepository(loadError: StateError('диск')));
     expect(find.textContaining('Хранилище недоступно'), findsOneWidget);

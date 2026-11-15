@@ -1,17 +1,23 @@
 import '../core/app_log.dart';
 import '../core/finance_categories.dart';
 import '../core/utils.dart';
+import '../models/life_event.dart';
 import '../models/models.dart';
 import 'default_data.dart';
 
 /// Версия схемы сохранённых данных. Увеличивать при несовместимых изменениях
 /// и добавлять шаг миграции в репозиторий.
-const int kSchemaVersion = 3;
+/// 4 — журнал событий жизни (`events`).
+const int kSchemaVersion = 4;
 
 /// Предел журналов в памяти (при превышении удаляются самые старые). Хранилище (SQLite) пишет только
 /// изменения, но весь журнал пока загружается в память целиком — поэтому предел сохранён.
 const int kMaxWorkoutSets = 50000;
 const int kMaxTransactions = 50000;
+
+/// Предел журнала событий. В отличие от подходов и операций старые события НЕ вытесняются
+/// (это была бы потеря истории): по достижении предела новые события не принимаются.
+const int kMaxLifeEvents = 50000;
 
 /// Весь сохраняемый срез состояния приложения (чистые данные, без UI и без Flutter-зависимостей логики).
 class AppData {
@@ -35,6 +41,7 @@ class AppData {
   List<MoneyTx> transactions; // денежные операции, по возрастанию времени
   Map<String, int> budgets; // лимит расходов в месяц по категории, ₽
   List<RecurringTx> recurring; // правила повторяющихся операций
+  List<LifeEvent> events; // журнал событий жизни (все версии, включая отменённые), по возрастанию времени
   String userName; // как обращаться (пусто — без имени)
   int stepsGoal; // цель шагов в день
   int proteinGoal; // норма белка, г в день
@@ -63,6 +70,7 @@ class AppData {
     List<MoneyTx>? transactions,
     Map<String, int>? budgets,
     List<RecurringTx>? recurring,
+    List<LifeEvent>? events,
     this.userName = '',
     this.stepsGoal = 10000,
     this.proteinGoal = 140,
@@ -72,7 +80,8 @@ class AppData {
   })  : workoutSets = workoutSets ?? <WorkoutSet>[],
         transactions = transactions ?? <MoneyTx>[],
         budgets = budgets ?? <String, int>{},
-        recurring = recurring ?? <RecurringTx>[];
+        recurring = recurring ?? <RecurringTx>[],
+        events = events ?? <LifeEvent>[];
 
   factory AppData.defaults({DateTime? now}) => AppData(
         netWorth: 2450000,
@@ -143,6 +152,7 @@ class AppData {
         'graphEvolutionHistory': graphEvolutionHistory,
         if (includeLogs) 'workoutSets': workoutSets.map((w) => w.toJson()).toList(),
         if (includeLogs) 'transactions': transactions.map((t) => t.toJson()).toList(),
+        if (includeLogs) 'events': events.map((e) => e.toJson()).toList(),
         'budgets': budgets,
         'recurring': recurring.map((r) => r.toJson()).toList(),
         'userName': userName,
@@ -269,6 +279,7 @@ class AppData {
         (v) => (boundedJournal(v, kMaxTransactions, 'transactions', MoneyTx.fromJson, idOf: (entry) => entry.id)..sort((a, b) => a.at.compareTo(b.at))),
         d.transactions,
       ),
+      events: pick<List<LifeEvent>>('events', (v) => _parseEvents(v, strict: strict), <LifeEvent>[]),
       budgets: pick<Map<String, int>>(
         'budgets',
         (v) => (v as Map).map((k, x) => MapEntry(k as String, (x as num).toInt())),
@@ -298,4 +309,40 @@ class AppData {
       lastHealthSyncMs: pick<int?>('lastHealthSyncMs', (v) => (v as num).toInt(), null),
     );
   }
+
+  /// Журнал событий. Строгий режим (импорт копии) отвергает копию при любой битой записи, повторе id,
+  /// нарушении цепочек версий или превышении предела. Обычная загрузка пропускает только битые записи
+  /// (с записью в журнал диагностики) — остальная история не теряется.
+  static List<LifeEvent> _parseEvents(dynamic v, {required bool strict}) {
+    final raw = v as List;
+    if (strict && raw.length > kMaxLifeEvents) {
+      throw const FormatException('AppData: поле "events" превышает допустимый размер ($kMaxLifeEvents)');
+    }
+    final out = <LifeEvent>[];
+    final ids = <String>{};
+    for (var i = 0; i < raw.length; i++) {
+      final e = raw[i];
+      final ev = e is Map ? LifeEvent.tryFromJson(Map<String, dynamic>.from(e)) : null;
+      if (ev == null || !ids.add(ev.id)) {
+        if (strict) throw FormatException('AppData: поле "events" — запись #$i повреждена или повторяет id');
+        AppLog.e('AppData: событие #$i пропущено (повреждено или повторяет id)');
+        continue;
+      }
+      out.add(ev);
+    }
+    if (strict) {
+      final problem = eventJournalProblem(out);
+      if (problem != null) throw FormatException('AppData: поле "events": $problem');
+    }
+    out.sort(compareEvents);
+    return out;
+  }
+}
+
+/// Порядок журнала событий: по времени события, затем по времени записи и id (стабильно для версий).
+int compareEvents(LifeEvent a, LifeEvent b) {
+  final c = a.at.compareTo(b.at);
+  if (c != 0) return c;
+  final r = a.recordedAt.compareTo(b.recordedAt);
+  return r != 0 ? r : a.id.compareTo(b.id);
 }

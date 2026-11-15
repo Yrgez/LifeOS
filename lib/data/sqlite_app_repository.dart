@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:sqflite_common/sqlite_api.dart';
 
 import '../core/app_log.dart';
+import '../models/life_event.dart';
 import '../models/models.dart';
 import 'app_data.dart';
 import 'app_repository.dart';
@@ -11,11 +12,12 @@ import 'change_set.dart';
 
 /// Версия SQL-схемы (PRAGMA user_version). Менять при изменении таблиц и добавлять шаг в [_onUpgrade].
 /// Не путать с [kSchemaVersion] — это версия формата JSON (резервные копии, поля AppData).
-const int kDbVersion = 1;
+/// 2 — таблица `life_events`.
+const int kDbVersion = 2;
 
 /// Хранилище в SQLite.
 ///
-/// * Крупные журналы — отдельные таблицы с индексами: `workout_sets`, `money_tx`.
+/// * Крупные журналы — отдельные таблицы с индексами: `workout_sets`, `money_tx`, `life_events`.
 /// * Небольшие списки (мышцы, цели, узлы графа…) — таблица `docs` (коллекция, id, позиция, JSON).
 /// * Скаляры и недельные истории — таблица `kv`.
 ///
@@ -67,7 +69,7 @@ class SqliteAppRepository implements AppRepository {
   }
 
   /// Таблицы схемы. Миграция шифрования копирует именно их: новая таблица обязана попасть сюда.
-  static const tables = ['kv', 'docs', 'workout_sets', 'money_tx'];
+  static const tables = ['kv', 'docs', 'workout_sets', 'money_tx', 'life_events'];
 
   // база новее приложения: ничего не трогаем, контроллер переходит в режим «только чтение»
   static Future<void> onDowngradeSchema(Database db, int oldVersion, int newVersion) =>
@@ -99,10 +101,19 @@ class SqliteAppRepository implements AppRepository {
       )''');
     await db.execute('CREATE INDEX idx_tx_ts ON money_tx (ts)');
     await db.execute('CREATE INDEX idx_tx_category ON money_tx (category_id, ts)');
+    await _createEventsTable(db);
+  }
+
+  /// События: время — отдельной колонкой (индекс для будущих выборок по периоду), остальное — JSON.
+  /// Формат события богаче и будет расти — JSON избавляет от миграции таблицы на каждое новое поле.
+  static Future<void> _createEventsTable(Database db) async {
+    await db.execute('CREATE TABLE life_events (id TEXT PRIMARY KEY, ts INTEGER NOT NULL, body TEXT NOT NULL)');
+    await db.execute('CREATE INDEX idx_events_ts ON life_events (ts)');
   }
 
   static Future<void> onUpgradeSchema(Database db, int oldVersion, int newVersion) async {
-    // Шаги миграции добавлять сюда: if (oldVersion < 2) { await db.execute('ALTER TABLE ...'); }
+    // Шаги миграции: каждый — для перехода со своей версии; выполняются по порядку.
+    if (oldVersion < 2) await _createEventsTable(db);
   }
 
   Future<Database> _open() async => _db ??= await opener();
@@ -149,7 +160,7 @@ class SqliteAppRepository implements AppRepository {
     if (v > kSchemaVersion) throw SchemaTooNewException(v);
     final data = AppData.fromJson(j);
     _snapshotFrom(data.toJson(includeLogs: false));
-    AppLog.d('SQLite: загрузка — ${data.workoutSets.length} подходов, ${data.transactions.length} операций, ${sw.elapsedMilliseconds} мс');
+    AppLog.d('SQLite: загрузка — ${data.workoutSets.length} подходов, ${data.transactions.length} операций, ${data.events.length} событий, ${sw.elapsedMilliseconds} мс');
     return data;
   }
 
@@ -209,6 +220,9 @@ class SqliteAppRepository implements AppRepository {
           'rid': r['recurring_id'],
         },
     ];
+    j['events'] = [
+      for (final r in await db.query('life_events', orderBy: 'ts, id')) dec(r['body'] as String, 'life_events:${r['id']}'),
+    ];
     return j;
   }
 
@@ -259,13 +273,17 @@ class SqliteAppRepository implements AppRepository {
         // Точный перечень изменений неизвестен — журналы переписываются целиком.
         b.delete('workout_sets');
         b.delete('money_tx');
+        b.delete('life_events');
+        for (final e in data.events) {
+          b.insert('life_events', _eventRow(e), conflictAlgorithm: ConflictAlgorithm.replace);
+        }
         for (final s in data.workoutSets) {
           b.insert('workout_sets', _setRow(s), conflictAlgorithm: ConflictAlgorithm.replace);
         }
         for (final t in data.transactions) {
           b.insert('money_tx', _txRow(t), conflictAlgorithm: ConflictAlgorithm.replace);
         }
-        logOps = data.workoutSets.length + data.transactions.length;
+        logOps = data.workoutSets.length + data.transactions.length + data.events.length;
       } else {
         for (final id in changes.setDeletes) {
           b.delete('workout_sets', where: 'id = ?', whereArgs: [id]);
@@ -279,7 +297,13 @@ class SqliteAppRepository implements AppRepository {
         for (final t in changes.txUpserts.values) {
           b.insert('money_tx', _txRow(t), conflictAlgorithm: ConflictAlgorithm.replace);
         }
-        logOps = changes.setDeletes.length + changes.setUpserts.length + changes.txDeletes.length + changes.txUpserts.length;
+        for (final id in changes.eventDeletes) {
+          b.delete('life_events', where: 'id = ?', whereArgs: [id]);
+        }
+        for (final e in changes.eventUpserts.values) {
+          b.insert('life_events', _eventRow(e), conflictAlgorithm: ConflictAlgorithm.replace);
+        }
+        logOps = changes.eventDeletes.length + changes.eventUpserts.length + changes.setDeletes.length + changes.setUpserts.length + changes.txDeletes.length + changes.txUpserts.length;
       }
 
       await b.commit(noResult: true);
@@ -323,6 +347,12 @@ class SqliteAppRepository implements AppRepository {
         'note': t.note,
         'affects_net_worth': t.affectsNetWorth ? 1 : 0,
         'recurring_id': t.recurringId,
+      };
+
+  static Map<String, Object?> _eventRow(LifeEvent e) => {
+        'id': e.id,
+        'ts': e.at.millisecondsSinceEpoch,
+        'body': jsonEncode(e.toJson()),
       };
 
   Map<String, String> _kvFrom(Map<String, dynamic> j) => {
