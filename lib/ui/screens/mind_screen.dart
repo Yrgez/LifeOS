@@ -4,8 +4,10 @@ import '../../core/theme.dart';
 import '../../state/app_controller.dart';
 import '../widgets/form_dialog.dart';
 import '../widgets/goals_ui.dart';
+import 'graph_screen.dart';
+import 'processes_screen.dart';
 
-/// Вкладка «Смыслы»: стратегические цели и история достижений.
+/// Вкладка «Разум» (MIND): цели, достижения, вход в граф связей и процессы.
 class MindScreen extends StatefulWidget {
   final AppController controller;
   const MindScreen({super.key, required this.controller});
@@ -41,6 +43,36 @@ class _MindScreenState extends State<MindScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  key: const ValueKey('open_graph'),
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => Scaffold(
+                      appBar: AppBar(
+                        title: const Text('ГРАФ СВЯЗЕЙ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                        backgroundColor: AppColors.panel,
+                        elevation: 0,
+                      ),
+                      body: GraphScreen(controller: c),
+                    ),
+                  )),
+                  icon: const Icon(Icons.hub_outlined, size: 18),
+                  label: const Text('Граф связей'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProcessesScreen(controller: c))),
+                  icon: const Icon(Icons.autorenew, size: 18),
+                  label: const Text('Процессы'),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

@@ -7,7 +7,7 @@ import '../screens/resources_screen.dart';
 import 'event_dialog.dart';
 import 'process_ui.dart';
 
-/// Карточка HUB: куда за 7 дней ушли ресурсы. Нажатие открывает экран «Ресурсы».
+/// Карточка вкладки «Сегодня»: куда за 7 дней ушли ресурсы. Нажатие открывает экран «Ресурсы».
 class ResourcesCard extends StatelessWidget {
   final AppController controller;
   const ResourcesCard({super.key, required this.controller});

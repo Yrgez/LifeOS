@@ -7,6 +7,7 @@ import '../../models/models.dart';
 import '../../state/app_controller.dart';
 import '../painters/anatomy_geometry.dart';
 import '../widgets/body_map_card.dart';
+import '../widgets/comparison_card.dart';
 import '../widgets/log_set_dialog.dart';
 import 'journal_screen.dart';
 
@@ -97,7 +98,8 @@ class _GymScreenState extends State<GymScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('АНАТОМИЧЕСКАЯ КАРТА ТЕЛА', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const Flexible(child: Text('АНАТОМИЧЕСКАЯ КАРТА ТЕЛА', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+              const SizedBox(width: 8),
               Container(
                 decoration: BoxDecoration(color: AppColors.field, borderRadius: BorderRadius.circular(20)),
                 child: Row(
@@ -113,6 +115,8 @@ class _GymScreenState extends State<GymScreen> {
           BodyMapCard(controller: c, selection: selection),
           const SizedBox(height: 12),
           _journalEntryCard(),
+          const SizedBox(height: 16),
+          ComparisonCard(controller: c),
           const SizedBox(height: 16),
           const Text('СПИСОК МЫШЕЧНЫХ ГРУПП:', style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),

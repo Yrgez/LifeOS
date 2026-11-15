@@ -34,27 +34,33 @@ void main() {
 
   testWidgets('все вкладки строятся', (tester) async {
     final c = await boot(tester);
-    expect(find.text('EXECUTIVE DASHBOARD'), findsOneWidget);
+    expect(find.textContaining('СЕГОДНЯ ·'), findsOneWidget);
 
-    await tester.tap(find.text('ТЕЛО'));
+    await tester.tap(find.text('Тело'));
     await tester.pumpAndSettle();
     expect(find.text('АНАТОМИЧЕСКАЯ КАРТА ТЕЛА'), findsOneWidget);
+    expect(find.text('СРАВНЕНИЕ МЕТРИК'), findsOneWidget); // переехало с HUB
 
-    await tester.tap(find.text('ГРАФ'));
-    await tester.pumpAndSettle();
-    expect(find.text('SECOND BRAIN GRAPH'), findsOneWidget);
-
-    await tester.tap(find.text('СМЫСЛЫ'));
+    await tester.tap(find.text('Разум'));
     await tester.pumpAndSettle();
     expect(find.text('СТРАТЕГИЧЕСКИЕ ЦЕЛИ'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('open_graph')));
+    await tester.pumpAndSettle();
+    expect(find.text('SECOND BRAIN GRAPH'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
 
-    await tester.tap(find.text('КАПИТАЛ'));
+    await tester.tap(find.text('Материальное'));
     await tester.pumpAndSettle();
     expect(find.text('КАПИТАЛ И КАРЬЕРА'), findsOneWidget);
 
-    await tester.tap(find.text('HUB'));
+    await tester.tap(find.text('Хроника'));
     await tester.pumpAndSettle();
-    expect(find.text('EXECUTIVE DASHBOARD'), findsOneWidget);
+    expect(find.text('ХРОНИКА'), findsOneWidget);
+
+    await tester.tap(find.text('Сегодня'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('СЕГОДНЯ ·'), findsOneWidget);
 
     await shutdown(tester, c);
   });
@@ -147,14 +153,11 @@ void main() {
     await shutdown(tester, c);
   });
 
-  testWidgets('хроника: карточка на HUB открывает ленту, тихие дни включаются', (tester) async {
+  testWidgets('хроника: вкладка показывает ленту, тихие дни включаются', (tester) async {
     final c = await boot(tester);
     c.addEvent(title: 'Первая тренировка', dimensions: ['body']);
     c.addProcess(title: 'Бег', dimensions: ['body']);
-    await tester.pumpAndSettle();
-    expect(find.text('ХРОНИКА'), findsOneWidget);
-
-    await tester.tap(find.byKey(const ValueKey('open_chronicle')));
+    await tester.tap(find.text('Хроника'));
     await tester.pumpAndSettle();
     expect(find.text('Первая тренировка'), findsOneWidget);
     expect(find.text('Начат процесс «Бег»'), findsOneWidget);
@@ -174,7 +177,7 @@ void main() {
     c.setGoalPlan(g, const GoalPlan(minutes: 6000));
     c.addEvent(title: 'Урок Java', dimensions: ['mind'], goalIds: [g], cost: const ResourceCost(minutes: 90));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('СМЫСЛЫ'));
+    await tester.tap(find.text('Разум'));
     await tester.pumpAndSettle();
     expect(find.text('Время: 1 ч 30 мин из 100 ч по плану'), findsOneWidget);
 
@@ -194,11 +197,31 @@ void main() {
     final p = c.addProcess(title: 'Изучение Java', dimensions: ['mind'])!;
     c.addNodeFor(NodeRef(NodeRef.process, p));
     c.removeProcess(p);
-    await tester.tap(find.text('ГРАФ'));
+    await tester.tap(find.text('Разум'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('open_graph')));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Тело'));
+    await tester.pumpAndSettle();
     expect(find.textContaining('Корреляция Пирсона'), findsNothing);
 
+    await shutdown(tester, c);
+  });
+
+  testWidgets('узкий экран телефона (360 px): все вкладки без переполнения', (tester) async {
+    final c = await boot(tester);
+    c.addProcess(title: 'Изучение Java', dimensions: ['mind']);
+    tester.view.physicalSize = const Size(360, 2600);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    for (final t in ['Тело', 'Разум', 'Материальное', 'Хроника', 'Сегодня']) {
+      await tester.tap(find.text(t).last);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull, reason: 'вкладка «$t»');
+    }
     await shutdown(tester, c);
   });
 
@@ -208,23 +231,9 @@ void main() {
     await shutdown(tester, c);
   });
 
-  testWidgets('выбор мышцы синхронизирован между HUB и «Тело»', (tester) async {
-    final c = await boot(tester);
-    await tester.tap(find.text('ТЕЛО'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Бицепс').first);
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('HUB'));
-    await tester.pumpAndSettle();
-    // в карточке карты тела на HUB показана выбранная мышца
-    expect(find.text('Бицепс'), findsWidgets);
-    await shutdown(tester, c);
-  });
-
   testWidgets('запись подхода из журнала доходит до контроллера', (tester) async {
     final c = await boot(tester);
-    await tester.tap(find.text('ТЕЛО'));
+    await tester.tap(find.text('Тело'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('ЖУРНАЛ ТРЕНИРОВОК'));
@@ -248,7 +257,7 @@ void main() {
 
   testWidgets('добавление операции из учёта финансов', (tester) async {
     final c = await boot(tester);
-    await tester.tap(find.text('КАПИТАЛ'));
+    await tester.tap(find.text('Материальное'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('УЧЁТ ОПЕРАЦИЙ'));
@@ -271,7 +280,7 @@ void main() {
   testWidgets('смена вкладок не теряет данные контроллера', (tester) async {
     final c = await boot(tester);
     c.updateWealth(netWorth: 7777777);
-    await tester.tap(find.text('КАПИТАЛ'));
+    await tester.tap(find.text('Материальное'));
     await tester.pumpAndSettle();
     expect(find.textContaining('7\u00A0777\u00A0777'), findsWidgets);
     await shutdown(tester, c);
@@ -281,7 +290,7 @@ void main() {
     testWidgets('новая установка: прохождение до конца с примерами данных', (tester) async {
       final c = await boot(tester, blank: true);
       expect(find.text('Добро пожаловать в Life OS'), findsOneWidget);
-      expect(find.text('EXECUTIVE DASHBOARD'), findsNothing);
+      expect(find.textContaining('СЕГОДНЯ ·'), findsNothing);
 
       await tester.enterText(find.byType(TextField).first, 'Мария');
       await tester.tap(find.text('Далее'));
@@ -304,7 +313,7 @@ void main() {
       expect(c.onboardingDone, isTrue);
       expect(c.userName, 'Мария');
       expect(c.goals, isNotEmpty);
-      expect(find.text('EXECUTIVE DASHBOARD'), findsOneWidget);
+      expect(find.textContaining('СЕГОДНЯ ·'), findsOneWidget);
       expect(find.text('Мария'), findsOneWidget);
       await shutdown(tester, c);
     });
@@ -339,14 +348,14 @@ void main() {
       await tester.pumpAndSettle();
       expect(c.onboardingDone, isTrue);
       expect(c.stepsGoal, 10000);
-      expect(find.text('EXECUTIVE DASHBOARD'), findsOneWidget);
+      expect(find.textContaining('СЕГОДНЯ ·'), findsOneWidget);
       await shutdown(tester, c);
     });
 
     testWidgets('существующие данные: знакомство не показывается', (tester) async {
       final c = await boot(tester);
       expect(find.text('Добро пожаловать в Life OS'), findsNothing);
-      expect(find.text('EXECUTIVE DASHBOARD'), findsOneWidget);
+      expect(find.textContaining('СЕГОДНЯ ·'), findsOneWidget);
       await shutdown(tester, c);
     });
 

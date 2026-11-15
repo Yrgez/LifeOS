@@ -160,7 +160,7 @@ class _WealthScreenState extends State<WealthScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('КАПИТАЛ И КАРЬЕРА', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const Flexible(child: Text('КАПИТАЛ И КАРЬЕРА', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
               IconButton(onPressed: _editWealthDialog, icon: const Icon(Icons.edit, color: AppColors.gold, size: 22)),
             ],
           ),
@@ -201,7 +201,7 @@ class _WealthScreenState extends State<WealthScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('ГРАФИК РОСТА ЗАРПЛАТЫ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const Flexible(child: Text('ГРАФИК РОСТА ЗАРПЛАТЫ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
               IconButton(onPressed: _addSalaryStepDialog, icon: const Icon(Icons.add_circle, color: AppColors.green, size: 24)),
             ],
           ),
