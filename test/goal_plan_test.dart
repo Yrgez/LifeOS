@@ -105,6 +105,7 @@ void main() {
       final g = c.goals.single.id;
       final p = c.addProcess(title: 'Java', dimensions: [LifeDimension.mind], goalIds: [g])!;
       c.addEvent(title: 'урок', dimensions: [LifeDimension.mind], processIds: [p], cost: const ResourceCost(minutes: 90));
+      now = now.add(const Duration(minutes: 1)); // одинаковое время — порядок решала бы случайная часть id
       c.addEvent(title: 'резюме', dimensions: [LifeDimension.material], goalIds: [g]);
       c.addEvent(title: 'не про цель', dimensions: [LifeDimension.body]);
       expect(c.eventsForGoal(g).map((e) => e.title), ['урок', 'резюме']);
