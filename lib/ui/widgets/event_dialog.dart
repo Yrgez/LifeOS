@@ -51,6 +51,7 @@ Future<EventDraft?> showEventDialog(
   LifeEvent? initial,
   String? presetDimension,
   String? presetProcessId,
+  String? presetGoalId,
 }) {
   return showDialog<EventDraft>(
     context: context,
@@ -61,6 +62,7 @@ Future<EventDraft?> showEventDialog(
       initial: initial,
       presetDimension: presetDimension,
       presetProcessId: presetProcessId,
+      presetGoalId: presetGoalId,
     ),
   );
 }
@@ -72,6 +74,7 @@ class _EventDialog extends StatefulWidget {
   final LifeEvent? initial;
   final String? presetDimension;
   final String? presetProcessId;
+  final String? presetGoalId;
   const _EventDialog({
     required this.now,
     required this.goals,
@@ -79,6 +82,7 @@ class _EventDialog extends StatefulWidget {
     this.initial,
     this.presetDimension,
     this.presetProcessId,
+    this.presetGoalId,
   });
 
   @override
@@ -109,7 +113,7 @@ class _EventDialogState extends State<_EventDialog> {
     _kind = e?.kind ?? LifeEventKind.action;
     _at = e?.at ?? widget.now;
     _energy = e?.cost.energy;
-    _goals = e?.goalIds.toSet() ?? <String>{};
+    _goals = e?.goalIds.toSet() ?? {if (widget.presetGoalId != null) widget.presetGoalId!};
     _procs = e?.processIds.toSet() ?? {if (widget.presetProcessId != null) widget.presetProcessId!};
     // событие в процессе по умолчанию относится к его измерениям
     if (e == null && widget.presetProcessId != null) {

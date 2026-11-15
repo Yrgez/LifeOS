@@ -12,10 +12,12 @@ import '../widgets/toast.dart';
 
 /// Журнал событий жизни: факты по измерениям BODY / MIND / MATERIAL, их ресурсы и версии.
 /// С [processId] — экран процесса: шапка процесса и только его события.
+/// С [goalId] — события цели (напрямую и через её процессы).
 class EventsScreen extends StatefulWidget {
   final AppController controller;
   final String? processId;
-  const EventsScreen({super.key, required this.controller, this.processId});
+  final String? goalId;
+  const EventsScreen({super.key, required this.controller, this.processId, this.goalId});
 
   @override
   State<EventsScreen> createState() => _EventsScreenState();
@@ -39,6 +41,7 @@ class _EventsScreenState extends State<EventsScreen> {
       processes: c.processes,
       presetDimension: _dimension,
       presetProcessId: widget.processId,
+      presetGoalId: widget.goalId,
     );
     if (d == null || !mounted) return;
     final id = c.addEvent(
@@ -132,7 +135,11 @@ class _EventsScreenState extends State<EventsScreen> {
         title: ListenableBuilder(
           listenable: c,
           builder: (context, _) => Text(
-            widget.processId == null ? 'СОБЫТИЯ ЖИЗНИ' : (c.processById(widget.processId!)?.title ?? 'Процесс'),
+            widget.processId != null
+                ? (c.processById(widget.processId!)?.title ?? 'Процесс')
+                : widget.goalId != null
+                    ? (c.goals.where((g) => g.id == widget.goalId).firstOrNull?.title ?? 'Цель')
+                    : 'СОБЫТИЯ ЖИЗНИ',
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1),
           ),
         ),
@@ -154,12 +161,14 @@ class _EventsScreenState extends State<EventsScreen> {
   Widget _content() {
     final pid = widget.processId;
     final process = pid == null ? null : c.processById(pid);
-    final all = c.events.reversed
+    final gid = widget.goalId;
+    final source = gid == null ? c.events : c.eventsForGoal(gid);
+    final all = source.reversed
         .where((e) => (_dimension == null || e.touches(_dimension!)) && (pid == null || e.processIds.contains(pid)))
         .toList();
     final now = c.now;
     final week = summarizeResources(
-      c.events,
+      source,
       from: now.subtract(const Duration(days: 7)),
       to: now.add(const Duration(minutes: 6)),
       dimension: _dimension,

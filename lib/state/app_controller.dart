@@ -9,6 +9,7 @@ import '../core/app_log.dart';
 import '../core/chronicle.dart';
 import '../core/finance_categories.dart';
 import '../core/finance_stats.dart';
+import '../core/goal_stats.dart';
 import '../core/life_events.dart';
 import '../core/resource_stats.dart';
 import '../core/utils.dart';
@@ -655,6 +656,14 @@ class AppController extends ChangeNotifier {
     return true;
   }
 
+  /// План ресурсов цели (минуты, рубли); null или пустой план снимает его. Значения должны быть > 0.
+  bool setGoalPlan(String goalId, GoalPlan? plan) {
+    final g = _goal(goalId);
+    if (g == null || (plan != null && !plan.isValid)) return false;
+    _commit(() => g.plan = plan == null || plan.isEmpty ? null : plan);
+    return true;
+  }
+
   void removeGoal(String goalId) => _commit(() => _d.goals.removeWhere((g) => g.id == goalId));
 
   /// Добавить чекпоинт. С [link] он будет выполняться автоматически; пустое название генерируется из метрики.
@@ -727,8 +736,11 @@ class AppController extends ChangeNotifier {
   /// Версии события от первой к последней.
   List<LifeEvent> eventRevisions(String id) => revisionChain(_d.events, id);
 
-  /// Актуальные события, ведущие к цели.
-  List<LifeEvent> eventsForGoal(String goalId) => [for (final e in events) if (e.goalIds.contains(goalId)) e];
+  /// Актуальные события цели: связанные с ней напрямую или через процесс, который ей служит.
+  List<LifeEvent> eventsForGoal(String goalId) => goalEvents(goalId, events, _d.processes);
+
+  /// Что уже вложено в цель: ресурсы, число событий (напрямую / через процессы), затронутые измерения.
+  GoalFact goalFactOf(String goalId) => goalFact(goalId, events, _d.processes);
 
   /// Сводка ресурсов за период [from, to) по актуальным событиям.
   ResourceSummary resourceSummary({required DateTime from, required DateTime to, String? dimension}) =>

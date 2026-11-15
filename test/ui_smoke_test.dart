@@ -4,6 +4,7 @@ import 'package:life_os/app.dart';
 import 'package:life_os/data/app_data.dart';
 import 'package:life_os/data/app_repository.dart';
 import 'package:life_os/models/life_event.dart';
+import 'package:life_os/models/models.dart';
 import 'package:life_os/state/app_controller.dart';
 
 /// Дымовые тесты интерфейса: после разбиения на экраны проверяют, что каждая вкладка строится,
@@ -162,6 +163,25 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('quiet_days')));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
+
+    await shutdown(tester, c);
+  });
+
+  testWidgets('цели: план ресурсов и факт из событий, переход к событиям цели', (tester) async {
+    final c = await boot(tester);
+    c.addGoal('Стать Java-разработчиком', 'Карьера', ['Основы']);
+    final g = c.goals.last.id;
+    c.setGoalPlan(g, const GoalPlan(minutes: 6000));
+    c.addEvent(title: 'Урок Java', dimensions: ['mind'], goalIds: [g], cost: const ResourceCost(minutes: 90));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('СМЫСЛЫ'));
+    await tester.pumpAndSettle();
+    expect(find.text('Время: 1 ч 30 мин из 100 ч по плану'), findsOneWidget);
+
+    await tester.tap(find.byKey(ValueKey('goal_events_$g')));
+    await tester.pumpAndSettle();
+    expect(find.text('Урок Java'), findsOneWidget);
+    expect(find.text('Стать Java-разработчиком'), findsWidgets); // заголовок экрана
 
     await shutdown(tester, c);
   });

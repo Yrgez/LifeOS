@@ -5,7 +5,11 @@ import '../../core/utils.dart';
 import '../../core/workout_stats.dart';
 import '../../models/models.dart';
 import '../../state/app_controller.dart';
+import '../../models/life_event.dart';
+import '../screens/events_screen.dart';
+import 'event_dialog.dart';
 import 'form_dialog.dart';
+import 'process_ui.dart';
 
 /// Диалог создания цели.
 Future<void> showNewGoalDialog(BuildContext context, AppController c) async {
@@ -43,6 +47,27 @@ Future<void> showEditGoalDialog(BuildContext context, AppController c, GlobalGoa
   );
   if (r == null) return;
   c.updateGoal(g.id, title: r['t']!, category: r['c']!, deadline: parseDate(r['dl']!));
+}
+
+/// План ресурсов цели: сколько часов и рублей вы готовы вложить. Пустое поле — не задано.
+Future<void> showGoalPlanDialog(BuildContext context, AppController c, GlobalGoal g) async {
+  final p = g.plan;
+  bool ok(String s) => s.trim().isEmpty || (parseNum(s) ?? -1) > 0;
+  final r = await showFormDialog(
+    context,
+    title: 'План ресурсов цели',
+    actionLabel: 'Сохранить',
+    accent: AppColors.violet,
+    actionTextColor: Colors.white,
+    fields: [
+      FieldSpec('h', 'Время, часов (пусто — не задано)', numeric: true, initial: p?.minutes == null ? '' : trimNum(p!.minutes! / 60)),
+      FieldSpec('m', 'Деньги, ₽ (пусто — не задано)', numeric: true, initial: p?.money?.toString() ?? ''),
+    ],
+    validate: (v) => ok(v['h']!) && ok(v['m']!),
+  );
+  if (r == null) return;
+  final h = parseNum(r['h']!), m = parseNum(r['m']!);
+  c.setGoalPlan(g.id, GoalPlan(minutes: h == null ? null : (h * 60).round(), money: m?.round()));
 }
 
 /// Диалог добавления чекпоинта: ручной или привязанный к метрике (выполняется автоматически).
@@ -118,6 +143,8 @@ class GoalCard extends StatelessWidget {
                               showEditGoalDialog(context, c, goal);
                             case 'add':
                               showAddCheckpointDialog(context, c, goal);
+                            case 'plan':
+                              showGoalPlanDialog(context, c, goal);
                             case 'delete':
                               c.removeGoal(goal.id);
                           }
@@ -125,6 +152,7 @@ class GoalCard extends StatelessWidget {
                         itemBuilder: (_) => const [
                           PopupMenuItem(value: 'edit', child: Text('Изменить цель / срок')),
                           PopupMenuItem(value: 'add', child: Text('Добавить чекпоинт')),
+                          PopupMenuItem(value: 'plan', child: Text('План ресурсов')),
                           PopupMenuItem(value: 'delete', child: Text('Удалить цель', style: TextStyle(color: AppColors.red))),
                         ],
                       ),
@@ -155,6 +183,7 @@ class GoalCard extends StatelessWidget {
                   child: Text('Чекпоинтов нет — добавьте через меню ⋮', style: TextStyle(color: Colors.white38, fontSize: 12)),
                 ),
               for (int i = 0; i < goal.checkpoints.length; i++) _checkpointRow(i, goal.checkpoints[i]),
+              GoalResources(controller: c, goal: goal),
             ],
           ),
         ),
@@ -256,4 +285,100 @@ class GoalCard extends StatelessWidget {
   }
 
   static String _fmt(MetricLink l, double v) => l.kind == MetricLink.oneRM ? trimNum(v) : fmtMoney(v.round());
+}
+
+/// План ↔ факт по цели. Факт — из событий (напрямую и через процессы цели). Без прогнозов и оценок:
+/// только «вложено столько из запланированного» и где данных не хватает.
+class GoalResources extends StatelessWidget {
+  final AppController controller;
+  final GlobalGoal goal;
+  const GoalResources({super.key, required this.controller, required this.goal});
+
+  @override
+  Widget build(BuildContext context) {
+    final f = controller.goalFactOf(goal.id);
+    final r = f.resources;
+    final plan = goal.plan;
+    if (r.events == 0 && plan == null && f.processIds.isEmpty) return const SizedBox.shrink();
+    final titles = {for (final p in controller.processes) p.id: p.title};
+    String known(int k, String v) => k == r.events ? v : '$v · указано в $k из ${r.events}';
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, right: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Divider(color: Colors.white10, height: 12),
+          Text(
+            'ВЛОЖЕНО: событий ${r.events}'
+            '${r.events > 0 && f.viaProcess > 0 ? ' (напрямую ${f.direct}, через процессы ${f.viaProcess})' : ''}',
+            style: const TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.6),
+          ),
+          if (f.dimensions.isNotEmpty)
+            Text('Затрагивает: ${f.dimensions.map((d) => LifeDimension.labels[d]).join(' + ')}', style: const TextStyle(color: Colors.white38, fontSize: 11)),
+          if (f.processIds.isNotEmpty)
+            Text('Процессы: ${f.processIds.map((id) => titles[id]).join(', ')}', style: const TextStyle(color: AppColors.amber, fontSize: 11)),
+          if (plan?.minutes != null || r.minutesKnown > 0)
+            _PlanRow(
+              label: 'Время',
+              fact: r.minutesKnown == 0 ? 'не указано' : known(r.minutesKnown, fmtMinutes(r.minutes)),
+              plan: plan?.minutes == null ? null : fmtMinutes(plan!.minutes!),
+              ratio: plan?.minutes == null ? null : r.minutes / plan!.minutes!,
+            ),
+          if (plan?.money != null || r.moneyKnown > 0)
+            _PlanRow(
+              label: 'Деньги',
+              fact: r.moneyKnown == 0 ? 'не указано' : known(r.moneyKnown, '${fmtMoney(r.money)} ₽'),
+              plan: plan?.money == null ? null : '${fmtMoney(plan!.money!)} ₽',
+              ratio: plan?.money == null ? null : r.money / plan!.money!,
+            ),
+          if (r.events > 0)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                key: ValueKey('goal_events_${goal.id}'),
+                style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 32)),
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => EventsScreen(controller: controller, goalId: goal.id))),
+                child: Text('События цели (${r.events})', style: const TextStyle(fontSize: 12)),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlanRow extends StatelessWidget {
+  final String label;
+  final String fact;
+  final String? plan;
+  final double? ratio; // факт / план; null — плана нет
+  const _PlanRow({required this.label, required this.fact, this.plan, this.ratio});
+
+  @override
+  Widget build(BuildContext context) {
+    final over = (ratio ?? 0) > 1;
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            plan == null ? '$label: $fact' : '$label: $fact из $plan по плану${over ? ' — больше плана' : ''}',
+            style: const TextStyle(fontSize: 12),
+          ),
+          if (ratio != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 3),
+              child: LinearProgressIndicator(
+                value: ratio!.clamp(0.0, 1.0),
+                minHeight: 6,
+                borderRadius: BorderRadius.circular(4),
+                backgroundColor: Colors.white.withValues(alpha: 0.05),
+                valueColor: AlwaysStoppedAnimation(dimensionChartColor(LifeDimension.mind)),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }

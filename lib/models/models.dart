@@ -304,6 +304,27 @@ class GoalCheckpoint {
   }
 }
 
+/// План ресурсов цели: сколько времени и денег человек готов вложить. null — не задано.
+/// План — намерение, а не оценка: факт сравнивается с ним, но ничего не «предсказывается».
+class GoalPlan {
+  final int? minutes;
+  final int? money; // ₽
+  const GoalPlan({this.minutes, this.money});
+
+  bool get isEmpty => minutes == null && money == null;
+  bool get isValid => (minutes == null || minutes! > 0) && (money == null || money! > 0);
+
+  Map<String, dynamic> toJson() => {if (minutes != null) 'min': minutes, if (money != null) 'rub': money};
+
+  /// null — значения недопустимы (отрицательные, нецелые, не объект).
+  static GoalPlan? tryFromJson(Object? raw) {
+    if (raw is! Map) return null;
+    int? f(Object? v) => v == null ? null : (v is num && v.isFinite && v == v.roundToDouble() ? v.toInt() : -1);
+    final p = GoalPlan(minutes: f(raw['min']), money: f(raw['rub']));
+    return p.isValid ? p : null;
+  }
+}
+
 class GlobalGoal {
   final String id;
   String title;
@@ -311,6 +332,7 @@ class GlobalGoal {
   DateTime? deadline; // только дата, без времени
   bool celebrated; // достижение за цель уже выдано (чтобы не создавать повторно / после ручного удаления)
   List<GoalCheckpoint> checkpoints;
+  GoalPlan? plan; // план ресурсов; null — не задан
 
   GlobalGoal({
     required this.id,
@@ -319,6 +341,7 @@ class GlobalGoal {
     required this.checkpoints,
     this.deadline,
     this.celebrated = false,
+    this.plan,
   });
 
   double get progress {
@@ -335,17 +358,24 @@ class GlobalGoal {
         'deadlineMs': deadline?.millisecondsSinceEpoch,
         'celebrated': celebrated,
         'checkpoints': checkpoints.map((c) => c.toJson()).toList(),
+        if (plan != null) 'plan': plan!.toJson(),
       };
 
   factory GlobalGoal.fromJson(Map<String, dynamic> json) =>
       tryFromJson(json) ?? (throw const FormatException('GlobalGoal'));
 
-  /// null — нет id или названия. Битые чекпоинты пропускаются по отдельности.
+  /// null — нет id или названия, либо план ресурсов битый. Битые чекпоинты пропускаются по отдельности.
   static GlobalGoal? tryFromJson(Map<String, dynamic> json, {void Function(String)? onSkip}) {
     final id = _id(json['id']);
     final title = json['title'];
     if (id == null || title is! String) return null;
+    GoalPlan? plan;
+    if (json['plan'] != null) {
+      plan = GoalPlan.tryFromJson(json['plan']);
+      if (plan == null) return null; // молча терять план нельзя
+    }
     final g = GlobalGoal(
+      plan: plan == null || plan.isEmpty ? null : plan,
       id: id,
       title: title,
       category: json['category'] as String? ?? 'Стратегия',
