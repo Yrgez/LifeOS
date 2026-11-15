@@ -133,7 +133,11 @@ class GoalCard extends StatelessWidget {
                   Flexible(child: Text(goal.category.toUpperCase(), overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.violet, fontSize: 10, fontWeight: FontWeight.bold))),
                   Row(
                     children: [
-                      Text('${(goal.progress * 100).round()}%', style: const TextStyle(color: AppColors.violet, fontWeight: FontWeight.bold)),
+                      // счёт, а не процент: «2 из 5» не прячет, из чего сложился прогресс
+                      Text(
+                        goal.checkpoints.isEmpty ? '—' : '${goal.checkpoints.where((x) => x.isCompleted).length} из ${goal.checkpoints.length}',
+                        style: const TextStyle(color: AppColors.violet, fontWeight: FontWeight.bold),
+                      ),
                       PopupMenuButton<String>(
                         icon: const Icon(Icons.more_vert, color: Colors.white38, size: 20),
                         color: AppColors.field,

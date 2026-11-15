@@ -153,13 +153,14 @@ void main() {
       expect(c.lastSetFor('chest')!.weight, 90);
     });
 
-    test('после подхода мышца «красная», готовность тела падает', () async {
+    test('после подхода мышца «красная» и попадает в восстанавливающиеся', () async {
       final c = make();
       await c.load();
-      final before = c.systemReadiness;
       c.logWorkout('chest', 100, 5);
       expect(c.muscles['chest']!.recoveryAt(now), closeTo(0.15, 1e-9));
-      expect(c.systemReadiness, lessThan(before));
+      expect(c.recovery.recovering.map((m) => m.id), contains('chest'));
+      final chest = c.recovery.recovering.firstWhere((m) => m.id == 'chest');
+      expect(chest.hoursLeft, c.muscles['chest']!.recoveryHours.ceil());
     });
 
     test('журнал переживает сохранение и загрузку', () async {

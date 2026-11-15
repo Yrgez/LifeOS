@@ -11,6 +11,7 @@ import '../core/finance_categories.dart';
 import '../core/finance_stats.dart';
 import '../core/goal_stats.dart';
 import '../core/life_events.dart';
+import '../core/recovery_stats.dart';
 import '../core/resource_stats.dart';
 import '../core/utils.dart';
 import '../core/workout_stats.dart';
@@ -153,12 +154,9 @@ class AppController extends ChangeNotifier {
   String? get healthMessage => _healthMessage;
   DateTime? get lastHealthSync => _d.lastHealthSyncMs == null ? null : DateTime.fromMillisecondsSinceEpoch(_d.lastHealthSyncMs!);
 
-  int get systemReadiness {
-    if (_d.muscles.isEmpty) return 0;
-    final now = _clock();
-    final total = _d.muscles.values.fold(0.0, (acc, m) => acc + m.recoveryAt(now));
-    return ((total / _d.muscles.length) * 100).round();
-  }
+  /// Восстановление мышц по типовой оценке: сколько групп восстановлено, какие ещё нет и сколько им осталось.
+  /// Заменяет прежний единый процент «готовности тела» (среднее оценок с точностью до процента).
+  RecoveryOverview get recovery => recoveryOverview(_d.muscles, _clock());
 
   /// Подписи последних 7 дней, заканчивая сегодняшним.
   List<String> get weekLabels {
@@ -328,6 +326,11 @@ class AppController extends ChangeNotifier {
     set('n_activity', 'Шаги: ${(_d.dailySteps / 1000).toStringAsFixed(1)}k');
     final chest = _d.muscles['chest'];
     if (chest != null) set('n_chest', 'Грудь (1RM ${chest.maxWeight.toInt()})');
+    for (final n in _d.graphNodes) {
+      final r = n.ref;
+      final title = r == null ? null : refTitle(r);
+      if (title != null) n.label = title; // сущность удалена — узел хранит последнее название
+    }
 
     _touchToday();
     _syncGoals();
@@ -562,13 +565,63 @@ class AppController extends ChangeNotifier {
     final newLabel = label?.trim();
     if (newLabel != null && newLabel.isEmpty) return false;
     _commit(() {
-      if (newLabel != null && !autoNodeIds.contains(id)) n.label = newLabel;
+      // подпись связанного узла берётся из процесса или цели
+      if (newLabel != null && !autoNodeIds.contains(id) && !_refExists(n.ref)) n.label = newLabel;
       if (category != null && category != n.category) {
         n.category = category;
         n.color = nodeColorFor(category);
       }
     });
     return true;
+  }
+
+  // ---------------- граф: связь с процессами и целями ----------------
+
+  bool _refExists(NodeRef? r) => r != null && refTitle(r) != null;
+
+  /// Название процесса или цели по ссылке; null — сущность удалена (узел хранит последнее название).
+  String? refTitle(NodeRef r) => switch (r.type) {
+        NodeRef.process => processById(r.id)?.title,
+        _ => _goal(r.id)?.title,
+      };
+
+  /// Узел, уже связанный с этой сущностью (одна сущность — один узел).
+  GraphNode? nodeForRef(NodeRef r) {
+    for (final n in _d.graphNodes) {
+      if (n.ref == r) return n;
+    }
+    return null;
+  }
+
+  /// Сфера графа по измерению: тело → «gym», материальное → «wealth», разум → «mind».
+  String _categoryFor(NodeRef r) {
+    final dims = r.type == NodeRef.process ? (processById(r.id)?.dimensions ?? const []) : goalFactOf(r.id).dimensions;
+    if (dims.isEmpty) return 'mind';
+    return switch (dims.first) { LifeDimension.body => 'gym', LifeDimension.material => 'wealth', _ => 'mind' };
+  }
+
+  /// Связывает узел с процессом или целью ([ref] = null снимает связь). Системные узлы не связываются.
+  bool linkNode(String nodeId, NodeRef? ref) {
+    final n = nodeById(nodeId);
+    if (n == null || autoNodeIds.contains(nodeId)) return false;
+    if (ref != null) {
+      final title = refTitle(ref);
+      final taken = nodeForRef(ref);
+      if (title == null || (taken != null && taken.id != nodeId)) return false;
+    }
+    _commit(() => n.ref = ref); // подпись подставит _syncDerived
+    return true;
+  }
+
+  /// Новый узел для процесса или цели. Возвращает id узла (существующего, если уже есть) или null.
+  String? addNodeFor(NodeRef ref) {
+    final existing = nodeForRef(ref);
+    if (existing != null) return existing.id;
+    final title = refTitle(ref);
+    if (title == null || !addNode(title, _categoryFor(ref))) return null;
+    final n = _d.graphNodes.last;
+    _commit(() => n.ref = ref);
+    return n.id;
   }
 
   void deleteNode(String id) => _commit(() {

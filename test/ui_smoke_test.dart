@@ -186,6 +186,22 @@ void main() {
     await shutdown(tester, c);
   });
 
+  testWidgets('без ложной точности: восстановление счётом, граф со связанным узлом удалённого процесса', (tester) async {
+    final c = await boot(tester);
+    expect(find.textContaining('Восстановлено '), findsOneWidget);
+    expect(find.textContaining('Готовность тела'), findsNothing);
+
+    final p = c.addProcess(title: 'Изучение Java', dimensions: ['mind'])!;
+    c.addNodeFor(NodeRef(NodeRef.process, p));
+    c.removeProcess(p);
+    await tester.tap(find.text('ГРАФ'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.textContaining('Корреляция Пирсона'), findsNothing);
+
+    await shutdown(tester, c);
+  });
+
   testWidgets('предупреждение о недоступном хранилище', (tester) async {
     final c = await boot(tester, repo: MemoryAppRepository(loadError: StateError('диск')));
     expect(find.textContaining('Хранилище недоступно'), findsOneWidget);

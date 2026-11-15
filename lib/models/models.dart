@@ -473,10 +473,38 @@ Color nodeColorFor(String category) {
   }
 }
 
+/// Ссылка узла графа на сущность жизни: процесс или цель. Подпись такого узла берётся из сущности,
+/// а с экрана графа можно перейти к ней — граф перестаёт быть набором отдельных подписей.
+class NodeRef {
+  static const process = 'process';
+  static const goal = 'goal';
+
+  final String type;
+  final String id;
+  const NodeRef(this.type, this.id);
+
+  Map<String, dynamic> toJson() => {'type': type, 'id': id};
+
+  static NodeRef? tryFromJson(Object? raw) {
+    if (raw is! Map) return null;
+    final t = raw['type'];
+    final id = _id(raw['id']);
+    if ((t != process && t != goal) || id == null) return null;
+    return NodeRef(t as String, id);
+  }
+
+  @override
+  bool operator ==(Object other) => other is NodeRef && other.type == type && other.id == id;
+
+  @override
+  int get hashCode => Object.hash(type, id);
+}
+
 class GraphNode {
   final String id;
   String label;
   String category;
+  NodeRef? ref; // связь с процессом или целью; null — обычный узел
   Offset position; // ДОЛИ холста (0..1), а не пиксели — граф не «вылезает» на других экранах
 
   /// Пользовательский цвет; null — цвет берётся из категории и не рассинхронизируется при её смене.
@@ -488,6 +516,7 @@ class GraphNode {
     required this.category,
     required this.position,
     Color? color,
+    this.ref,
   }) {
     _override = (color == null || color == nodeColorFor(category)) ? null : color;
   }
@@ -503,6 +532,7 @@ class GraphNode {
         'fx': position.dx,
         'fy': position.dy,
         'color': color.toARGB32(),
+        if (ref != null) 'ref': ref!.toJson(),
       };
 
   factory GraphNode.fromJson(Map<String, dynamic> j) =>
@@ -525,11 +555,17 @@ class GraphNode {
     }
     final cat = j['category'] as String? ?? 'mind';
     final rawColor = _i(j['color']);
+    NodeRef? ref;
+    if (j['ref'] != null) {
+      ref = NodeRef.tryFromJson(j['ref']);
+      if (ref == null) return null; // битая ссылка: узел не превращается молча в обычный
+    }
     return GraphNode(
       id: id,
       label: j['label'] as String? ?? '',
       category: cat,
       position: Offset(clampD(fx, 0.06, 0.94), clampD(fy, 0.06, 0.94)),
+      ref: ref,
       color: rawColor == null ? null : Color(rawColor & 0xFFFFFFFF),
     );
   }

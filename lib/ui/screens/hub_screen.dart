@@ -43,27 +43,30 @@ class HubScreen extends StatelessWidget {
               ),
               // на узком экране плашка сжимается, а не выталкивает кнопки за край
               Flexible(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.green.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.green.withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.favorite, color: AppColors.green, size: 14),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          'Готовность тела: ${c.systemReadiness}%',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: AppColors.green, fontSize: 12, fontWeight: FontWeight.bold),
+                child: Tooltip(
+                  message: 'Оценка по типовому времени восстановления групп мышц после последней тренировки',
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.green.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.green.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.favorite, color: AppColors.green, size: 14),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            'Восстановлено ${c.recovery.recovered} из ${c.recovery.total}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: AppColors.green, fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
