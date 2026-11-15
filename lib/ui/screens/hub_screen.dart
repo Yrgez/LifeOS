@@ -4,9 +4,12 @@ import '../../core/theme.dart';
 import '../../security/security_service.dart';
 import '../../state/app_controller.dart';
 import '../widgets/body_map_card.dart';
+import '../widgets/chronicle_card.dart';
 import '../widgets/comparison_card.dart';
 import '../widgets/health_card.dart';
+import '../widgets/resources_card.dart';
 import 'events_screen.dart';
+import 'processes_screen.dart';
 import 'settings_screen.dart';
 
 /// Вкладка HUB: готовность тела, здоровье, сравнение метрик, карта тела.
@@ -33,25 +36,45 @@ class HubScreen extends StatelessWidget {
                   children: [
                     const Text('EXECUTIVE DASHBOARD', style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
                     const SizedBox(height: 4),
-                    Text(c.userName.isEmpty ? 'Life OS' : c.userName, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(c.userName.isEmpty ? 'Life OS' : c.userName,
+                        maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.green.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.green.withValues(alpha: 0.3)),
+              // на узком экране плашка сжимается, а не выталкивает кнопки за край
+              Flexible(
+                child: Tooltip(
+                  message: 'Оценка по типовому времени восстановления групп мышц после последней тренировки',
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.green.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.green.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.favorite, color: AppColors.green, size: 14),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            'Восстановлено ${c.recovery.recovered} из ${c.recovery.total}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: AppColors.green, fontSize: 12, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.favorite, color: AppColors.green, size: 14),
-                    const SizedBox(width: 6),
-                    Text('Готовность тела: ${c.systemReadiness}%', style: const TextStyle(color: AppColors.green, fontSize: 12, fontWeight: FontWeight.bold)),
-                  ],
-                ),
+              ),
+              IconButton(
+                key: const ValueKey('open_processes'),
+                icon: const Icon(Icons.autorenew, color: Colors.white54),
+                tooltip: 'Процессы',
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProcessesScreen(controller: c))),
               ),
               IconButton(
                 key: const ValueKey('open_events'),
@@ -67,6 +90,10 @@ class HubScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
+          ResourcesCard(controller: c),
+          const SizedBox(height: 16),
+          ChronicleCard(controller: c),
+          const SizedBox(height: 16),
           HealthCard(controller: c),
           const SizedBox(height: 16),
           ComparisonCard(controller: c),

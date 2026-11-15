@@ -41,9 +41,9 @@ void main() {
       expect(c.proteinGoal, 140);
     });
 
-    test('мышцы без истории: 100% готовности, нулевой рекорд, прогрессия начинается с журнала', () async {
+    test('мышцы без истории: все восстановлены, нулевой рекорд, прогрессия начинается с журнала', () async {
       final c = await make(blank: true);
-      expect(c.systemReadiness, 100);
+      expect(c.recovery.recovered, c.recovery.total); // ни одной тренировки — всё восстановлено
       expect(c.muscles['chest']!.maxWeight, 0);
       expect(c.progression('chest'), [0]); // нет данных
       c.logWorkout('chest', 100, 5);

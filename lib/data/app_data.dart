@@ -1,14 +1,20 @@
+import 'dart:collection';
+
 import '../core/app_log.dart';
 import '../core/finance_categories.dart';
 import '../core/utils.dart';
+import '../models/day_snapshot.dart';
 import '../models/life_event.dart';
+import '../models/life_process.dart';
 import '../models/models.dart';
 import 'default_data.dart';
 
 /// Версия схемы сохранённых данных. Увеличивать при несовместимых изменениях
 /// и добавлять шаг миграции в репозиторий.
-/// 4 — журнал событий жизни (`events`).
-const int kSchemaVersion = 4;
+/// 4 — журнал событий жизни (`events`). 5 — процессы (`processes`) и связь событий с ними.
+/// 6 — дневные снимки (`snapshots`) вместо недельных массивов (старые массивы переносятся при чтении).
+/// 7 — план ресурсов цели (`goals[].plan`). 8 — связь узла графа с процессом или целью (`graphNodes[].ref`).
+const int kSchemaVersion = 8;
 
 /// Предел журналов в памяти (при превышении удаляются самые старые). Хранилище (SQLite) пишет только
 /// изменения, но весь журнал пока загружается в память целиком — поэтому предел сохранён.
@@ -18,6 +24,12 @@ const int kMaxTransactions = 50000;
 /// Предел журнала событий. В отличие от подходов и операций старые события НЕ вытесняются
 /// (это была бы потеря истории): по достижении предела новые события не принимаются.
 const int kMaxLifeEvents = 50000;
+
+/// Предел числа процессов (они хранятся в таблице малых данных и сравниваются целиком при сохранении).
+const int kMaxProcesses = 1000;
+
+/// Предел дневных снимков (сто лет). Старые снимки не вытесняются.
+const int kMaxSnapshots = 36500;
 
 /// Весь сохраняемый срез состояния приложения (чистые данные, без UI и без Flutter-зависимостей логики).
 class AppData {
@@ -34,13 +46,13 @@ class AppData {
   List<SalaryStep> salaryHistory;
   List<GraphNode> graphNodes;
   List<GraphEdge> graphEdges;
-  List<double> stepsWeekHistory;
-  List<double> caloriesWeekHistory;
-  List<double> graphEvolutionHistory;
+  /// Дневные снимки по ключу дня (yyyy-MM-dd), по возрастанию дат.
+  SplayTreeMap<String, DaySnapshot> snapshots;
   List<WorkoutSet> workoutSets; // журнал подходов, по возрастанию времени
   List<MoneyTx> transactions; // денежные операции, по возрастанию времени
   Map<String, int> budgets; // лимит расходов в месяц по категории, ₽
   List<RecurringTx> recurring; // правила повторяющихся операций
+  List<LifeProcess> processes; // процессы жизни (длительные направления усилий)
   List<LifeEvent> events; // журнал событий жизни (все версии, включая отменённые), по возрастанию времени
   String userName; // как обращаться (пусто — без имени)
   int stepsGoal; // цель шагов в день
@@ -63,14 +75,13 @@ class AppData {
     required this.salaryHistory,
     required this.graphNodes,
     required this.graphEdges,
-    required this.stepsWeekHistory,
-    required this.caloriesWeekHistory,
-    required this.graphEvolutionHistory,
+    Map<String, DaySnapshot>? snapshots,
     List<WorkoutSet>? workoutSets,
     List<MoneyTx>? transactions,
     Map<String, int>? budgets,
     List<RecurringTx>? recurring,
     List<LifeEvent>? events,
+    List<LifeProcess>? processes,
     this.userName = '',
     this.stepsGoal = 10000,
     this.proteinGoal = 140,
@@ -81,7 +92,9 @@ class AppData {
         transactions = transactions ?? <MoneyTx>[],
         budgets = budgets ?? <String, int>{},
         recurring = recurring ?? <RecurringTx>[],
-        events = events ?? <LifeEvent>[];
+        snapshots = SplayTreeMap.of(snapshots ?? const {}),
+        events = events ?? <LifeEvent>[],
+        processes = processes ?? <LifeProcess>[];
 
   factory AppData.defaults({DateTime? now}) => AppData(
         netWorth: 2450000,
@@ -97,9 +110,14 @@ class AppData {
         salaryHistory: defaultSalary(),
         graphNodes: defaultGraphNodes(),
         graphEdges: defaultGraphEdges(),
-        stepsWeekHistory: <double>[6800, 7400, 9200, 6100, 8900, 11400, 8420],
-        caloriesWeekHistory: <double>[450, 490, 610, 380, 560, 710, 540],
-        graphEvolutionHistory: <double>[3, 4, 6, 7, 8, 8, 9],
+        snapshots: snapshotsFromWeekly(
+          lastDay: dayKey(now ?? DateTime.now()),
+          steps: const [6800, 7400, 9200, 6100, 8900, 11400, 8420],
+          calories: const [450, 490, 610, 380, 560, 710, 540],
+          nodes: const [3, 4, 6, 7, 8, 8, 9],
+          netWorth: 2450000,
+          protein: 145,
+        ),
         workoutSets: <WorkoutSet>[],
         userName: 'Александр', // имя из исходной версии приложения; для существующих данных остаётся прежним
         onboardingDone: true,
@@ -123,9 +141,6 @@ class AppData {
       salaryHistory: <SalaryStep>[],
       graphNodes: nodes,
       graphEdges: blankGraphEdges(),
-      stepsWeekHistory: List<double>.generate(7, (_) => 0, growable: true),
-      caloriesWeekHistory: List<double>.generate(7, (_) => 0, growable: true),
-      graphEvolutionHistory: List<double>.generate(7, (_) => nodes.length.toDouble(), growable: true),
       onboardingDone: false,
     );
   }
@@ -147,14 +162,13 @@ class AppData {
         'salaryHistory': salaryHistory.map((s) => s.toJson()).toList(),
         'graphNodes': graphNodes.map((n) => n.toJson()).toList(),
         'graphEdges': graphEdges.map((e) => e.toJson()).toList(),
-        'stepsWeekHistory': stepsWeekHistory,
-        'caloriesWeekHistory': caloriesWeekHistory,
-        'graphEvolutionHistory': graphEvolutionHistory,
         if (includeLogs) 'workoutSets': workoutSets.map((w) => w.toJson()).toList(),
         if (includeLogs) 'transactions': transactions.map((t) => t.toJson()).toList(),
         if (includeLogs) 'events': events.map((e) => e.toJson()).toList(),
+        if (includeLogs) 'snapshots': snapshots.values.map((x) => x.toJson()).toList(),
         'budgets': budgets,
         'recurring': recurring.map((r) => r.toJson()).toList(),
+        'processes': processes.map((p) => p.toJson()).toList(),
         'userName': userName,
         'stepsGoal': stepsGoal,
         'proteinGoal': proteinGoal,
@@ -246,7 +260,6 @@ class AppData {
       }
       return parsed;
     }
-    List<double> doubles(dynamic v) => fit7((v as List).map((e) => (e as num).toDouble()).toList());
 
     return AppData(
       netWorth: pick<int>('netWorth', (v) => (v as num).toInt(), d.netWorth),
@@ -266,9 +279,9 @@ class AppData {
       salaryHistory: pick<List<SalaryStep>>('salaryHistory', (v) => list(v, SalaryStep.fromJson), d.salaryHistory),
       graphNodes: pick<List<GraphNode>>('graphNodes', (v) => uniqueCollection(v, 'graphNodes', GraphNode.fromJson, (entry) => entry.id), d.graphNodes),
       graphEdges: pick<List<GraphEdge>>('graphEdges', (v) => uniqueCollection(v, 'graphEdges', GraphEdge.fromJson, (entry) => entry.key), d.graphEdges),
-      stepsWeekHistory: pick<List<double>>('stepsWeekHistory', doubles, d.stepsWeekHistory),
-      caloriesWeekHistory: pick<List<double>>('caloriesWeekHistory', doubles, d.caloriesWeekHistory),
-      graphEvolutionHistory: pick<List<double>>('graphEvolutionHistory', doubles, d.graphEvolutionHistory),
+      snapshots: j.containsKey('snapshots')
+          ? pick<Map<String, DaySnapshot>>('snapshots', (v) => _parseSnapshots(v, strict: strict), {})
+          : _migrateWeekly(j, pick, fallbackDay: j['lastDay'] is String ? j['lastDay'] as String : d.lastDay),
       workoutSets: pick<List<WorkoutSet>>(
         'workoutSets',
         (v) => (boundedJournal(v, kMaxWorkoutSets, 'workoutSets', WorkoutSet.fromJson, idOf: (entry) => entry.id)..sort((a, b) => a.at.compareTo(b.at))),
@@ -279,6 +292,13 @@ class AppData {
         (v) => (boundedJournal(v, kMaxTransactions, 'transactions', MoneyTx.fromJson, idOf: (entry) => entry.id)..sort((a, b) => a.at.compareTo(b.at))),
         d.transactions,
       ),
+      processes: pick<List<LifeProcess>>('processes', (v) {
+        final list = uniqueCollection(v, 'processes', LifeProcess.fromJson, (entry) => entry.id);
+        if (strict && list.length > kMaxProcesses) {
+          throw const FormatException('AppData: поле "processes" превышает допустимый размер ($kMaxProcesses)');
+        }
+        return list;
+      }, <LifeProcess>[]),
       events: pick<List<LifeEvent>>('events', (v) => _parseEvents(v, strict: strict), <LifeEvent>[]),
       budgets: pick<Map<String, int>>(
         'budgets',
@@ -310,6 +330,49 @@ class AppData {
     );
   }
 
+  static Map<String, DaySnapshot> _parseSnapshots(dynamic v, {required bool strict}) {
+    final raw = v as List;
+    if (strict && raw.length > kMaxSnapshots) {
+      throw const FormatException('AppData: поле "snapshots" превышает допустимый размер ($kMaxSnapshots)');
+    }
+    final out = <String, DaySnapshot>{};
+    for (var i = 0; i < raw.length; i++) {
+      final e = raw[i];
+      final s = e is Map ? DaySnapshot.tryFromJson(Map<String, dynamic>.from(e)) : null;
+      if (s == null || out.containsKey(s.day)) {
+        if (strict) throw FormatException('AppData: поле "snapshots" — запись #$i повреждена или повторяет день');
+        AppLog.e('AppData: снимок дня #$i пропущен (повреждён или повторяет день)');
+        continue;
+      }
+      out[s.day] = s;
+    }
+    return out;
+  }
+
+  /// Данные до схемы 6: недельные массивы → снимки. Массивов нет — снимков нет (а не демо-значения).
+  static Map<String, DaySnapshot> _migrateWeekly(
+    Map<String, dynamic> j,
+    T Function<T>(String, T Function(dynamic), T) pick, {
+    required String fallbackDay,
+  }) {
+    const keys = ['stepsWeekHistory', 'caloriesWeekHistory', 'graphEvolutionHistory'];
+    if (!keys.any(j.containsKey)) return {};
+    final lastDay = fallbackDay;
+    // без дополнения до 7 значений: недостающие дни остаются «неизвестно», а не копией соседнего
+    List<double> arr(String k) => pick<List<double>>(k, (v) => (v as List).map((e) => (e as num).toDouble()).toList(), const []);
+    final nw = j['netWorth'], pr = j['proteinGrams'], ds = j['dailySteps'], dc = j['activeCalories'];
+    return snapshotsFromWeekly(
+      lastDay: lastDay,
+      steps: arr(keys[0]),
+      calories: arr(keys[1]),
+      nodes: arr(keys[2]),
+      netWorth: nw is num ? nw.toInt() : null,
+      protein: pr is num ? pr.toInt() : null,
+      todaySteps: ds is num ? ds.toInt() : null,
+      todayCalories: dc is num ? dc.toInt() : null,
+    );
+  }
+
   /// Журнал событий. Строгий режим (импорт копии) отвергает копию при любой битой записи, повторе id,
   /// нарушении цепочек версий или превышении предела. Обычная загрузка пропускает только битые записи
   /// (с записью в журнал диагностики) — остальная история не теряется.
@@ -337,6 +400,43 @@ class AppData {
     out.sort(compareEvents);
     return out;
   }
+}
+
+/// Снимки из прежних недельных массивов (7 значений, последнее — [lastDay]). Ноль в старых массивах
+/// означал и «ноль», и «нет данных» (дни без открытия приложения заполнялись нулями), поэтому нулевые
+/// шаги и калории переносятся как «неизвестно». Капитал и белок известны только за [lastDay].
+/// За сам [lastDay] источник правды — текущие счётчики ([todaySteps], [todayCalories]): последняя точка
+/// массивов всегда повторяла их.
+Map<String, DaySnapshot> snapshotsFromWeekly({
+  required String lastDay,
+  required List<num> steps,
+  required List<num> calories,
+  required List<num> nodes,
+  int? netWorth,
+  int? protein,
+  int? todaySteps,
+  int? todayCalories,
+}) {
+  if (!isValidDayKey(lastDay)) return {};
+  final last = dayFromKey(lastDay);
+  final out = <String, DaySnapshot>{};
+  num? at(List<num> l, int i) => i < l.length ? l[l.length - 1 - i] : null; // i — дней назад
+  for (var i = 0; i < 7; i++) {
+    final key = dayKey(DateTime(last.year, last.month, last.day - i));
+    final st = i == 0 && todaySteps != null ? todaySteps : at(steps, i);
+    final kc = i == 0 && todayCalories != null ? todayCalories : at(calories, i);
+    final nd = at(nodes, i);
+    final s = DaySnapshot(
+      day: key,
+      steps: st != null && st > 0 ? st.round() : null,
+      activeCalories: kc != null && kc > 0 ? kc.round() : null,
+      graphNodes: nd != null && nd >= 0 ? nd.round() : null,
+      netWorth: i == 0 ? netWorth : null,
+      protein: i == 0 && protein != null && protein > 0 ? protein : null,
+    );
+    if (!s.isEmpty) out[key] = s;
+  }
+  return out;
 }
 
 /// Порядок журнала событий: по времени события, затем по времени записи и id (стабильно для версий).

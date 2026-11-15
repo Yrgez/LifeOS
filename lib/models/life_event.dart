@@ -148,6 +148,7 @@ class LifeEvent {
   final String note;
   final ResourceCost cost;
   final List<String> goalIds; // цели, к которым ведёт событие (цель может быть уже удалена — история остаётся)
+  final List<String> processIds; // процессы, в которые вложено событие (так же: удалённый процесс не стирает историю)
   final List<EventRef> refs;
   final String source;
   final String? supersedesId; // это событие — новая версия события [supersedesId]
@@ -163,12 +164,14 @@ class LifeEvent {
     this.note = '',
     this.cost = ResourceCost.none,
     Iterable<String> goalIds = const [],
+    Iterable<String> processIds = const [],
     Iterable<EventRef> refs = const [],
     this.source = EventSource.manual,
     this.supersedesId,
     this.voidedAt,
   })  : dimensions = List.unmodifiable(normalizeDimensions(dimensions)),
         goalIds = List.unmodifiable(goalIds.toSet()),
+        processIds = List.unmodifiable(processIds.toSet()),
         refs = List.unmodifiable(refs.toSet());
 
   /// Порядок по LifeDimension.all, без повторов и неизвестных значений.
@@ -193,6 +196,8 @@ class LifeEvent {
       goalIds.length <= maxLinks &&
       refs.length <= maxLinks &&
       goalIds.every((g) => _str(g) != null) &&
+      processIds.length <= maxLinks &&
+      processIds.every((p) => _str(p) != null) &&
       EventSource.isValid(source) &&
       supersedesId != id;
 
@@ -206,6 +211,7 @@ class LifeEvent {
         note: note,
         cost: cost,
         goalIds: goalIds,
+        processIds: processIds,
         refs: refs,
         source: source,
         supersedesId: supersedesId,
@@ -222,6 +228,7 @@ class LifeEvent {
         if (note.isNotEmpty) 'note': note,
         if (!cost.isEmpty) 'cost': cost.toJson(),
         if (goalIds.isNotEmpty) 'goals': goalIds,
+        if (processIds.isNotEmpty) 'procs': processIds,
         if (refs.isNotEmpty) 'refs': refs.map((r) => r.toJson()).toList(),
         'src': source,
         if (supersedesId != null) 'sup': supersedesId,
@@ -242,6 +249,7 @@ class LifeEvent {
     final note = j['note'] ?? '';
     final cost = ResourceCost.tryFromJson(j['cost']);
     final goals = j['goals'] ?? const [];
+    final procs = j['procs'] ?? const [];
     final refsRaw = j['refs'] ?? const [];
     final src = j['src'] ?? EventSource.manual;
     final sup = j['sup'];
@@ -250,6 +258,7 @@ class LifeEvent {
     if (dims is! List || dims.isEmpty || !dims.every((d) => d is String && LifeDimension.isValid(d))) return null;
     if (kind is! String || title is! String || note is! String || src is! String) return null;
     if (goals is! List || !goals.every((g) => _str(g) != null)) return null;
+    if (procs is! List || !procs.every((p) => _str(p) != null)) return null;
     if (refsRaw is! List) return null;
     final refs = <EventRef>[];
     for (final r in refsRaw) {
@@ -270,6 +279,7 @@ class LifeEvent {
       note: note,
       cost: cost,
       goalIds: goals.cast<String>(),
+      processIds: procs.cast<String>(),
       refs: refs,
       source: src,
       supersedesId: sup as String?,

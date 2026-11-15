@@ -6,16 +6,22 @@ import 'dart:ui' show Offset;
 import 'package:flutter/foundation.dart';
 
 import '../core/app_log.dart';
+import '../core/chronicle.dart';
 import '../core/finance_categories.dart';
 import '../core/finance_stats.dart';
+import '../core/goal_stats.dart';
 import '../core/life_events.dart';
+import '../core/recovery_stats.dart';
+import '../core/resource_stats.dart';
 import '../core/utils.dart';
 import '../core/workout_stats.dart';
 import '../data/app_data.dart';
 import '../data/app_repository.dart';
 import '../data/change_set.dart';
 import '../data/health_source.dart';
+import '../models/day_snapshot.dart';
 import '../models/life_event.dart';
+import '../models/life_process.dart';
 import '../models/models.dart';
 
 /// Вся бизнес-логика и состояние. UI только читает геттеры и вызывает методы.
@@ -94,9 +100,35 @@ class AppController extends ChangeNotifier {
   List<SalaryStep> get salaryHistory => _d.salaryHistory;
   List<GraphNode> get graphNodes => _d.graphNodes;
   List<GraphEdge> get graphEdges => _d.graphEdges;
-  List<double> get stepsWeekHistory => _d.stepsWeekHistory;
-  List<double> get caloriesWeekHistory => _d.caloriesWeekHistory;
-  List<double> get graphEvolutionHistory => _d.graphEvolutionHistory;
+  /// Дневные снимки (по возрастанию дат). Дня без снимка нет в списке: данных за него нет.
+  List<DaySnapshot> get snapshots => List.unmodifiable(_d.snapshots.values);
+  DaySnapshot? snapshotFor(DateTime day) => _d.snapshots[dayKey(day)];
+
+  Map<String, DaySnapshot> get snapshotsByDay => Map.unmodifiable(_d.snapshots);
+
+  /// Хроника: события, смены статусов процессов и достижения — новые сверху.
+  List<ChronicleEntry> get chronicle => chronicleEntries(currentEvents: events, processes: _d.processes, achievements: _d.achievements);
+
+  /// Снимки последних [n] дней, заканчивая сегодняшним; null — данных за день нет.
+  List<DaySnapshot?> lastDaysSnapshots(int n) {
+    final t = _clock();
+    return [for (var i = n - 1; i >= 0; i--) _d.snapshots[dayKey(DateTime(t.year, t.month, t.day - i))]];
+  }
+
+  // Ряды за 7 дней для мини-графиков. На графике «нет данных» рисуется нулём;
+  // сами снимки различают ноль и отсутствие данных.
+  List<double> get stepsWeekHistory => [for (final x in lastDaysSnapshots(7)) (x?.steps ?? 0).toDouble()];
+  List<double> get caloriesWeekHistory => [for (final x in lastDaysSnapshots(7)) (x?.activeCalories ?? 0).toDouble()];
+
+  /// Число узлов графа по дням: пропущенный день повторяет последнее известное значение
+  /// (узлы между днями не исчезают), до первого известного — текущее число.
+  List<double> get graphEvolutionHistory {
+    final days = lastDaysSnapshots(7);
+    var last = days.firstWhere((x) => x?.graphNodes != null, orElse: () => null)?.graphNodes ?? _d.graphNodes.length;
+    return [
+      for (final x in days) (last = x?.graphNodes ?? last).toDouble(),
+    ];
+  }
 
   /// Журнал подходов (по возрастанию времени). Не изменять напрямую — только через методы контроллера.
   List<WorkoutSet> get sets => List.unmodifiable(_d.workoutSets);
@@ -122,12 +154,9 @@ class AppController extends ChangeNotifier {
   String? get healthMessage => _healthMessage;
   DateTime? get lastHealthSync => _d.lastHealthSyncMs == null ? null : DateTime.fromMillisecondsSinceEpoch(_d.lastHealthSyncMs!);
 
-  int get systemReadiness {
-    if (_d.muscles.isEmpty) return 0;
-    final now = _clock();
-    final total = _d.muscles.values.fold(0.0, (acc, m) => acc + m.recoveryAt(now));
-    return ((total / _d.muscles.length) * 100).round();
-  }
+  /// Восстановление мышц по типовой оценке: сколько групп восстановлено, какие ещё нет и сколько им осталось.
+  /// Заменяет прежний единый процент «готовности тела» (среднее оценок с точностью до процента).
+  RecoveryOverview get recovery => recoveryOverview(_d.muscles, _clock());
 
   /// Подписи последних 7 дней, заканчивая сегодняшним.
   List<String> get weekLabels {
@@ -146,15 +175,15 @@ class AppController extends ChangeNotifier {
   List<double> metricSeries(String key) {
     switch (key) {
       case 'calories':
-        return _d.caloriesWeekHistory;
+        return caloriesWeekHistory;
       case 'chest':
         return progression('chest');
       case 'quads':
         return progression('quads');
       case 'graph':
-        return _d.graphEvolutionHistory;
+        return graphEvolutionHistory;
       default:
-        return _d.stepsWeekHistory;
+        return stepsWeekHistory;
     }
   }
 
@@ -276,18 +305,14 @@ class AppController extends ChangeNotifier {
     }
     final diff = today.difference(last).inDays;
     if (diff <= 0) return; // тот же день (или часы переведены назад) — ничего не трогаем
-    for (int i = 0; i < min(diff, 7); i++) {
-      push7(_d.stepsWeekHistory, 0);
-      push7(_d.caloriesWeekHistory, 0);
-      push7(_d.graphEvolutionHistory, _d.graphNodes.length.toDouble());
-    }
+    // снимок прошедшего дня уже записан; пропущенные дни остаются без снимков — «нет данных»
     _d.dailySteps = 0;
     _d.activeCalories = 0;
     _d.proteinGrams = 0;
     _d.lastDay = dayKey(now);
   }
 
-  /// Подписи «системных» узлов графа и последние точки историй всегда отражают реальные цифры.
+  /// Подписи «системных» узлов графа и снимок текущего дня всегда отражают реальные цифры.
   void _syncDerived() {
     void set(String id, String label) {
       for (final n in _d.graphNodes) {
@@ -301,14 +326,58 @@ class AppController extends ChangeNotifier {
     set('n_activity', 'Шаги: ${(_d.dailySteps / 1000).toStringAsFixed(1)}k');
     final chest = _d.muscles['chest'];
     if (chest != null) set('n_chest', 'Грудь (1RM ${chest.maxWeight.toInt()})');
-
-    if (_d.graphEvolutionHistory.isNotEmpty) {
-      _d.graphEvolutionHistory[_d.graphEvolutionHistory.length - 1] = _d.graphNodes.length.toDouble();
+    for (final n in _d.graphNodes) {
+      final r = n.ref;
+      final title = r == null ? null : refTitle(r);
+      if (title != null) n.label = title; // сущность удалена — узел хранит последнее название
     }
-    if (_d.stepsWeekHistory.isNotEmpty) _d.stepsWeekHistory[_d.stepsWeekHistory.length - 1] = _d.dailySteps.toDouble();
-    if (_d.caloriesWeekHistory.isNotEmpty) _d.caloriesWeekHistory[_d.caloriesWeekHistory.length - 1] = _d.activeCalories.toDouble();
 
+    _touchToday();
     _syncGoals();
+  }
+
+  // ---------------- дневные снимки ----------------
+
+  /// Записывает снимок, если он изменился ([before] — подпись до изменения; null — снимка не было).
+  void _putSnapshot(DaySnapshot x, String? before) {
+    if (before == x.signature) return;
+    if (before == null && _d.snapshots.length >= kMaxSnapshots) {
+      AppLog.e('Дневных снимков больше $kMaxSnapshots — новый день не записан');
+      return;
+    }
+    _d.snapshots[x.day] = x;
+    _pending.upsertSnapshot(x);
+  }
+
+  /// Снимок текущего дня = текущие значения. Нулевые шаги, калории и белок считаются «не введено»,
+  /// пока за день не было ненулевого значения (после него ноль — это исправление пользователя).
+  void _touchToday({String? activitySource}) {
+    final key = dayKey(_clock());
+    final existing = _d.snapshots[key];
+    final x = existing ?? DaySnapshot(day: key);
+    final before = existing?.signature;
+    int? keep(int v, int? old) => v > 0 || old != null ? v : null;
+    x
+      ..steps = keep(_d.dailySteps, x.steps)
+      ..activeCalories = keep(_d.activeCalories, x.activeCalories)
+      ..protein = keep(_d.proteinGrams, x.protein)
+      ..netWorth = _d.netWorth
+      ..graphNodes = _d.graphNodes.length;
+    if (activitySource != null && (x.steps != null || x.activeCalories != null)) x.activitySource = activitySource;
+    _putSnapshot(x, before);
+  }
+
+  /// Данные источника за прошедший день (Health Connect): дополняют снимок того дня.
+  void _recordPastActivity(DateTime day, {int? steps, int? calories}) {
+    if (steps == null && calories == null) return;
+    final key = dayKey(day);
+    final existing = _d.snapshots[key];
+    final x = existing ?? DaySnapshot(day: key);
+    final before = existing?.signature;
+    if (steps != null) x.steps = steps;
+    if (calories != null) x.activeCalories = calories;
+    x.activitySource = 'health';
+    _putSnapshot(x, before);
   }
 
   /// Чекпоинты, привязанные к метрикам, выполняются автоматически; достижение за цель выдаётся один раз
@@ -443,6 +512,7 @@ class AppController extends ChangeNotifier {
         if (steps != null) _d.dailySteps = max(0, steps);
         if (calories != null) _d.activeCalories = max(0, calories);
         if (protein != null) _d.proteinGrams = max(0, protein);
+        if (steps != null || calories != null) _touchToday(activitySource: 'manual');
       });
 
   // ---------------- граф ----------------
@@ -495,13 +565,63 @@ class AppController extends ChangeNotifier {
     final newLabel = label?.trim();
     if (newLabel != null && newLabel.isEmpty) return false;
     _commit(() {
-      if (newLabel != null && !autoNodeIds.contains(id)) n.label = newLabel;
+      // подпись связанного узла берётся из процесса или цели
+      if (newLabel != null && !autoNodeIds.contains(id) && !_refExists(n.ref)) n.label = newLabel;
       if (category != null && category != n.category) {
         n.category = category;
         n.color = nodeColorFor(category);
       }
     });
     return true;
+  }
+
+  // ---------------- граф: связь с процессами и целями ----------------
+
+  bool _refExists(NodeRef? r) => r != null && refTitle(r) != null;
+
+  /// Название процесса или цели по ссылке; null — сущность удалена (узел хранит последнее название).
+  String? refTitle(NodeRef r) => switch (r.type) {
+        NodeRef.process => processById(r.id)?.title,
+        _ => _goal(r.id)?.title,
+      };
+
+  /// Узел, уже связанный с этой сущностью (одна сущность — один узел).
+  GraphNode? nodeForRef(NodeRef r) {
+    for (final n in _d.graphNodes) {
+      if (n.ref == r) return n;
+    }
+    return null;
+  }
+
+  /// Сфера графа по измерению: тело → «gym», материальное → «wealth», разум → «mind».
+  String _categoryFor(NodeRef r) {
+    final dims = r.type == NodeRef.process ? (processById(r.id)?.dimensions ?? const []) : goalFactOf(r.id).dimensions;
+    if (dims.isEmpty) return 'mind';
+    return switch (dims.first) { LifeDimension.body => 'gym', LifeDimension.material => 'wealth', _ => 'mind' };
+  }
+
+  /// Связывает узел с процессом или целью ([ref] = null снимает связь). Системные узлы не связываются.
+  bool linkNode(String nodeId, NodeRef? ref) {
+    final n = nodeById(nodeId);
+    if (n == null || autoNodeIds.contains(nodeId)) return false;
+    if (ref != null) {
+      final title = refTitle(ref);
+      final taken = nodeForRef(ref);
+      if (title == null || (taken != null && taken.id != nodeId)) return false;
+    }
+    _commit(() => n.ref = ref); // подпись подставит _syncDerived
+    return true;
+  }
+
+  /// Новый узел для процесса или цели. Возвращает id узла (существующего, если уже есть) или null.
+  String? addNodeFor(NodeRef ref) {
+    final existing = nodeForRef(ref);
+    if (existing != null) return existing.id;
+    final title = refTitle(ref);
+    if (title == null || !addNode(title, _categoryFor(ref))) return null;
+    final n = _d.graphNodes.last;
+    _commit(() => n.ref = ref);
+    return n.id;
   }
 
   void deleteNode(String id) => _commit(() {
@@ -589,6 +709,14 @@ class AppController extends ChangeNotifier {
     return true;
   }
 
+  /// План ресурсов цели (минуты, рубли); null или пустой план снимает его. Значения должны быть > 0.
+  bool setGoalPlan(String goalId, GoalPlan? plan) {
+    final g = _goal(goalId);
+    if (g == null || (plan != null && !plan.isValid)) return false;
+    _commit(() => g.plan = plan == null || plan.isEmpty ? null : plan);
+    return true;
+  }
+
   void removeGoal(String goalId) => _commit(() => _d.goals.removeWhere((g) => g.id == goalId));
 
   /// Добавить чекпоинт. С [link] он будет выполняться автоматически; пустое название генерируется из метрики.
@@ -661,12 +789,19 @@ class AppController extends ChangeNotifier {
   /// Версии события от первой к последней.
   List<LifeEvent> eventRevisions(String id) => revisionChain(_d.events, id);
 
-  /// Актуальные события, ведущие к цели.
-  List<LifeEvent> eventsForGoal(String goalId) => [for (final e in events) if (e.goalIds.contains(goalId)) e];
+  /// Актуальные события цели: связанные с ней напрямую или через процесс, который ей служит.
+  List<LifeEvent> eventsForGoal(String goalId) => goalEvents(goalId, events, _d.processes);
+
+  /// Что уже вложено в цель: ресурсы, число событий (напрямую / через процессы), затронутые измерения.
+  GoalFact goalFactOf(String goalId) => goalFact(goalId, events, _d.processes);
 
   /// Сводка ресурсов за период [from, to) по актуальным событиям.
   ResourceSummary resourceSummary({required DateTime from, required DateTime to, String? dimension}) =>
       summarizeResources(events, from: from, to: to, dimension: dimension);
+
+  /// Распределение ресурсов за [days] дней, заканчивающихся сегодня: по измерениям, процессам, с прошлым периодом.
+  ResourceBreakdown resourceBreakdownFor(int days) =>
+      resourceBreakdown(current: events, transactions: _d.transactions, now: _clock(), days: days);
 
   /// Фиксирует событие. Возвращает id или null (неверные данные, событие в будущем, журнал полон).
   String? addEvent({
@@ -677,6 +812,7 @@ class AppController extends ChangeNotifier {
     String note = '',
     ResourceCost cost = ResourceCost.none,
     Iterable<String> goalIds = const [],
+    Iterable<String> processIds = const [],
     Iterable<EventRef> refs = const [],
     String source = EventSource.manual,
   }) =>
@@ -688,6 +824,7 @@ class AppController extends ChangeNotifier {
         note: note,
         cost: cost,
         goalIds: goalIds,
+        processIds: processIds,
         refs: refs,
         source: source,
       );
@@ -703,6 +840,7 @@ class AppController extends ChangeNotifier {
     String note = '',
     ResourceCost cost = ResourceCost.none,
     Iterable<String> goalIds = const [],
+    Iterable<String> processIds = const [],
     Iterable<EventRef>? refs,
   }) {
     final old = eventById(id);
@@ -715,6 +853,7 @@ class AppController extends ChangeNotifier {
       note: note,
       cost: cost,
       goalIds: goalIds,
+      processIds: processIds,
       refs: refs ?? old.refs,
       source: old.source,
       supersedesId: old.id,
@@ -729,6 +868,7 @@ class AppController extends ChangeNotifier {
     required String note,
     required ResourceCost cost,
     required Iterable<String> goalIds,
+    required Iterable<String> processIds,
     required Iterable<EventRef> refs,
     required String source,
     String? supersedesId,
@@ -751,6 +891,7 @@ class AppController extends ChangeNotifier {
       note: note.trim(),
       cost: cost,
       goalIds: goalIds,
+      processIds: processIds,
       refs: refs,
       source: source,
       supersedesId: supersedesId,
@@ -801,6 +942,94 @@ class AppController extends ChangeNotifier {
       ids.forEach(_pending.deleteEvent);
     });
     return ids.length;
+  }
+
+  // ---------------- процессы ----------------
+  //
+  // Процесс — рамка для событий: всё вложенное в него считается по событиям с его id.
+  // Смена статуса дописывается в журнал статусов процесса, прежние статусы сохраняются.
+
+  List<LifeProcess> get processes => List.unmodifiable(_d.processes);
+
+  LifeProcess? processById(String id) {
+    for (final p in _d.processes) {
+      if (p.id == id) return p;
+    }
+    return null;
+  }
+
+  /// Актуальные события процесса, по возрастанию времени.
+  List<LifeEvent> eventsForProcess(String processId) => [for (final e in events) if (e.processIds.contains(processId)) e];
+
+  /// Ресурсы, вложенные в процесс за всё время, первое и последнее событие.
+  ProcessActivity processActivityOf(String processId) => processActivity(events, processId);
+
+  /// Начинает процесс. [startedAt] — когда он фактически начался (можно задним числом, не в будущем).
+  /// Возвращает id или null.
+  String? addProcess({
+    required String title,
+    required Iterable<String> dimensions,
+    String description = '',
+    Iterable<String> goalIds = const [],
+    DateTime? startedAt,
+  }) {
+    if (_d.processes.length >= kMaxProcesses) return null;
+    final now = _clock();
+    final start = startedAt ?? now;
+    if (start.isAfter(now.add(const Duration(minutes: 5)))) return null;
+    final p = LifeProcess(
+      id: 'proc_${now.microsecondsSinceEpoch}_${_random.nextInt(1 << 20)}',
+      title: title.trim(),
+      description: description.trim(),
+      dimensions: dimensions.where(LifeDimension.isValid),
+      goalIds: goalIds,
+      createdAt: now,
+      statusLog: [ProcessStatusChange(at: start, status: ProcessStatus.active)],
+    );
+    if (!p.isValid) return null;
+    _commit(() => _d.processes.add(p));
+    return p.id;
+  }
+
+  /// Меняет описание процесса (название, измерения, цели). Статус меняется только через [setProcessStatus].
+  bool updateProcess(String id, {required String title, required Iterable<String> dimensions, String description = '', Iterable<String> goalIds = const []}) {
+    final p = processById(id);
+    if (p == null) return false;
+    final dims = LifeEvent.normalizeDimensions(dimensions.where(LifeDimension.isValid));
+    final t = title.trim();
+    final desc = description.trim();
+    final goals = goalIds.toSet().toList();
+    if (t.isEmpty || t.length > LifeProcess.maxTitle || desc.length > LifeProcess.maxDescription || dims.isEmpty || goals.length > LifeEvent.maxLinks) {
+      return false;
+    }
+    _commit(() {
+      p
+        ..title = t
+        ..description = desc
+        ..dimensions = dims
+        ..goalIds = goals;
+    });
+    return true;
+  }
+
+  /// Новая запись в журнале статусов. Тот же статус повторно не пишется.
+  bool setProcessStatus(String id, String status, {String note = ''}) {
+    final p = processById(id);
+    if (p == null || !ProcessStatus.isValid(status) || p.status == status) return false;
+    if (p.statusLog.length >= LifeProcess.maxLog || note.length > ProcessStatusChange.maxNote) return false;
+    final now = _clock();
+    // часы могли уйти назад — журнал статусов всё равно остаётся упорядоченным
+    final at = now.isBefore(p.statusLog.last.at) ? p.statusLog.last.at : now;
+    _commit(() => p.statusLog.add(ProcessStatusChange(at: at, status: status, note: note.trim())));
+    return true;
+  }
+
+  /// Удаляет процесс НАВСЕГДА (только явно). События остаются: в них сохраняется ссылка на удалённый процесс.
+  bool removeProcess(String id) {
+    final i = _d.processes.indexWhere((p) => p.id == id);
+    if (i < 0) return false;
+    _commit(() => _d.processes.removeAt(i));
+    return true;
   }
 
   // ---------------- финансы ----------------
@@ -1097,13 +1326,14 @@ class AppController extends ChangeNotifier {
         for (final d in days) {
           final idx = 6 - (dayIndex(today) - dayIndex(d.day));
           if (idx < 0 || idx > 6) continue;
-          if (d.steps != null) _d.stepsWeekHistory[idx] = d.steps!.toDouble();
-          if (d.activeCalories != null) _d.caloriesWeekHistory[idx] = d.activeCalories!.toDouble();
-          if (idx == 6) {
+          if (idx < 6) {
+            _recordPastActivity(d.day, steps: d.steps, calories: d.activeCalories);
+          } else {
             if (d.steps != null) _d.dailySteps = d.steps!;
             if (d.activeCalories != null) _d.activeCalories = d.activeCalories!;
             final p = d.protein;
             if (p != null && p > 0) _d.proteinGrams = p;
+            _touchToday(activitySource: 'health');
           }
         }
         _d.lastHealthSyncMs = now.millisecondsSinceEpoch;

@@ -1,3 +1,4 @@
+import '../models/day_snapshot.dart';
 import '../models/life_event.dart';
 import '../models/models.dart';
 
@@ -14,10 +15,11 @@ class ChangeSet {
   final Set<String> txDeletes = {};
   final Map<String, LifeEvent> eventUpserts = {};
   final Set<String> eventDeletes = {};
+  final Map<String, DaySnapshot> snapshotUpserts = {}; // по ключу дня
 
   ChangeSet({this.full = false});
 
-  bool get isEmpty => !full && setUpserts.isEmpty && setDeletes.isEmpty && txUpserts.isEmpty && txDeletes.isEmpty && eventUpserts.isEmpty && eventDeletes.isEmpty;
+  bool get isEmpty => !full && setUpserts.isEmpty && setDeletes.isEmpty && txUpserts.isEmpty && txDeletes.isEmpty && eventUpserts.isEmpty && eventDeletes.isEmpty && snapshotUpserts.isEmpty;
 
   void upsertSet(WorkoutSet s) {
     setDeletes.remove(s.id);
@@ -49,6 +51,9 @@ class ChangeSet {
     eventDeletes.add(id);
   }
 
+  /// Снимок пишется копией: дальнейшие правки текущего дня не меняют уже поставленное в очередь.
+  void upsertSnapshot(DaySnapshot s) => snapshotUpserts[s.day] = s.copy();
+
   /// Переписать журналы целиком; точечные записи при этом не нужны.
   void markFull() {
     full = true;
@@ -58,5 +63,6 @@ class ChangeSet {
     txDeletes.clear();
     eventUpserts.clear();
     eventDeletes.clear();
+    snapshotUpserts.clear();
   }
 }

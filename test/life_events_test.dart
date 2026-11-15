@@ -304,6 +304,7 @@ void main() {
       c1.logWorkout('chest', 80, 5);
       await c1.flush();
       await v1.execute('DROP TABLE life_events');
+      await v1.execute('DROP TABLE day_snapshots'); // в v1 не было и её
       await v1.setVersion(1);
       await v1.close();
 

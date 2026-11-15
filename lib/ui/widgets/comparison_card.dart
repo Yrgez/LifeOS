@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
-import '../../core/utils.dart';
 import '../../state/app_controller.dart';
 import '../painters/chart_painters.dart';
 import 'form_dialog.dart';
@@ -53,16 +52,10 @@ class _ComparisonCardState extends State<ComparisonCard> {
     final allDays = c.weekLabels;
     final labels = bothWeekly ? allDays.sublist(allDays.length - n) : List.generate(n, (i) => '${i + 1}');
 
-    final r = pearson(seriesA, seriesB);
-    String corrText;
-    if (r == null) {
-      corrText = 'Недостаточно данных для корреляции';
-    } else {
-      final abs = r.abs();
-      final strength = abs >= 0.7 ? 'сильная' : (abs >= 0.4 ? 'умеренная' : 'слабая');
-      final dir = abs < 0.2 ? '' : (r > 0 ? ' положительная' : ' отрицательная');
-      corrText = 'Корреляция Пирсона: r = ${r.toStringAsFixed(2)} ($strength$dir, n = $n)';
-    }
+    // Коэффициент корреляции по 7 точкам не говорит о связи ничего надёжного (и дни без данных здесь — нули),
+    // поэтому число и вердикт не показываются: только сами кривые и честное число точек.
+    final corrText = 'Точек: $n. Этого мало для вывода о связи — сравнивайте форму кривых сами; '
+        'дни без данных показаны нулём.';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -81,7 +74,7 @@ class _ComparisonCardState extends State<ComparisonCard> {
                 children: [
                   Icon(Icons.compare_arrows, color: Colors.cyanAccent, size: 18),
                   SizedBox(width: 8),
-                  Text('СРАВНЕНИЕ И КОРРЕЛЯЦИЯ', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
+                  Text('СРАВНЕНИЕ МЕТРИК', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
                 ],
               ),
               Container(
@@ -136,7 +129,7 @@ class _ComparisonCardState extends State<ComparisonCard> {
           const SizedBox(height: 8),
           Text(corrText, style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600)),
           const SizedBox(height: 2),
-          const Text('Кривые нормализованы по шкале 0–100% для выявления взаимной корреляции.', style: TextStyle(color: Colors.white38, fontSize: 10)),
+          const Text('Каждая кривая приведена к своему диапазону (от минимума до максимума), чтобы сравнить форму.', style: TextStyle(color: Colors.white38, fontSize: 10)),
         ],
       ),
     );

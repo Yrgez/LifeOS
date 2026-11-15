@@ -10,6 +10,7 @@ import '../../state/app_controller.dart';
 import '../painters/chart_painters.dart';
 import '../painters/graph_painter.dart';
 import '../widgets/form_dialog.dart';
+import 'events_screen.dart';
 
 const _categoryNames = {
   'mind': 'Смыслы / Цели',
@@ -147,20 +148,48 @@ class _GraphScreenState extends State<GraphScreen> {
 
   // ---------------- диалоги ----------------
 
+  /// Варианты связи узла: процессы и цели (уже связанные с другим узлом не предлагаются).
+  Map<String, String> _refOptions({GraphNode? node}) {
+    bool free(NodeRef r) => c.nodeForRef(r) == null || c.nodeForRef(r)!.id == node?.id;
+    return {
+      '': 'Не связан',
+      for (final p in c.processes)
+        if (free(NodeRef(NodeRef.process, p.id))) 'process:${p.id}': 'Процесс: ${p.title}',
+      for (final g in c.goals)
+        if (free(NodeRef(NodeRef.goal, g.id))) 'goal:${g.id}': 'Цель: ${g.title}',
+      // связь с удалённой сущностью остаётся выбранной, пока её не сменят явно
+      if (node?.ref != null && c.refTitle(node!.ref!) == null) _refKey(node.ref): '${node.label} (удалён)',
+    };
+  }
+
+  static NodeRef? _parseRef(String v) {
+    final i = v.indexOf(':');
+    return i < 0 ? null : NodeRef(v.substring(0, i), v.substring(i + 1));
+  }
+
+  static String _refKey(NodeRef? r) => r == null ? '' : '${r.type}:${r.id}';
+
   Future<void> _addNodeDialog() async {
+    final refs = _refOptions();
     final r = await showFormDialog(
       context,
       title: 'Создать узел графа',
       actionLabel: 'Создать',
       accent: AppColors.violet,
-      fields: const [
-        FieldSpec('title', 'Название узла'),
-        FieldSpec('cat', 'Сфера жизни', initial: 'mind', options: _categoryNames),
+      fields: [
+        if (refs.length > 1) FieldSpec('ref', 'Связать с процессом или целью', initial: '', options: refs),
+        const FieldSpec('title', 'Название узла (для связанного — из процесса/цели)'),
+        const FieldSpec('cat', 'Сфера жизни', initial: 'mind', options: _categoryNames),
       ],
-      validate: (v) => v['title']!.isNotEmpty,
+      validate: (v) => v['title']!.isNotEmpty || (v['ref'] ?? '').isNotEmpty,
     );
     if (r == null || !mounted) return;
-    c.addNode(r['title']!, r['cat']!);
+    final ref = _parseRef(r['ref'] ?? '');
+    if (ref != null) {
+      c.addNodeFor(ref);
+    } else {
+      c.addNode(r['title']!, r['cat']!);
+    }
   }
 
   Future<void> _editNodeDialog(GraphNode n) async {
@@ -171,14 +200,16 @@ class _GraphScreenState extends State<GraphScreen> {
       actionLabel: 'Сохранить',
       accent: AppColors.violet,
       fields: [
-        // подписи «живых» узлов подставляются из данных — переименовать их нельзя
-        if (!auto) FieldSpec('title', 'Название узла', initial: n.label),
+        // подписи «живых» и связанных узлов подставляются из данных — переименовать их нельзя
+        if (!auto && n.ref == null) FieldSpec('title', 'Название узла', initial: n.label),
+        if (!auto) FieldSpec('ref', 'Связь с процессом или целью', initial: _refKey(n.ref), options: _refOptions(node: n)),
         FieldSpec('cat', 'Сфера жизни', initial: n.category, options: _categoryNames),
       ],
-      validate: (v) => auto || v['title']!.isNotEmpty,
+      validate: (v) => auto || n.ref != null || v['title']!.isNotEmpty,
     );
     if (r == null || !mounted) return;
-    c.updateNode(n.id, label: auto ? null : r['title'], category: r['cat']);
+    c.updateNode(n.id, label: auto || n.ref != null ? null : r['title'], category: r['cat']);
+    if (!auto && r['ref'] != _refKey(n.ref)) c.linkNode(n.id, _parseRef(r['ref'] ?? ''));
   }
 
   Future<void> _addEdgeDialog([String? fromId]) async {
@@ -441,6 +472,7 @@ class _GraphScreenState extends State<GraphScreen> {
           '${_categoryNames[node.category] ?? node.category}${auto ? ' • значение обновляется автоматически' : ''}',
           style: const TextStyle(color: Colors.white38, fontSize: 10),
         ),
+        if (node.ref != null) _refLine(node.ref!),
         const SizedBox(height: 8),
         if (links.isEmpty)
           const Text('Связей нет — свяжите узел с другими, чтобы увидеть влияние', style: TextStyle(color: AppColors.amber, fontSize: 11))
@@ -503,6 +535,28 @@ class _GraphScreenState extends State<GraphScreen> {
           ],
         ),
       ],
+    );
+  }
+
+  /// Строка связи узла: что это за сущность, переход к ней, или пометка, что она удалена.
+  Widget _refLine(NodeRef ref) {
+    final title = c.refTitle(ref);
+    final kind = ref.type == NodeRef.process ? 'Процесс' : 'Цель';
+    if (title == null) {
+      return Text('$kind удалён(а) — узел хранит последнее название', style: const TextStyle(color: AppColors.amber, fontSize: 11));
+    }
+    final open = ref.type == NodeRef.process
+        ? EventsScreen(controller: c, processId: ref.id)
+        : EventsScreen(controller: c, goalId: ref.id);
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: TextButton.icon(
+        key: const ValueKey('node_ref_open'),
+        style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 30)),
+        onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => open)),
+        icon: Icon(ref.type == NodeRef.process ? Icons.autorenew : Icons.track_changes, size: 14),
+        label: Text('$kind: события и ресурсы', style: const TextStyle(fontSize: 11)),
+      ),
     );
   }
 

@@ -44,7 +44,7 @@ class _MindScreenState extends State<MindScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('СТРАТЕГИЧЕСКИЕ ЦЕЛИ', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const Flexible(child: Text('СТРАТЕГИЧЕСКИЕ ЦЕЛИ', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
               IconButton(onPressed: _addNewGoalDialog, icon: const Icon(Icons.add_circle, color: AppColors.violet, size: 28)),
             ],
           ),
@@ -54,7 +54,7 @@ class _MindScreenState extends State<MindScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('ИСТОРИЯ ДОСТИЖЕНИЙ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Flexible(child: Text('ИСТОРИЯ ДОСТИЖЕНИЙ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
               IconButton(onPressed: _addNewAchievementDialog, icon: const Icon(Icons.add_circle, color: AppColors.green, size: 28)),
             ],
           ),

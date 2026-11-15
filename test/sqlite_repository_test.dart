@@ -200,14 +200,14 @@ void main() {
       expect(await count('workout_sets'), 2);
     });
 
-    test('изменение скаляра и недельной истории', () async {
+    test('изменение скаляра и дневного снимка', () async {
       final repo = repoOn(db);
       final d = rich();
       await repo.save(d);
       final before = await changes();
       d.netWorth += 1;
-      d.stepsWeekHistory[6] = 1234;
-      await repo.save(d, changes: ChangeSet());
+      final snap = d.snapshots['2026-10-24']!..steps = 1234;
+      await repo.save(d, changes: ChangeSet()..upsertSnapshot(snap));
       expect(await changes() - before, 2);
     });
 

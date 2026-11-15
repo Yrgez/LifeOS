@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:life_os/app.dart';
 import 'package:life_os/data/app_data.dart';
 import 'package:life_os/data/app_repository.dart';
+import 'package:life_os/models/life_event.dart';
+import 'package:life_os/models/models.dart';
 import 'package:life_os/state/app_controller.dart';
 
 /// Дымовые тесты интерфейса: после разбиения на экраны проверяют, что каждая вкладка строится,
@@ -79,6 +81,123 @@ void main() {
     await tester.pumpAndSettle();
     expect(c.events, isEmpty);
     expect(c.allEvents, hasLength(1)); // в истории осталось
+
+    await shutdown(tester, c);
+  });
+
+  testWidgets('процессы: создать, записать событие в процесс, сменить статус', (tester) async {
+    final c = await boot(tester);
+    await tester.tap(find.byKey(const ValueKey('open_processes')));
+    await tester.pumpAndSettle();
+    expect(find.text('ПРОЦЕССЫ'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('add_process')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('process_title')), 'Изучение Java');
+    await tester.tap(find.byKey(const ValueKey('pdim_mind')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('process_save')));
+    await tester.pumpAndSettle();
+    final p = c.processes.single;
+
+    await tester.tap(find.text('Изучение Java'));
+    await tester.pumpAndSettle();
+    expect(find.text('ЖУРНАЛ СТАТУСОВ'), findsOneWidget);
+
+    // событие с экрана процесса сразу относится к нему и к его измерениям
+    await tester.tap(find.byKey(const ValueKey('add_event')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('event_title')), 'Урок 1');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('event_save')));
+    await tester.pumpAndSettle();
+    expect(c.eventsForProcess(p.id).single.title, 'Урок 1');
+    expect(c.events.single.dimensions, ['mind']);
+
+    await tester.tap(find.byKey(const ValueKey('process_menu')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Статус: На паузе'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Сохранить'));
+    await tester.pumpAndSettle();
+    expect(c.processById(p.id)!.status, 'paused');
+
+    await shutdown(tester, c);
+  });
+
+  testWidgets('ресурсы: карточка на HUB открывает экран, периоды переключаются', (tester) async {
+    final c = await boot(tester);
+    final p = c.addProcess(title: 'Изучение Java', dimensions: ['mind'])!;
+    c.addEvent(title: 'Урок', dimensions: ['mind', 'material'], processIds: [p], cost: const ResourceCost(minutes: 90, money: 1500, energy: 3));
+    c.addEvent(title: 'Пробежка', dimensions: ['body'], cost: const ResourceCost(minutes: 30));
+    await tester.pumpAndSettle();
+    expect(find.text('РЕСУРСЫ ЗА 7 ДНЕЙ'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('open_resources')));
+    await tester.pumpAndSettle();
+    expect(find.text('ПО ИЗМЕРЕНИЯМ'), findsOneWidget);
+    expect(find.text('Изучение Java'), findsOneWidget);
+    expect(find.text('Вне процессов'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('period_365')));
+    await tester.pumpAndSettle();
+    expect(find.text('ПО ПРОЦЕССАМ'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await shutdown(tester, c);
+  });
+
+  testWidgets('хроника: карточка на HUB открывает ленту, тихие дни включаются', (tester) async {
+    final c = await boot(tester);
+    c.addEvent(title: 'Первая тренировка', dimensions: ['body']);
+    c.addProcess(title: 'Бег', dimensions: ['body']);
+    await tester.pumpAndSettle();
+    expect(find.text('ХРОНИКА'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('open_chronicle')));
+    await tester.pumpAndSettle();
+    expect(find.text('Первая тренировка'), findsOneWidget);
+    expect(find.text('Начат процесс «Бег»'), findsOneWidget);
+    expect(find.text('Подушка безопасности 1 000 000 ₽'), findsOneWidget); // достижение из примеров, по месяцу
+
+    await tester.tap(find.byKey(const ValueKey('quiet_days')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+
+    await shutdown(tester, c);
+  });
+
+  testWidgets('цели: план ресурсов и факт из событий, переход к событиям цели', (tester) async {
+    final c = await boot(tester);
+    c.addGoal('Стать Java-разработчиком', 'Карьера', ['Основы']);
+    final g = c.goals.last.id;
+    c.setGoalPlan(g, const GoalPlan(minutes: 6000));
+    c.addEvent(title: 'Урок Java', dimensions: ['mind'], goalIds: [g], cost: const ResourceCost(minutes: 90));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('СМЫСЛЫ'));
+    await tester.pumpAndSettle();
+    expect(find.text('Время: 1 ч 30 мин из 100 ч по плану'), findsOneWidget);
+
+    await tester.tap(find.byKey(ValueKey('goal_events_$g')));
+    await tester.pumpAndSettle();
+    expect(find.text('Урок Java'), findsOneWidget);
+    expect(find.text('Стать Java-разработчиком'), findsWidgets); // заголовок экрана
+
+    await shutdown(tester, c);
+  });
+
+  testWidgets('без ложной точности: восстановление счётом, граф со связанным узлом удалённого процесса', (tester) async {
+    final c = await boot(tester);
+    expect(find.textContaining('Восстановлено '), findsOneWidget);
+    expect(find.textContaining('Готовность тела'), findsNothing);
+
+    final p = c.addProcess(title: 'Изучение Java', dimensions: ['mind'])!;
+    c.addNodeFor(NodeRef(NodeRef.process, p));
+    c.removeProcess(p);
+    await tester.tap(find.text('ГРАФ'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.textContaining('Корреляция Пирсона'), findsNothing);
 
     await shutdown(tester, c);
   });

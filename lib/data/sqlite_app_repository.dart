@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:sqflite_common/sqlite_api.dart';
 
 import '../core/app_log.dart';
+import '../models/day_snapshot.dart';
 import '../models/life_event.dart';
 import '../models/models.dart';
 import 'app_data.dart';
@@ -12,13 +13,13 @@ import 'change_set.dart';
 
 /// Версия SQL-схемы (PRAGMA user_version). Менять при изменении таблиц и добавлять шаг в [_onUpgrade].
 /// Не путать с [kSchemaVersion] — это версия формата JSON (резервные копии, поля AppData).
-/// 2 — таблица `life_events`.
-const int kDbVersion = 2;
+/// 2 — таблица `life_events`. 3 — таблица `day_snapshots` (недельные массивы из `kv` переносятся в неё при загрузке).
+const int kDbVersion = 3;
 
 /// Хранилище в SQLite.
 ///
-/// * Крупные журналы — отдельные таблицы с индексами: `workout_sets`, `money_tx`, `life_events`.
-/// * Небольшие списки (мышцы, цели, узлы графа…) — таблица `docs` (коллекция, id, позиция, JSON).
+/// * Крупные журналы — отдельные таблицы с индексами: `workout_sets`, `money_tx`, `life_events`, `day_snapshots`.
+/// * Небольшие списки (мышцы, цели, узлы графа, процессы…) — таблица `docs` (коллекция, id, позиция, JSON).
 /// * Скаляры и недельные истории — таблица `kv`.
 ///
 /// Запись **инкрементальная** на двух уровнях:
@@ -46,11 +47,11 @@ class SqliteAppRepository implements AppRepository {
 
   static const _kvKeys = [
     'netWorth', 'monthlyIncome', 'monthlyExpense', 'dailySteps', 'activeCalories', 'proteinGrams', 'lastDay',
-    'healthEnabled', 'lastHealthSyncMs', 'stepsWeekHistory', 'caloriesWeekHistory', 'graphEvolutionHistory',
+    'healthEnabled', 'lastHealthSyncMs',
     'userName', 'stepsGoal', 'proteinGoal', 'onboardingDone',
   ];
 
-  static const _listCollections = ['goals', 'achievements', 'salaryHistory', 'graphNodes', 'graphEdges', 'recurring'];
+  static const _listCollections = ['goals', 'achievements', 'salaryHistory', 'graphNodes', 'graphEdges', 'recurring', 'processes'];
 
   // ---------------- открытие и схема ----------------
 
@@ -69,7 +70,10 @@ class SqliteAppRepository implements AppRepository {
   }
 
   /// Таблицы схемы. Миграция шифрования копирует именно их: новая таблица обязана попасть сюда.
-  static const tables = ['kv', 'docs', 'workout_sets', 'money_tx', 'life_events'];
+  static const tables = ['kv', 'docs', 'workout_sets', 'money_tx', 'life_events', 'day_snapshots'];
+
+  /// Ключи `kv` недельных массивов (до версии базы 3). Читаются один раз — для переноса в снимки.
+  static const _legacyWeeklyKeys = ['stepsWeekHistory', 'caloriesWeekHistory', 'graphEvolutionHistory'];
 
   // база новее приложения: ничего не трогаем, контроллер переходит в режим «только чтение»
   static Future<void> onDowngradeSchema(Database db, int oldVersion, int newVersion) =>
@@ -102,7 +106,11 @@ class SqliteAppRepository implements AppRepository {
     await db.execute('CREATE INDEX idx_tx_ts ON money_tx (ts)');
     await db.execute('CREATE INDEX idx_tx_category ON money_tx (category_id, ts)');
     await _createEventsTable(db);
+    await _createSnapshotsTable(db);
   }
+
+  static Future<void> _createSnapshotsTable(Database db) =>
+      db.execute('CREATE TABLE day_snapshots (day TEXT PRIMARY KEY, body TEXT NOT NULL)');
 
   /// События: время — отдельной колонкой (индекс для будущих выборок по периоду), остальное — JSON.
   /// Формат события богаче и будет расти — JSON избавляет от миграции таблицы на каждое новое поле.
@@ -114,6 +122,7 @@ class SqliteAppRepository implements AppRepository {
   static Future<void> onUpgradeSchema(Database db, int oldVersion, int newVersion) async {
     // Шаги миграции: каждый — для перехода со своей версии; выполняются по порядку.
     if (oldVersion < 2) await _createEventsTable(db);
+    if (oldVersion < 3) await _createSnapshotsTable(db);
   }
 
   Future<Database> _open() async => _db ??= await opener();
@@ -159,6 +168,7 @@ class SqliteAppRepository implements AppRepository {
     final v = (j['schemaVersion'] as num?)?.toInt() ?? 1;
     if (v > kSchemaVersion) throw SchemaTooNewException(v);
     final data = AppData.fromJson(j);
+    if (!j.containsKey('snapshots')) await _finishWeeklyMigration(db, data);
     _snapshotFrom(data.toJson(includeLogs: false));
     AppLog.d('SQLite: загрузка — ${data.workoutSets.length} подходов, ${data.transactions.length} операций, ${data.events.length} событий, ${sw.elapsedMilliseconds} мс');
     return data;
@@ -220,6 +230,15 @@ class SqliteAppRepository implements AppRepository {
           'rid': r['recurring_id'],
         },
     ];
+    final snaps = await db.query('day_snapshots', orderBy: 'day');
+    final legacyWeekly = _legacyWeeklyKeys.any(j.containsKey);
+    // таблица снимков пуста, а в kv остались недельные массивы — отдаём их AppData для переноса
+    if (snaps.isNotEmpty || !legacyWeekly) {
+      j['snapshots'] = [for (final r in snaps) dec(r['body'] as String, 'day_snapshots:${r['day']}')];
+      for (final k in _legacyWeeklyKeys) {
+        j.remove(k);
+      }
+    }
     j['events'] = [
       for (final r in await db.query('life_events', orderBy: 'ts, id')) dec(r['body'] as String, 'life_events:${r['id']}'),
     ];
@@ -274,6 +293,10 @@ class SqliteAppRepository implements AppRepository {
         b.delete('workout_sets');
         b.delete('money_tx');
         b.delete('life_events');
+        b.delete('day_snapshots');
+        for (final x in data.snapshots.values) {
+          b.insert('day_snapshots', _snapRow(x), conflictAlgorithm: ConflictAlgorithm.replace);
+        }
         for (final e in data.events) {
           b.insert('life_events', _eventRow(e), conflictAlgorithm: ConflictAlgorithm.replace);
         }
@@ -283,7 +306,7 @@ class SqliteAppRepository implements AppRepository {
         for (final t in data.transactions) {
           b.insert('money_tx', _txRow(t), conflictAlgorithm: ConflictAlgorithm.replace);
         }
-        logOps = data.workoutSets.length + data.transactions.length + data.events.length;
+        logOps = data.workoutSets.length + data.transactions.length + data.events.length + data.snapshots.length;
       } else {
         for (final id in changes.setDeletes) {
           b.delete('workout_sets', where: 'id = ?', whereArgs: [id]);
@@ -303,7 +326,10 @@ class SqliteAppRepository implements AppRepository {
         for (final e in changes.eventUpserts.values) {
           b.insert('life_events', _eventRow(e), conflictAlgorithm: ConflictAlgorithm.replace);
         }
-        logOps = changes.eventDeletes.length + changes.eventUpserts.length + changes.setDeletes.length + changes.setUpserts.length + changes.txDeletes.length + changes.txUpserts.length;
+        for (final x in changes.snapshotUpserts.values) {
+          b.insert('day_snapshots', _snapRow(x), conflictAlgorithm: ConflictAlgorithm.replace);
+        }
+        logOps = changes.snapshotUpserts.length + changes.eventDeletes.length + changes.eventUpserts.length + changes.setDeletes.length + changes.setUpserts.length + changes.txDeletes.length + changes.txUpserts.length;
       }
 
       await b.commit(noResult: true);
@@ -348,6 +374,24 @@ class SqliteAppRepository implements AppRepository {
         'affects_net_worth': t.affectsNetWorth ? 1 : 0,
         'recurring_id': t.recurringId,
       };
+
+  static Map<String, Object?> _snapRow(DaySnapshot s) => {'day': s.day, 'body': jsonEncode(s.toJson())};
+
+  /// Перенос недельных массивов: снимки записываются, старые ключи kv удаляются — в одной транзакции.
+  /// После этого массивы больше не читаются, а повторный перенос невозможен.
+  Future<void> _finishWeeklyMigration(Database db, AppData data) async {
+    await db.transaction((txn) async {
+      final b = txn.batch();
+      for (final x in data.snapshots.values) {
+        b.insert('day_snapshots', _snapRow(x), conflictAlgorithm: ConflictAlgorithm.replace);
+      }
+      for (final k in _legacyWeeklyKeys) {
+        b.delete('kv', where: 'k = ?', whereArgs: [k]);
+      }
+      await b.commit(noResult: true);
+    });
+    AppLog.d('SQLite: недельные истории перенесены в дневные снимки (${data.snapshots.length})');
+  }
 
   static Map<String, Object?> _eventRow(LifeEvent e) => {
         'id': e.id,

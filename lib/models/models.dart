@@ -304,6 +304,27 @@ class GoalCheckpoint {
   }
 }
 
+/// План ресурсов цели: сколько времени и денег человек готов вложить. null — не задано.
+/// План — намерение, а не оценка: факт сравнивается с ним, но ничего не «предсказывается».
+class GoalPlan {
+  final int? minutes;
+  final int? money; // ₽
+  const GoalPlan({this.minutes, this.money});
+
+  bool get isEmpty => minutes == null && money == null;
+  bool get isValid => (minutes == null || minutes! > 0) && (money == null || money! > 0);
+
+  Map<String, dynamic> toJson() => {if (minutes != null) 'min': minutes, if (money != null) 'rub': money};
+
+  /// null — значения недопустимы (отрицательные, нецелые, не объект).
+  static GoalPlan? tryFromJson(Object? raw) {
+    if (raw is! Map) return null;
+    int? f(Object? v) => v == null ? null : (v is num && v.isFinite && v == v.roundToDouble() ? v.toInt() : -1);
+    final p = GoalPlan(minutes: f(raw['min']), money: f(raw['rub']));
+    return p.isValid ? p : null;
+  }
+}
+
 class GlobalGoal {
   final String id;
   String title;
@@ -311,6 +332,7 @@ class GlobalGoal {
   DateTime? deadline; // только дата, без времени
   bool celebrated; // достижение за цель уже выдано (чтобы не создавать повторно / после ручного удаления)
   List<GoalCheckpoint> checkpoints;
+  GoalPlan? plan; // план ресурсов; null — не задан
 
   GlobalGoal({
     required this.id,
@@ -319,6 +341,7 @@ class GlobalGoal {
     required this.checkpoints,
     this.deadline,
     this.celebrated = false,
+    this.plan,
   });
 
   double get progress {
@@ -335,17 +358,24 @@ class GlobalGoal {
         'deadlineMs': deadline?.millisecondsSinceEpoch,
         'celebrated': celebrated,
         'checkpoints': checkpoints.map((c) => c.toJson()).toList(),
+        if (plan != null) 'plan': plan!.toJson(),
       };
 
   factory GlobalGoal.fromJson(Map<String, dynamic> json) =>
       tryFromJson(json) ?? (throw const FormatException('GlobalGoal'));
 
-  /// null — нет id или названия. Битые чекпоинты пропускаются по отдельности.
+  /// null — нет id или названия, либо план ресурсов битый. Битые чекпоинты пропускаются по отдельности.
   static GlobalGoal? tryFromJson(Map<String, dynamic> json, {void Function(String)? onSkip}) {
     final id = _id(json['id']);
     final title = json['title'];
     if (id == null || title is! String) return null;
+    GoalPlan? plan;
+    if (json['plan'] != null) {
+      plan = GoalPlan.tryFromJson(json['plan']);
+      if (plan == null) return null; // молча терять план нельзя
+    }
     final g = GlobalGoal(
+      plan: plan == null || plan.isEmpty ? null : plan,
       id: id,
       title: title,
       category: json['category'] as String? ?? 'Стратегия',
@@ -443,10 +473,38 @@ Color nodeColorFor(String category) {
   }
 }
 
+/// Ссылка узла графа на сущность жизни: процесс или цель. Подпись такого узла берётся из сущности,
+/// а с экрана графа можно перейти к ней — граф перестаёт быть набором отдельных подписей.
+class NodeRef {
+  static const process = 'process';
+  static const goal = 'goal';
+
+  final String type;
+  final String id;
+  const NodeRef(this.type, this.id);
+
+  Map<String, dynamic> toJson() => {'type': type, 'id': id};
+
+  static NodeRef? tryFromJson(Object? raw) {
+    if (raw is! Map) return null;
+    final t = raw['type'];
+    final id = _id(raw['id']);
+    if ((t != process && t != goal) || id == null) return null;
+    return NodeRef(t as String, id);
+  }
+
+  @override
+  bool operator ==(Object other) => other is NodeRef && other.type == type && other.id == id;
+
+  @override
+  int get hashCode => Object.hash(type, id);
+}
+
 class GraphNode {
   final String id;
   String label;
   String category;
+  NodeRef? ref; // связь с процессом или целью; null — обычный узел
   Offset position; // ДОЛИ холста (0..1), а не пиксели — граф не «вылезает» на других экранах
 
   /// Пользовательский цвет; null — цвет берётся из категории и не рассинхронизируется при её смене.
@@ -458,6 +516,7 @@ class GraphNode {
     required this.category,
     required this.position,
     Color? color,
+    this.ref,
   }) {
     _override = (color == null || color == nodeColorFor(category)) ? null : color;
   }
@@ -473,6 +532,7 @@ class GraphNode {
         'fx': position.dx,
         'fy': position.dy,
         'color': color.toARGB32(),
+        if (ref != null) 'ref': ref!.toJson(),
       };
 
   factory GraphNode.fromJson(Map<String, dynamic> j) =>
@@ -495,11 +555,17 @@ class GraphNode {
     }
     final cat = j['category'] as String? ?? 'mind';
     final rawColor = _i(j['color']);
+    NodeRef? ref;
+    if (j['ref'] != null) {
+      ref = NodeRef.tryFromJson(j['ref']);
+      if (ref == null) return null; // битая ссылка: узел не превращается молча в обычный
+    }
     return GraphNode(
       id: id,
       label: j['label'] as String? ?? '',
       category: cat,
       position: Offset(clampD(fx, 0.06, 0.94), clampD(fy, 0.06, 0.94)),
+      ref: ref,
       color: rawColor == null ? null : Color(rawColor & 0xFFFFFFFF),
     );
   }

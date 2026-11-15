@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../../core/recovery_stats.dart';
 import '../../core/theme.dart';
 import '../../state/app_controller.dart';
 import '../painters/anatomy_geometry.dart';
@@ -125,7 +126,7 @@ class BodyMapCard extends StatelessWidget {
                           children: [
                             Text(activeMuscle.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                             Text(
-                              'Готовность: ${(activeMuscle.recovery * 100).round()}% • 1RM: ${activeMuscle.maxWeight.toInt()} кг',
+                              '${_recoveryText(muscleRecovery(activeMuscle, controller.now), activeMuscle.lastTrainedOn(controller.now))} • 1RM: ${activeMuscle.maxWeight.toInt()} кг',
                               style: const TextStyle(color: Colors.white54, fontSize: 11),
                             ),
                           ],
@@ -178,4 +179,10 @@ class BodyMapCard extends StatelessWidget {
       }
     }
   }
+}
+
+/// «Тренировка 2 дн. назад · ещё ≈ 20 ч (оценка)» — без процента «готовности».
+String _recoveryText(MuscleRecovery r, String lastTrained) {
+  if (r.lastTrainedAt == null) return lastTrained;
+  return 'Тренировка ${lastTrained.toLowerCase()} · ${r.recovered ? 'восстановлена' : 'ещё ${fmtHoursLeft(r.hoursLeft)}'} (оценка)';
 }
