@@ -5,6 +5,8 @@ analyzer:
     strict-casts: true
   errors:
     unawaited_futures: warning
+  exclude:
+    - build/**
 
 linter:
   rules:

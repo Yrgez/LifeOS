@@ -8,12 +8,14 @@ import 'package:flutter/foundation.dart';
 import '../core/app_log.dart';
 import '../core/finance_categories.dart';
 import '../core/finance_stats.dart';
+import '../core/life_events.dart';
 import '../core/utils.dart';
 import '../core/workout_stats.dart';
 import '../data/app_data.dart';
 import '../data/app_repository.dart';
 import '../data/change_set.dart';
 import '../data/health_source.dart';
+import '../models/life_event.dart';
 import '../models/models.dart';
 
 /// Вся бизнес-логика и состояние. UI только читает геттеры и вызывает методы.
@@ -30,13 +32,15 @@ class AppController extends ChangeNotifier {
     InitialData? initialData,
     int maxWorkoutSets = kMaxWorkoutSets,
     int maxTransactions = kMaxTransactions,
+    int maxEvents = kMaxLifeEvents,
     this.saveDelay = const Duration(milliseconds: 400),
   })  : _clock = clock ?? DateTime.now,
         _random = random ?? Random(),
         _health = health,
         _initialData = initialData ?? ((now) => AppData.defaults(now: now)),
         _maxSets = maxWorkoutSets,
-        _maxTx = maxTransactions;
+        _maxTx = maxTransactions,
+        _maxEvents = maxEvents;
 
   final AppRepository _repo;
   final DateTime Function() _clock;
@@ -45,6 +49,7 @@ class AppController extends ChangeNotifier {
   final InitialData _initialData;
   final int _maxSets;
   final int _maxTx;
+  final int _maxEvents;
 
   /// Изменения журналов с последнего успешного сохранения (репозиторий применяет их точечно).
   ChangeSet _pending = ChangeSet();
@@ -632,6 +637,171 @@ class AppController extends ChangeNotifier {
   }
 
   void removeAchievement(String id) => _commit(() => _d.achievements.removeWhere((a) => a.id == id));
+
+  // ---------------- события жизни ----------------
+  //
+  // Журнал событий — ядро модели: факты BODY / MIND / MATERIAL с затратами ресурсов и связями с целями.
+  // История не переписывается: правка = новая версия, отмена = пометка, удаление — только явное.
+
+  /// Весь журнал: все версии, включая отменённые (для истории и проверки происхождения).
+  List<LifeEvent> get allEvents => List.unmodifiable(_d.events);
+
+  /// Актуальные события (последние версии, не отменённые), по возрастанию времени.
+  List<LifeEvent> get events => currentEvents(_d.events);
+
+  bool get eventsFull => _d.events.length >= _maxEvents;
+
+  LifeEvent? eventById(String id) {
+    for (final e in _d.events) {
+      if (e.id == id) return e;
+    }
+    return null;
+  }
+
+  /// Версии события от первой к последней.
+  List<LifeEvent> eventRevisions(String id) => revisionChain(_d.events, id);
+
+  /// Актуальные события, ведущие к цели.
+  List<LifeEvent> eventsForGoal(String goalId) => [for (final e in events) if (e.goalIds.contains(goalId)) e];
+
+  /// Сводка ресурсов за период [from, to) по актуальным событиям.
+  ResourceSummary resourceSummary({required DateTime from, required DateTime to, String? dimension}) =>
+      summarizeResources(events, from: from, to: to, dimension: dimension);
+
+  /// Фиксирует событие. Возвращает id или null (неверные данные, событие в будущем, журнал полон).
+  String? addEvent({
+    required String title,
+    required Iterable<String> dimensions,
+    String kind = LifeEventKind.action,
+    DateTime? at,
+    String note = '',
+    ResourceCost cost = ResourceCost.none,
+    Iterable<String> goalIds = const [],
+    Iterable<EventRef> refs = const [],
+    String source = EventSource.manual,
+  }) =>
+      _appendEvent(
+        title: title,
+        dimensions: dimensions,
+        kind: kind,
+        at: at,
+        note: note,
+        cost: cost,
+        goalIds: goalIds,
+        refs: refs,
+        source: source,
+      );
+
+  /// Новая версия события (прежняя остаётся в истории). Править можно только последнюю версию
+  /// неотменённого события. Возвращает id новой версии или null.
+  String? reviseEvent(
+    String id, {
+    required String title,
+    required Iterable<String> dimensions,
+    required String kind,
+    required DateTime at,
+    String note = '',
+    ResourceCost cost = ResourceCost.none,
+    Iterable<String> goalIds = const [],
+    Iterable<EventRef>? refs,
+  }) {
+    final old = eventById(id);
+    if (old == null || old.isVoided || latestRevision(_d.events, id)?.id != id) return null;
+    return _appendEvent(
+      title: title,
+      dimensions: dimensions,
+      kind: kind,
+      at: at,
+      note: note,
+      cost: cost,
+      goalIds: goalIds,
+      refs: refs ?? old.refs,
+      source: old.source,
+      supersedesId: old.id,
+    );
+  }
+
+  String? _appendEvent({
+    required String title,
+    required Iterable<String> dimensions,
+    required String kind,
+    DateTime? at,
+    required String note,
+    required ResourceCost cost,
+    required Iterable<String> goalIds,
+    required Iterable<EventRef> refs,
+    required String source,
+    String? supersedesId,
+  }) {
+    if (_d.events.length >= _maxEvents) {
+      AppLog.e('Журнал событий достиг предела $_maxEvents — новое событие не принято');
+      return null;
+    }
+    final now = _clock();
+    final when = at ?? now;
+    // событие — факт: будущее планируется целями, а не событиями (небольшой допуск на расхождение часов)
+    if (when.isAfter(now.add(const Duration(minutes: 5)))) return null;
+    final e = LifeEvent(
+      id: 'ev_${now.microsecondsSinceEpoch}_${_random.nextInt(1 << 20)}',
+      at: when,
+      recordedAt: now,
+      dimensions: dimensions.where(LifeDimension.isValid),
+      kind: kind,
+      title: title.trim(),
+      note: note.trim(),
+      cost: cost,
+      goalIds: goalIds,
+      refs: refs,
+      source: source,
+      supersedesId: supersedesId,
+    );
+    if (!e.isValid) return null;
+    _commit(() {
+      _d.events
+        ..add(e)
+        ..sort(compareEvents);
+      _pending.upsertEvent(e);
+    });
+    return e.id;
+  }
+
+  /// Отменяет событие (оно остаётся в истории с отметкой). Отменяется последняя версия цепочки.
+  bool voidEvent(String id) {
+    final latest = latestRevision(_d.events, id);
+    if (latest == null || latest.isVoided) return false;
+    _replaceEvent(latest.copyWith(voidedAt: _clock()));
+    return true;
+  }
+
+  /// Снимает отметку отмены (кнопка «Вернуть»).
+  bool unvoidEvent(String id) {
+    final latest = latestRevision(_d.events, id);
+    if (latest == null || !latest.isVoided) return false;
+    _replaceEvent(latest.copyWith(clearVoided: true));
+    return true;
+  }
+
+  void _replaceEvent(LifeEvent e) {
+    final i = _d.events.indexWhere((x) => x.id == e.id);
+    if (i < 0) return;
+    _commit(() {
+      _d.events[i] = e;
+      _pending.upsertEvent(e);
+    });
+  }
+
+  /// Удаляет событие НАВСЕГДА вместе со всеми его версиями. Только по явному решению пользователя.
+  /// Возвращает число удалённых записей.
+  int purgeEvent(String id) {
+    final chain = eventRevisions(id);
+    if (chain.isEmpty) return 0;
+    final ids = {for (final e in chain) e.id};
+    _commit(() {
+      _d.events.removeWhere((e) => ids.contains(e.id));
+      ids.forEach(_pending.deleteEvent);
+    });
+    return ids.length;
+  }
 
   // ---------------- финансы ----------------
 

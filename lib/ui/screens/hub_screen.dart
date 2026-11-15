@@ -6,6 +6,7 @@ import '../../state/app_controller.dart';
 import '../widgets/body_map_card.dart';
 import '../widgets/comparison_card.dart';
 import '../widgets/health_card.dart';
+import 'events_screen.dart';
 import 'settings_screen.dart';
 
 /// Вкладка HUB: готовность тела, здоровье, сравнение метрик, карта тела.
@@ -51,6 +52,12 @@ class HubScreen extends StatelessWidget {
                     Text('Готовность тела: ${c.systemReadiness}%', style: const TextStyle(color: AppColors.green, fontSize: 12, fontWeight: FontWeight.bold)),
                   ],
                 ),
+              ),
+              IconButton(
+                key: const ValueKey('open_events'),
+                icon: const Icon(Icons.timeline, color: Colors.white54),
+                tooltip: 'События жизни',
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => EventsScreen(controller: c))),
               ),
               IconButton(
                 icon: const Icon(Icons.settings, color: Colors.white54),

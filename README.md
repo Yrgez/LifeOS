@@ -5,8 +5,9 @@ lib/
   main.dart                    точка входа: перехват ошибок, SQLite-хранилище, источник Health Connect
   app.dart                     MaterialApp
   core/                        чистая логика без Flutter-состояния
-    utils, workout_stats, finance_stats, finance_categories, graph_stats, theme, app_log
+    utils, workout_stats, finance_stats, finance_categories, graph_stats, life_events, theme, app_log
   models/models.dart           модели данных + JSON
+  models/life_event.dart       ядро LIFE OS: событие жизни (измерения, ресурсы, версии), чистый Dart
   data/
     app_data.dart              AppData — весь сохраняемый срез состояния
     app_repository.dart        интерфейс AppRepository, PrefsAppRepository (прежнее хранилище), MemoryAppRepository
@@ -21,9 +22,9 @@ lib/
   state/app_controller.dart    AppController (ChangeNotifier): вся бизнес-логика
   ui/
     app_shell.dart             оболочка: навигация, баннер хранилища, жизненный цикл
-    screens/                   hub, gym, graph, mind, wealth, journal, finance, settings, onboarding
+    screens/                   hub, gym, graph, mind, wealth, journal, finance, events, settings, onboarding
     widgets/                   body_map_card, health_card, comparison_card, goals_ui, form_dialog,
-                               log_set_dialog, backup_actions, health_actions, confirm_dialog, toast
+                               log_set_dialog, event_dialog, backup_actions, health_actions, confirm_dialog, toast
     painters/                  chart_painters, body_painter, graph_painter, anatomy_geometry
 test/                          юнит-тесты логики и хранилищ + ui_smoke_test (виджеты, знакомство, настройки)
 docs/HEALTH_SETUP.md           настройка Health Connect на Android
@@ -40,7 +41,8 @@ docs/SECURITY_SETUP.md         настройка и модель угроз: б
 
 ## Хранилище (SQLite, `sqflite`)
 Файл `life_os.db`. Таблицы: `kv` (скаляры и недельные истории), `docs` (мышцы, цели, достижения, зарплата,
-узлы и связи графа, правила повторов, лимиты), `workout_sets` и `money_tx` (журналы, индексы по времени и категории).
+узлы и связи графа, правила повторов, лимиты), `workout_sets`, `money_tx` и `life_events` (журналы, индексы по времени и категории;
+события хранятся JSON-ом с отдельной колонкой времени).
 - **Запись инкрементальная на двух уровнях.**
   - Журналы пишутся строго по `ChangeSet`: контроллер отмечает каждую вставку, правку и удаление подхода или операции
     (в том числе вытеснение по пределу и создание повторяющихся операций), репозиторий применяет только это — без обхода
@@ -55,12 +57,17 @@ docs/SECURITY_SETUP.md         настройка и модель угроз: б
 - **Безопасность**: если базу не удалось открыть/прочитать, схема новее приложения или прежнее хранилище недоступно —
   контроллер переходит в режим «только чтение» (красный баннер), ничего не перезаписывая.
 - **Замеры**: загрузка и крупные сохранения пишут время в диагностический журнал (Настройки → «Журнал диагностики»).
-- Журнал и операции пока целиком загружаются в память; предел 50 000 записей каждого (`kMaxWorkoutSets`, `kMaxTransactions`).
+- Журналы пока целиком загружаются в память; предел 50 000 записей каждого (`kMaxWorkoutSets`, `kMaxTransactions`,
+  `kMaxLifeEvents`). Подходы и операции при превышении вытесняют старейшие; события — нет (история не теряется),
+  новые просто не принимаются.
   Ленивая загрузка по диапазону дат не делалась: она требует переработки статистики (рекорды, прогрессия, остатки) и
   оправдана только если замеры на устройстве покажут медленный запуск.
 - Тесты репозитория используют `sqflite_common_ffi` и системную библиотеку sqlite3.
 
 ## Функциональность
+- **События жизни** (`events_screen.dart`, кнопка на HUB): факты по измерениям Тело / Разум / Материальное с затратами
+  времени, денег и энергии (1–5), связями с целями и ссылками на записи журналов. Правка создаёт новую версию,
+  «Отменить» оставляет событие в истории, «Удалить навсегда» — только явно. Неуказанные ресурсы ≠ ноль.
 - **Журнал тренировок**: история подходов, прогрессия 1RM, объём (без упражнений, шаблонов и таймера).
 - **Цели**: сроки, правка, чекпоинты, в том числе автоматические по метрикам (1RM, капитал, доход).
 - **Финансы**: операции по категориям, лимиты, повторяющиеся операции (создание, правка, удаление правил), правка операций, связь с чистым капиталом.

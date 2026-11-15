@@ -1,0 +1,271 @@
+import 'package:flutter/material.dart';
+
+import '../../core/theme.dart';
+import '../../core/utils.dart';
+import '../../models/life_event.dart';
+import '../../models/models.dart';
+
+Color dimensionColor(String d) => switch (d) {
+      LifeDimension.body => AppColors.green,
+      LifeDimension.mind => AppColors.violet,
+      _ => AppColors.gold,
+    };
+
+/// Что ввёл пользователь в диалоге события.
+class EventDraft {
+  final String title;
+  final Set<String> dimensions;
+  final String kind;
+  final DateTime at;
+  final String note;
+  final ResourceCost cost;
+  final Set<String> goalIds;
+  const EventDraft({
+    required this.title,
+    required this.dimensions,
+    required this.kind,
+    required this.at,
+    required this.note,
+    required this.cost,
+    required this.goalIds,
+  });
+}
+
+/// Диалог «Зафиксировать событие» / «Новая версия». [initial] — правка существующего события.
+Future<EventDraft?> showEventDialog(
+  BuildContext context, {
+  required DateTime now,
+  required List<GlobalGoal> goals,
+  LifeEvent? initial,
+  String? presetDimension,
+}) {
+  return showDialog<EventDraft>(
+    context: context,
+    builder: (_) => _EventDialog(now: now, goals: goals, initial: initial, presetDimension: presetDimension),
+  );
+}
+
+class _EventDialog extends StatefulWidget {
+  final DateTime now;
+  final List<GlobalGoal> goals;
+  final LifeEvent? initial;
+  final String? presetDimension;
+  const _EventDialog({required this.now, required this.goals, this.initial, this.presetDimension});
+
+  @override
+  State<_EventDialog> createState() => _EventDialogState();
+}
+
+class _EventDialogState extends State<_EventDialog> {
+  late final TextEditingController _title;
+  late final TextEditingController _note;
+  late final TextEditingController _minutes;
+  late final TextEditingController _money;
+  late Set<String> _dims;
+  late String _kind;
+  late DateTime _at;
+  int? _energy;
+  late Set<String> _goals;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.initial;
+    _title = TextEditingController(text: e?.title ?? '');
+    _note = TextEditingController(text: e?.note ?? '');
+    _minutes = TextEditingController(text: e?.cost.minutes?.toString() ?? '');
+    _money = TextEditingController(text: e?.cost.money?.toString() ?? '');
+    _dims = e != null ? e.dimensions.toSet() : {if (widget.presetDimension != null) widget.presetDimension!};
+    _kind = e?.kind ?? LifeEventKind.action;
+    _at = e?.at ?? widget.now;
+    _energy = e?.cost.energy;
+    _goals = e?.goalIds.toSet() ?? <String>{};
+  }
+
+  @override
+  void dispose() {
+    for (final c in [_title, _note, _minutes, _money]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  // пусто — «не указано»; иначе неотрицательное целое
+  int? _opt(TextEditingController c) => c.text.trim().isEmpty ? null : parseInt(c.text);
+  bool _optOk(TextEditingController c) => c.text.trim().isEmpty || (parseInt(c.text) ?? -1) >= 0;
+
+  bool get _valid =>
+      _title.text.trim().isNotEmpty &&
+      _dims.isNotEmpty &&
+      _optOk(_minutes) &&
+      _optOk(_money) &&
+      (_opt(_minutes) ?? 0) <= ResourceCost.maxMinutes &&
+      !_at.isAfter(widget.now.add(const Duration(minutes: 5)));
+
+  Future<void> _pickDate() async {
+    final d = await showDatePicker(
+      context: context,
+      initialDate: _at,
+      firstDate: DateTime(1900),
+      lastDate: widget.now,
+    );
+    if (d == null || !mounted) return;
+    final t = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(_at));
+    if (!mounted) return;
+    var at = DateTime(d.year, d.month, d.day, t?.hour ?? _at.hour, t?.minute ?? _at.minute);
+    if (at.isAfter(widget.now)) at = widget.now;
+    setState(() => _at = at);
+  }
+
+  InputDecoration _dec(String label, {String? hint}) => InputDecoration(
+        labelText: label,
+        hintText: hint,
+        filled: true,
+        fillColor: AppColors.field,
+        isDense: true,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+      );
+
+  Widget _label(String t) => Padding(
+        padding: const EdgeInsets.only(top: 12, bottom: 6),
+        child: Text(t, style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final editing = widget.initial != null;
+    return AlertDialog(
+      backgroundColor: AppColors.card,
+      title: Text(editing ? 'Новая версия события' : 'Зафиксировать событие', style: const TextStyle(fontSize: 16)),
+      content: SizedBox(
+        width: 420,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (editing)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 10),
+                  child: Text('Прежняя версия останется в истории.', style: TextStyle(color: Colors.white38, fontSize: 11)),
+                ),
+              TextField(
+                key: const ValueKey('event_title'),
+                controller: _title,
+                maxLength: LifeEvent.maxTitle,
+                decoration: _dec('Что произошло?'),
+                onChanged: (_) => setState(() {}),
+              ),
+              _label('ИЗМЕРЕНИЯ'),
+              Wrap(
+                spacing: 8,
+                children: [
+                  for (final d in LifeDimension.all)
+                    FilterChip(
+                      key: ValueKey('dim_$d'),
+                      label: Text(LifeDimension.labels[d]!),
+                      selected: _dims.contains(d),
+                      selectedColor: dimensionColor(d).withValues(alpha: 0.3),
+                      onSelected: (v) => setState(() => v ? _dims.add(d) : _dims.remove(d)),
+                    ),
+                ],
+              ),
+              _label('ВИД'),
+              DropdownButtonFormField<String>(
+                initialValue: _kind,
+                decoration: _dec('Вид события'),
+                items: [
+                  for (final e in LifeEventKind.labels.entries) DropdownMenuItem(value: e.key, child: Text(e.value)),
+                ],
+                onChanged: (v) => setState(() => _kind = v ?? _kind),
+              ),
+              _label('КОГДА'),
+              OutlinedButton.icon(
+                onPressed: _pickDate,
+                icon: const Icon(Icons.event, size: 16),
+                label: Text('${dayKey(_at)} ${_at.hour.toString().padLeft(2, '0')}:${_at.minute.toString().padLeft(2, '0')}'),
+              ),
+              _label('РЕСУРСЫ (НЕОБЯЗАТЕЛЬНО)'),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _minutes,
+                      keyboardType: TextInputType.number,
+                      decoration: _dec('Время, мин'),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: _money,
+                      keyboardType: TextInputType.number,
+                      decoration: _dec('Деньги, ₽'),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text('Энергия — ваша оценка, сколько сил ушло (1 — почти не ушло, 5 — всё)',
+                  style: TextStyle(color: Colors.white38, fontSize: 11)),
+              const SizedBox(height: 4),
+              Wrap(
+                spacing: 6,
+                children: [
+                  for (var i = ResourceCost.minEnergy; i <= ResourceCost.maxEnergy; i++)
+                    ChoiceChip(
+                      label: Text('$i'),
+                      selected: _energy == i,
+                      onSelected: (v) => setState(() => _energy = v ? i : null),
+                    ),
+                ],
+              ),
+              if (widget.goals.isNotEmpty) ...[
+                _label('ВЕДЁТ К ЦЕЛЯМ'),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: [
+                    for (final g in widget.goals)
+                      FilterChip(
+                        label: Text(g.title, overflow: TextOverflow.ellipsis),
+                        selected: _goals.contains(g.id),
+                        onSelected: (v) => setState(() => v ? _goals.add(g.id) : _goals.remove(g.id)),
+                      ),
+                  ],
+                ),
+              ],
+              _label('ЗАМЕТКА'),
+              TextField(controller: _note, maxLines: 3, maxLength: LifeEvent.maxNote, decoration: _dec('Подробности, контекст')),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Отмена', style: TextStyle(color: Colors.white54))),
+        ElevatedButton(
+          key: const ValueKey('event_save'),
+          style: ElevatedButton.styleFrom(backgroundColor: AppColors.green),
+          onPressed: _valid
+              ? () => Navigator.pop(
+                    context,
+                    EventDraft(
+                      title: _title.text.trim(),
+                      dimensions: _dims,
+                      kind: _kind,
+                      at: _at,
+                      note: _note.text.trim(),
+                      cost: ResourceCost(minutes: _opt(_minutes), money: _opt(_money), energy: _energy),
+                      // цели, удалённые после записи события, сохраняются в его истории
+                      goalIds: _goals,
+                    ),
+                  )
+              : null,
+          child: const Text('Сохранить', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        ),
+      ],
+    );
+  }
+}

@@ -1,6 +1,7 @@
+import '../models/life_event.dart';
 import '../models/models.dart';
 
-/// Изменения журналов (подходы и операции) с момента последнего успешного сохранения.
+/// Изменения журналов (подходы, операции, события) с момента последнего успешного сохранения.
 ///
 /// Контроллер заполняет его при каждой мутации журнала, а репозиторий применяет точечно —
 /// без обхода и сериализации всех записей. Если точный перечень изменений неизвестен
@@ -11,10 +12,12 @@ class ChangeSet {
   final Set<String> setDeletes = {};
   final Map<String, MoneyTx> txUpserts = {};
   final Set<String> txDeletes = {};
+  final Map<String, LifeEvent> eventUpserts = {};
+  final Set<String> eventDeletes = {};
 
   ChangeSet({this.full = false});
 
-  bool get isEmpty => !full && setUpserts.isEmpty && setDeletes.isEmpty && txUpserts.isEmpty && txDeletes.isEmpty;
+  bool get isEmpty => !full && setUpserts.isEmpty && setDeletes.isEmpty && txUpserts.isEmpty && txDeletes.isEmpty && eventUpserts.isEmpty && eventDeletes.isEmpty;
 
   void upsertSet(WorkoutSet s) {
     setDeletes.remove(s.id);
@@ -36,6 +39,16 @@ class ChangeSet {
     txDeletes.add(id);
   }
 
+  void upsertEvent(LifeEvent e) {
+    eventDeletes.remove(e.id);
+    eventUpserts[e.id] = e;
+  }
+
+  void deleteEvent(String id) {
+    eventUpserts.remove(id);
+    eventDeletes.add(id);
+  }
+
   /// Переписать журналы целиком; точечные записи при этом не нужны.
   void markFull() {
     full = true;
@@ -43,5 +56,7 @@ class ChangeSet {
     setDeletes.clear();
     txUpserts.clear();
     txDeletes.clear();
+    eventUpserts.clear();
+    eventDeletes.clear();
   }
 }
