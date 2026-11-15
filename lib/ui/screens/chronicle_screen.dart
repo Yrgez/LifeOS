@@ -13,7 +13,8 @@ import 'events_screen.dart';
 /// Хроника (PAST): лента жизни по месяцам и дням — события, процессы, достижения и состояние дня.
 class ChronicleScreen extends StatefulWidget {
   final AppController controller;
-  const ChronicleScreen({super.key, required this.controller});
+  final bool embedded; // вкладка оболочки: без собственной шапки
+  const ChronicleScreen({super.key, required this.controller, this.embedded = false});
 
   @override
   State<ChronicleScreen> createState() => _ChronicleScreenState();
@@ -27,6 +28,7 @@ class _ChronicleScreenState extends State<ChronicleScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.embedded) return ListenableBuilder(listenable: c, builder: (context, _) => _content());
     return Scaffold(
       appBar: AppBar(
         title: const Text('ХРОНИКА', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
@@ -44,6 +46,11 @@ class _ChronicleScreenState extends State<ChronicleScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
       children: [
+        if (widget.embedded)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 10),
+            child: Text('ХРОНИКА', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          ),
         Wrap(
           spacing: 8,
           runSpacing: 4,

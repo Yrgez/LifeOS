@@ -102,7 +102,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Finder hubVisible() => find.text('EXECUTIVE DASHBOARD').hitTestable();
+  Finder hubVisible() => find.textContaining('СЕГОДНЯ ·').hitTestable();
 
   group('экран блокировки', () {
     testWidgets('биометрия подтверждена — приложение открывается само', (tester) async {

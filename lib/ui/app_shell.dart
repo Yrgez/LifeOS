@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import '../core/theme.dart';
 import '../security/security_service.dart';
 import '../state/app_controller.dart';
-import 'screens/graph_screen.dart';
+import 'screens/chronicle_screen.dart';
 import 'screens/gym_screen.dart';
 import 'screens/hub_screen.dart';
 import 'screens/mind_screen.dart';
@@ -28,7 +28,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
   AppController get c => widget.controller;
 
   int _currentIndex = 0;
-  final BodyMapSelection _selection = BodyMapSelection(); // общий выбор на карте тела (HUB и «Тело»)
+  final BodyMapSelection _selection = BodyMapSelection(); // выбор на карте тела переживает переключение вкладок
   Timer? _tickTimer;
 
   @override
@@ -80,15 +80,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
   Widget _screen() {
     switch (_currentIndex) {
       case 0:
-        return HubScreen(controller: c, selection: _selection, security: widget.security);
+        return HubScreen(controller: c, security: widget.security);
       case 1:
         return GymScreen(controller: c, selection: _selection);
       case 2:
-        return GraphScreen(controller: c);
-      case 3:
         return MindScreen(controller: c);
-      default:
+      case 3:
         return WealthScreen(controller: c);
+      default:
+        return ChronicleScreen(controller: c, embedded: true);
     }
   }
 
@@ -115,11 +115,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
           selectedFontSize: 11,
           unselectedFontSize: 10,
           items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), activeIcon: Icon(Icons.dashboard), label: 'HUB'),
-            BottomNavigationBarItem(icon: Icon(Icons.accessibility_new), label: 'ТЕЛО'),
-            BottomNavigationBarItem(icon: Icon(Icons.hub_outlined), activeIcon: Icon(Icons.hub), label: 'ГРАФ'),
-            BottomNavigationBarItem(icon: Icon(Icons.track_changes_outlined), activeIcon: Icon(Icons.track_changes), label: 'СМЫСЛЫ'),
-            BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet_outlined), activeIcon: Icon(Icons.account_balance_wallet), label: 'КАПИТАЛ'),
+            // PRESENT, три измерения жизни, PAST
+            BottomNavigationBarItem(icon: Icon(Icons.today_outlined), activeIcon: Icon(Icons.today), label: 'Сегодня'),
+            BottomNavigationBarItem(icon: Icon(Icons.accessibility_new), label: 'Тело'),
+            BottomNavigationBarItem(icon: Icon(Icons.psychology_outlined), activeIcon: Icon(Icons.psychology), label: 'Разум'),
+            BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet_outlined), activeIcon: Icon(Icons.account_balance_wallet), label: 'Материальное'),
+            BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Хроника'),
           ],
         ),
       ),

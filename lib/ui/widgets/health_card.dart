@@ -90,9 +90,10 @@ class _HealthCardState extends State<HealthCard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _MetricCol('Шаги', fmtMoney(c.dailySteps), 'Цель: ${fmtMoney(c.stepsGoal)}', Colors.cyanAccent),
-              _MetricCol('Активность', '${c.activeCalories} ккал', 'Калории', Colors.orangeAccent),
-              _MetricCol('Белок', '${c.proteinGrams}г', 'Норма: ${c.proteinGoal}г', Colors.greenAccent),
+              // равные доли ширины: на узком экране колонки переносят текст, а не вылезают за край
+              Expanded(child: _MetricCol('Шаги', fmtMoney(c.dailySteps), 'Цель: ${fmtMoney(c.stepsGoal)}', Colors.cyanAccent)),
+              Expanded(child: _MetricCol('Активность', '${c.activeCalories} ккал', 'Калории', Colors.orangeAccent)),
+              Expanded(child: _MetricCol('Белок', '${c.proteinGrams}г', 'Норма: ${c.proteinGoal}г', Colors.greenAccent)),
             ],
           ),
           const SizedBox(height: 14),

@@ -10,7 +10,7 @@ import '../painters/body_painter.dart';
 import '../painters/chart_painters.dart';
 import 'log_set_dialog.dart';
 
-/// Общий выбор на карте тела: ракурс и выбранная мышца. Один объект на HUB и «Тело» — выбор синхронизирован.
+/// Выбор на карте тела: ракурс и выбранная мышца. Хранится в оболочке и переживает переключение вкладок.
 class BodyMapSelection extends ChangeNotifier {
   bool showFront = true;
   String? muscleId = 'chest';
@@ -147,7 +147,8 @@ class BodyMapCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('ИСТОРИЯ 1RM (ПРОГРЕСС СИЛЫ):', style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold)),
+                      const Flexible(child: Text('ИСТОРИЯ 1RM (ПРОГРЕСС СИЛЫ):', style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold))),
+                      const SizedBox(width: 8),
                       // раньше показывался последний подход как «рекорд»; теперь — настоящий максимум
                       Text('${activeMuscle.maxWeight.toInt()} кг рекорд', style: const TextStyle(color: AppColors.green, fontSize: 10, fontWeight: FontWeight.bold)),
                     ],

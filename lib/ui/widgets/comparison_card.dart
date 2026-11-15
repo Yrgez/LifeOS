@@ -67,20 +67,12 @@ class _ComparisonCardState extends State<ComparisonCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          const Row(
             children: [
-              const Row(
-                children: [
-                  Icon(Icons.compare_arrows, color: Colors.cyanAccent, size: 18),
-                  SizedBox(width: 8),
-                  Text('СРАВНЕНИЕ МЕТРИК', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: Colors.cyanAccent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                child: const Text('2 Метрики', style: TextStyle(color: Colors.cyanAccent, fontSize: 10, fontWeight: FontWeight.bold)),
+              Icon(Icons.compare_arrows, color: Colors.cyanAccent, size: 18),
+              SizedBox(width: 8),
+              Flexible(
+                child: Text('СРАВНЕНИЕ МЕТРИК', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
               ),
             ],
           ),
