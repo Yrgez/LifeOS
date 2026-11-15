@@ -16,6 +16,7 @@ import '../data/app_repository.dart';
 import '../data/change_set.dart';
 import '../data/health_source.dart';
 import '../models/life_event.dart';
+import '../models/life_process.dart';
 import '../models/models.dart';
 
 /// Вся бизнес-логика и состояние. UI только читает геттеры и вызывает методы.
@@ -677,6 +678,7 @@ class AppController extends ChangeNotifier {
     String note = '',
     ResourceCost cost = ResourceCost.none,
     Iterable<String> goalIds = const [],
+    Iterable<String> processIds = const [],
     Iterable<EventRef> refs = const [],
     String source = EventSource.manual,
   }) =>
@@ -688,6 +690,7 @@ class AppController extends ChangeNotifier {
         note: note,
         cost: cost,
         goalIds: goalIds,
+        processIds: processIds,
         refs: refs,
         source: source,
       );
@@ -703,6 +706,7 @@ class AppController extends ChangeNotifier {
     String note = '',
     ResourceCost cost = ResourceCost.none,
     Iterable<String> goalIds = const [],
+    Iterable<String> processIds = const [],
     Iterable<EventRef>? refs,
   }) {
     final old = eventById(id);
@@ -715,6 +719,7 @@ class AppController extends ChangeNotifier {
       note: note,
       cost: cost,
       goalIds: goalIds,
+      processIds: processIds,
       refs: refs ?? old.refs,
       source: old.source,
       supersedesId: old.id,
@@ -729,6 +734,7 @@ class AppController extends ChangeNotifier {
     required String note,
     required ResourceCost cost,
     required Iterable<String> goalIds,
+    required Iterable<String> processIds,
     required Iterable<EventRef> refs,
     required String source,
     String? supersedesId,
@@ -751,6 +757,7 @@ class AppController extends ChangeNotifier {
       note: note.trim(),
       cost: cost,
       goalIds: goalIds,
+      processIds: processIds,
       refs: refs,
       source: source,
       supersedesId: supersedesId,
@@ -801,6 +808,94 @@ class AppController extends ChangeNotifier {
       ids.forEach(_pending.deleteEvent);
     });
     return ids.length;
+  }
+
+  // ---------------- процессы ----------------
+  //
+  // Процесс — рамка для событий: всё вложенное в него считается по событиям с его id.
+  // Смена статуса дописывается в журнал статусов процесса, прежние статусы сохраняются.
+
+  List<LifeProcess> get processes => List.unmodifiable(_d.processes);
+
+  LifeProcess? processById(String id) {
+    for (final p in _d.processes) {
+      if (p.id == id) return p;
+    }
+    return null;
+  }
+
+  /// Актуальные события процесса, по возрастанию времени.
+  List<LifeEvent> eventsForProcess(String processId) => [for (final e in events) if (e.processIds.contains(processId)) e];
+
+  /// Ресурсы, вложенные в процесс за всё время, первое и последнее событие.
+  ProcessActivity processActivityOf(String processId) => processActivity(events, processId);
+
+  /// Начинает процесс. [startedAt] — когда он фактически начался (можно задним числом, не в будущем).
+  /// Возвращает id или null.
+  String? addProcess({
+    required String title,
+    required Iterable<String> dimensions,
+    String description = '',
+    Iterable<String> goalIds = const [],
+    DateTime? startedAt,
+  }) {
+    if (_d.processes.length >= kMaxProcesses) return null;
+    final now = _clock();
+    final start = startedAt ?? now;
+    if (start.isAfter(now.add(const Duration(minutes: 5)))) return null;
+    final p = LifeProcess(
+      id: 'proc_${now.microsecondsSinceEpoch}_${_random.nextInt(1 << 20)}',
+      title: title.trim(),
+      description: description.trim(),
+      dimensions: dimensions.where(LifeDimension.isValid),
+      goalIds: goalIds,
+      createdAt: now,
+      statusLog: [ProcessStatusChange(at: start, status: ProcessStatus.active)],
+    );
+    if (!p.isValid) return null;
+    _commit(() => _d.processes.add(p));
+    return p.id;
+  }
+
+  /// Меняет описание процесса (название, измерения, цели). Статус меняется только через [setProcessStatus].
+  bool updateProcess(String id, {required String title, required Iterable<String> dimensions, String description = '', Iterable<String> goalIds = const []}) {
+    final p = processById(id);
+    if (p == null) return false;
+    final dims = LifeEvent.normalizeDimensions(dimensions.where(LifeDimension.isValid));
+    final t = title.trim();
+    final desc = description.trim();
+    final goals = goalIds.toSet().toList();
+    if (t.isEmpty || t.length > LifeProcess.maxTitle || desc.length > LifeProcess.maxDescription || dims.isEmpty || goals.length > LifeEvent.maxLinks) {
+      return false;
+    }
+    _commit(() {
+      p
+        ..title = t
+        ..description = desc
+        ..dimensions = dims
+        ..goalIds = goals;
+    });
+    return true;
+  }
+
+  /// Новая запись в журнале статусов. Тот же статус повторно не пишется.
+  bool setProcessStatus(String id, String status, {String note = ''}) {
+    final p = processById(id);
+    if (p == null || !ProcessStatus.isValid(status) || p.status == status) return false;
+    if (p.statusLog.length >= LifeProcess.maxLog || note.length > ProcessStatusChange.maxNote) return false;
+    final now = _clock();
+    // часы могли уйти назад — журнал статусов всё равно остаётся упорядоченным
+    final at = now.isBefore(p.statusLog.last.at) ? p.statusLog.last.at : now;
+    _commit(() => p.statusLog.add(ProcessStatusChange(at: at, status: status, note: note.trim())));
+    return true;
+  }
+
+  /// Удаляет процесс НАВСЕГДА (только явно). События остаются: в них сохраняется ссылка на удалённый процесс.
+  bool removeProcess(String id) {
+    final i = _d.processes.indexWhere((p) => p.id == id);
+    if (i < 0) return false;
+    _commit(() => _d.processes.removeAt(i));
+    return true;
   }
 
   // ---------------- финансы ----------------

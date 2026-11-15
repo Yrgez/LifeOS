@@ -18,7 +18,7 @@ const int kDbVersion = 2;
 /// Хранилище в SQLite.
 ///
 /// * Крупные журналы — отдельные таблицы с индексами: `workout_sets`, `money_tx`, `life_events`.
-/// * Небольшие списки (мышцы, цели, узлы графа…) — таблица `docs` (коллекция, id, позиция, JSON).
+/// * Небольшие списки (мышцы, цели, узлы графа, процессы…) — таблица `docs` (коллекция, id, позиция, JSON).
 /// * Скаляры и недельные истории — таблица `kv`.
 ///
 /// Запись **инкрементальная** на двух уровнях:
@@ -50,7 +50,7 @@ class SqliteAppRepository implements AppRepository {
     'userName', 'stepsGoal', 'proteinGoal', 'onboardingDone',
   ];
 
-  static const _listCollections = ['goals', 'achievements', 'salaryHistory', 'graphNodes', 'graphEdges', 'recurring'];
+  static const _listCollections = ['goals', 'achievements', 'salaryHistory', 'graphNodes', 'graphEdges', 'recurring', 'processes'];
 
   // ---------------- открытие и схема ----------------
 

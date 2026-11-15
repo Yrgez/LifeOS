@@ -8,6 +8,7 @@ lib/
     utils, workout_stats, finance_stats, finance_categories, graph_stats, life_events, theme, app_log
   models/models.dart           модели данных + JSON
   models/life_event.dart       ядро LIFE OS: событие жизни (измерения, ресурсы, версии), чистый Dart
+  models/life_process.dart     процесс жизни (длительное направление) и журнал его статусов
   data/
     app_data.dart              AppData — весь сохраняемый срез состояния
     app_repository.dart        интерфейс AppRepository, PrefsAppRepository (прежнее хранилище), MemoryAppRepository
@@ -22,9 +23,9 @@ lib/
   state/app_controller.dart    AppController (ChangeNotifier): вся бизнес-логика
   ui/
     app_shell.dart             оболочка: навигация, баннер хранилища, жизненный цикл
-    screens/                   hub, gym, graph, mind, wealth, journal, finance, events, settings, onboarding
+    screens/                   hub, gym, graph, mind, wealth, journal, finance, events, processes, settings, onboarding
     widgets/                   body_map_card, health_card, comparison_card, goals_ui, form_dialog,
-                               log_set_dialog, event_dialog, backup_actions, health_actions, confirm_dialog, toast
+                               log_set_dialog, event_dialog, process_ui, backup_actions, health_actions, confirm_dialog, toast
     painters/                  chart_painters, body_painter, graph_painter, anatomy_geometry
 test/                          юнит-тесты логики и хранилищ + ui_smoke_test (виджеты, знакомство, настройки)
 docs/HEALTH_SETUP.md           настройка Health Connect на Android
@@ -41,7 +42,7 @@ docs/SECURITY_SETUP.md         настройка и модель угроз: б
 
 ## Хранилище (SQLite, `sqflite`)
 Файл `life_os.db`. Таблицы: `kv` (скаляры и недельные истории), `docs` (мышцы, цели, достижения, зарплата,
-узлы и связи графа, правила повторов, лимиты), `workout_sets`, `money_tx` и `life_events` (журналы, индексы по времени и категории;
+узлы и связи графа, правила повторов, лимиты, процессы), `workout_sets`, `money_tx` и `life_events` (журналы, индексы по времени и категории;
 события хранятся JSON-ом с отдельной колонкой времени).
 - **Запись инкрементальная на двух уровнях.**
   - Журналы пишутся строго по `ChangeSet`: контроллер отмечает каждую вставку, правку и удаление подхода или операции
@@ -68,6 +69,9 @@ docs/SECURITY_SETUP.md         настройка и модель угроз: б
 - **События жизни** (`events_screen.dart`, кнопка на HUB): факты по измерениям Тело / Разум / Материальное с затратами
   времени, денег и энергии (1–5), связями с целями и ссылками на записи журналов. Правка создаёт новую версию,
   «Отменить» оставляет событие в истории, «Удалить навсегда» — только явно. Неуказанные ресурсы ≠ ноль.
+- **Процессы** (`processes_screen.dart`, кнопка на HUB): длительные направления («Изучение Java», «Набор массы»).
+  Собственных чисел у процесса нет — вложенные время, деньги и энергия считаются по его событиям. Статусы
+  (идёт / на паузе / завершён / прекращён) дописываются в журнал статусов. Экран процесса — шапка + его события.
 - **Журнал тренировок**: история подходов, прогрессия 1RM, объём (без упражнений, шаблонов и таймера).
 - **Цели**: сроки, правка, чекпоинты, в том числе автоматические по метрикам (1RM, капитал, доход).
 - **Финансы**: операции по категориям, лимиты, повторяющиеся операции (создание, правка, удаление правил), правка операций, связь с чистым капиталом.

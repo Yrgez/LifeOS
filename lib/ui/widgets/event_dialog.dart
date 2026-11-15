@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../models/life_event.dart';
+import '../../models/life_process.dart';
 import '../../models/models.dart';
 
 Color dimensionColor(String d) => switch (d) {
@@ -20,6 +21,7 @@ class EventDraft {
   final String note;
   final ResourceCost cost;
   final Set<String> goalIds;
+  final Set<String> processIds;
   const EventDraft({
     required this.title,
     required this.dimensions,
@@ -28,6 +30,7 @@ class EventDraft {
     required this.note,
     required this.cost,
     required this.goalIds,
+    required this.processIds,
   });
 }
 
@@ -36,21 +39,39 @@ Future<EventDraft?> showEventDialog(
   BuildContext context, {
   required DateTime now,
   required List<GlobalGoal> goals,
+  List<LifeProcess> processes = const [],
   LifeEvent? initial,
   String? presetDimension,
+  String? presetProcessId,
 }) {
   return showDialog<EventDraft>(
     context: context,
-    builder: (_) => _EventDialog(now: now, goals: goals, initial: initial, presetDimension: presetDimension),
+    builder: (_) => _EventDialog(
+      now: now,
+      goals: goals,
+      processes: processes,
+      initial: initial,
+      presetDimension: presetDimension,
+      presetProcessId: presetProcessId,
+    ),
   );
 }
 
 class _EventDialog extends StatefulWidget {
   final DateTime now;
   final List<GlobalGoal> goals;
+  final List<LifeProcess> processes;
   final LifeEvent? initial;
   final String? presetDimension;
-  const _EventDialog({required this.now, required this.goals, this.initial, this.presetDimension});
+  final String? presetProcessId;
+  const _EventDialog({
+    required this.now,
+    required this.goals,
+    required this.processes,
+    this.initial,
+    this.presetDimension,
+    this.presetProcessId,
+  });
 
   @override
   State<_EventDialog> createState() => _EventDialogState();
@@ -66,6 +87,7 @@ class _EventDialogState extends State<_EventDialog> {
   late DateTime _at;
   int? _energy;
   late Set<String> _goals;
+  late Set<String> _procs;
 
   @override
   void initState() {
@@ -80,7 +102,17 @@ class _EventDialogState extends State<_EventDialog> {
     _at = e?.at ?? widget.now;
     _energy = e?.cost.energy;
     _goals = e?.goalIds.toSet() ?? <String>{};
+    _procs = e?.processIds.toSet() ?? {if (widget.presetProcessId != null) widget.presetProcessId!};
+    // событие в процессе по умолчанию относится к его измерениям
+    if (e == null && widget.presetProcessId != null) {
+      for (final p in widget.processes) {
+        if (p.id == widget.presetProcessId) _dims.addAll(p.dimensions);
+      }
+    }
   }
+
+  // выбирать можно открытые процессы; уже связанные закрытые остаются видны, чтобы связь можно было снять
+  List<LifeProcess> get _processOptions => [for (final p in widget.processes) if (p.isOpen || _procs.contains(p.id)) p];
 
   @override
   void dispose() {
@@ -237,6 +269,22 @@ class _EventDialogState extends State<_EventDialog> {
                   ],
                 ),
               ],
+              if (_processOptions.isNotEmpty) ...[
+                _label('В ПРОЦЕССЕ'),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: [
+                    for (final p in _processOptions)
+                      FilterChip(
+                        key: ValueKey('proc_${p.id}'),
+                        label: Text(p.title, overflow: TextOverflow.ellipsis),
+                        selected: _procs.contains(p.id),
+                        onSelected: (v) => setState(() => v ? _procs.add(p.id) : _procs.remove(p.id)),
+                      ),
+                  ],
+                ),
+              ],
               _label('ЗАМЕТКА'),
               TextField(controller: _note, maxLines: 3, maxLength: LifeEvent.maxNote, decoration: _dec('Подробности, контекст')),
             ],
@@ -260,6 +308,7 @@ class _EventDialogState extends State<_EventDialog> {
                       cost: ResourceCost(minutes: _opt(_minutes), money: _opt(_money), energy: _energy),
                       // цели, удалённые после записи события, сохраняются в его истории
                       goalIds: _goals,
+                      processIds: _procs,
                     ),
                   )
               : null,

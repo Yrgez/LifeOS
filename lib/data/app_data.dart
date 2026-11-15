@@ -2,13 +2,14 @@ import '../core/app_log.dart';
 import '../core/finance_categories.dart';
 import '../core/utils.dart';
 import '../models/life_event.dart';
+import '../models/life_process.dart';
 import '../models/models.dart';
 import 'default_data.dart';
 
 /// Версия схемы сохранённых данных. Увеличивать при несовместимых изменениях
 /// и добавлять шаг миграции в репозиторий.
-/// 4 — журнал событий жизни (`events`).
-const int kSchemaVersion = 4;
+/// 4 — журнал событий жизни (`events`). 5 — процессы (`processes`) и связь событий с ними.
+const int kSchemaVersion = 5;
 
 /// Предел журналов в памяти (при превышении удаляются самые старые). Хранилище (SQLite) пишет только
 /// изменения, но весь журнал пока загружается в память целиком — поэтому предел сохранён.
@@ -18,6 +19,9 @@ const int kMaxTransactions = 50000;
 /// Предел журнала событий. В отличие от подходов и операций старые события НЕ вытесняются
 /// (это была бы потеря истории): по достижении предела новые события не принимаются.
 const int kMaxLifeEvents = 50000;
+
+/// Предел числа процессов (они хранятся в таблице малых данных и сравниваются целиком при сохранении).
+const int kMaxProcesses = 1000;
 
 /// Весь сохраняемый срез состояния приложения (чистые данные, без UI и без Flutter-зависимостей логики).
 class AppData {
@@ -41,6 +45,7 @@ class AppData {
   List<MoneyTx> transactions; // денежные операции, по возрастанию времени
   Map<String, int> budgets; // лимит расходов в месяц по категории, ₽
   List<RecurringTx> recurring; // правила повторяющихся операций
+  List<LifeProcess> processes; // процессы жизни (длительные направления усилий)
   List<LifeEvent> events; // журнал событий жизни (все версии, включая отменённые), по возрастанию времени
   String userName; // как обращаться (пусто — без имени)
   int stepsGoal; // цель шагов в день
@@ -71,6 +76,7 @@ class AppData {
     Map<String, int>? budgets,
     List<RecurringTx>? recurring,
     List<LifeEvent>? events,
+    List<LifeProcess>? processes,
     this.userName = '',
     this.stepsGoal = 10000,
     this.proteinGoal = 140,
@@ -81,7 +87,8 @@ class AppData {
         transactions = transactions ?? <MoneyTx>[],
         budgets = budgets ?? <String, int>{},
         recurring = recurring ?? <RecurringTx>[],
-        events = events ?? <LifeEvent>[];
+        events = events ?? <LifeEvent>[],
+        processes = processes ?? <LifeProcess>[];
 
   factory AppData.defaults({DateTime? now}) => AppData(
         netWorth: 2450000,
@@ -155,6 +162,7 @@ class AppData {
         if (includeLogs) 'events': events.map((e) => e.toJson()).toList(),
         'budgets': budgets,
         'recurring': recurring.map((r) => r.toJson()).toList(),
+        'processes': processes.map((p) => p.toJson()).toList(),
         'userName': userName,
         'stepsGoal': stepsGoal,
         'proteinGoal': proteinGoal,
@@ -279,6 +287,13 @@ class AppData {
         (v) => (boundedJournal(v, kMaxTransactions, 'transactions', MoneyTx.fromJson, idOf: (entry) => entry.id)..sort((a, b) => a.at.compareTo(b.at))),
         d.transactions,
       ),
+      processes: pick<List<LifeProcess>>('processes', (v) {
+        final list = uniqueCollection(v, 'processes', LifeProcess.fromJson, (entry) => entry.id);
+        if (strict && list.length > kMaxProcesses) {
+          throw const FormatException('AppData: поле "processes" превышает допустимый размер ($kMaxProcesses)');
+        }
+        return list;
+      }, <LifeProcess>[]),
       events: pick<List<LifeEvent>>('events', (v) => _parseEvents(v, strict: strict), <LifeEvent>[]),
       budgets: pick<Map<String, int>>(
         'budgets',

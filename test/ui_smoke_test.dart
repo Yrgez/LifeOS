@@ -83,6 +83,46 @@ void main() {
     await shutdown(tester, c);
   });
 
+  testWidgets('процессы: создать, записать событие в процесс, сменить статус', (tester) async {
+    final c = await boot(tester);
+    await tester.tap(find.byKey(const ValueKey('open_processes')));
+    await tester.pumpAndSettle();
+    expect(find.text('ПРОЦЕССЫ'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('add_process')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('process_title')), 'Изучение Java');
+    await tester.tap(find.byKey(const ValueKey('pdim_mind')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('process_save')));
+    await tester.pumpAndSettle();
+    final p = c.processes.single;
+
+    await tester.tap(find.text('Изучение Java'));
+    await tester.pumpAndSettle();
+    expect(find.text('ЖУРНАЛ СТАТУСОВ'), findsOneWidget);
+
+    // событие с экрана процесса сразу относится к нему и к его измерениям
+    await tester.tap(find.byKey(const ValueKey('add_event')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('event_title')), 'Урок 1');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('event_save')));
+    await tester.pumpAndSettle();
+    expect(c.eventsForProcess(p.id).single.title, 'Урок 1');
+    expect(c.events.single.dimensions, ['mind']);
+
+    await tester.tap(find.byKey(const ValueKey('process_menu')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Статус: На паузе'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Сохранить'));
+    await tester.pumpAndSettle();
+    expect(c.processById(p.id)!.status, 'paused');
+
+    await shutdown(tester, c);
+  });
+
   testWidgets('предупреждение о недоступном хранилище', (tester) async {
     final c = await boot(tester, repo: MemoryAppRepository(loadError: StateError('диск')));
     expect(find.textContaining('Хранилище недоступно'), findsOneWidget);

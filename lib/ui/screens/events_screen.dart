@@ -7,12 +7,15 @@ import '../../models/life_event.dart';
 import '../../state/app_controller.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/event_dialog.dart';
+import '../widgets/process_ui.dart';
 import '../widgets/toast.dart';
 
 /// Журнал событий жизни: факты по измерениям BODY / MIND / MATERIAL, их ресурсы и версии.
+/// С [processId] — экран процесса: шапка процесса и только его события.
 class EventsScreen extends StatefulWidget {
   final AppController controller;
-  const EventsScreen({super.key, required this.controller});
+  final String? processId;
+  const EventsScreen({super.key, required this.controller, this.processId});
 
   @override
   State<EventsScreen> createState() => _EventsScreenState();
@@ -29,7 +32,14 @@ class _EventsScreenState extends State<EventsScreen> {
       showToast(context, 'Журнал событий заполнен — новые события не принимаются');
       return;
     }
-    final d = await showEventDialog(context, now: c.now, goals: c.goals, presetDimension: _dimension);
+    final d = await showEventDialog(
+      context,
+      now: c.now,
+      goals: c.goals,
+      processes: c.processes,
+      presetDimension: _dimension,
+      presetProcessId: widget.processId,
+    );
     if (d == null || !mounted) return;
     final id = c.addEvent(
       title: d.title,
@@ -39,12 +49,13 @@ class _EventsScreenState extends State<EventsScreen> {
       note: d.note,
       cost: d.cost,
       goalIds: d.goalIds,
+      processIds: d.processIds,
     );
     showToast(context, id == null ? 'Событие не сохранено: проверьте данные' : 'Событие зафиксировано');
   }
 
   Future<void> _revise(LifeEvent e) async {
-    final d = await showEventDialog(context, now: c.now, goals: c.goals, initial: e);
+    final d = await showEventDialog(context, now: c.now, goals: c.goals, processes: c.processes, initial: e);
     if (d == null || !mounted) return;
     final id = c.reviseEvent(
       e.id,
@@ -55,6 +66,7 @@ class _EventsScreenState extends State<EventsScreen> {
       note: d.note,
       cost: d.cost,
       goalIds: d.goalIds,
+      processIds: d.processIds,
     );
     showToast(context, id == null ? 'Не удалось сохранить новую версию' : 'Сохранена новая версия');
   }
@@ -117,7 +129,13 @@ class _EventsScreenState extends State<EventsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('СОБЫТИЯ ЖИЗНИ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
+        title: ListenableBuilder(
+          listenable: c,
+          builder: (context, _) => Text(
+            widget.processId == null ? 'СОБЫТИЯ ЖИЗНИ' : (c.processById(widget.processId!)?.title ?? 'Процесс'),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1),
+          ),
+        ),
         backgroundColor: AppColors.panel,
         elevation: 0,
       ),
@@ -134,12 +152,23 @@ class _EventsScreenState extends State<EventsScreen> {
   }
 
   Widget _content() {
-    final all = c.events.reversed.where((e) => _dimension == null || e.touches(_dimension!)).toList();
+    final pid = widget.processId;
+    final process = pid == null ? null : c.processById(pid);
+    final all = c.events.reversed
+        .where((e) => (_dimension == null || e.touches(_dimension!)) && (pid == null || e.processIds.contains(pid)))
+        .toList();
     final now = c.now;
-    final week = c.resourceSummary(from: now.subtract(const Duration(days: 7)), to: now.add(const Duration(minutes: 6)), dimension: _dimension);
+    final week = summarizeResources(
+      c.events,
+      from: now.subtract(const Duration(days: 7)),
+      to: now.add(const Duration(minutes: 6)),
+      dimension: _dimension,
+      processId: pid,
+    );
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
       children: [
+        if (process != null) ...[ProcessHeader(controller: c, process: process), const SizedBox(height: 12)],
         Wrap(
           spacing: 8,
           children: [
@@ -180,30 +209,21 @@ class _WeekCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = summary;
-    String part(int known, String value) => known == 0 ? 'не указано' : known == s.events ? value : '$value (указано в $known из ${s.events})';
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(12)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('ЗА 7 ДНЕЙ: ${s.events} событий', style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold)),
-          if (s.events > 0) ...[
+          Text('ЗА 7 ДНЕЙ: ${summary.events} событий', style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold)),
+          if (summary.events > 0) ...[
             const SizedBox(height: 6),
-            Text('Время: ${part(s.minutesKnown, _minutes(s.minutes))}', style: const TextStyle(fontSize: 12)),
-            Text('Деньги: ${part(s.moneyKnown, '${fmtMoney(s.money)} ₽')}', style: const TextStyle(fontSize: 12)),
-            Text(
-              'Энергия: ${s.energyKnown == 0 ? 'не указано' : [for (var i = 1; i <= 5; i++) if (s.energy[i] != null) '$i×${s.energy[i]}'].join(', ')}',
-              style: const TextStyle(fontSize: 12),
-            ),
+            for (final line in resourceLines(summary)) Text(line, style: const TextStyle(fontSize: 12)),
           ],
         ],
       ),
     );
   }
-
-  static String _minutes(int m) => m < 60 ? '$m мин' : '${m ~/ 60} ч ${m % 60} мин';
 }
 
 class _EventTile extends StatelessWidget {
@@ -226,6 +246,7 @@ class _EventTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final e = event;
     final goalTitles = {for (final g in controller.goals) g.id: g.title};
+    final processTitles = {for (final p in controller.processes) p.id: p.title};
     final versions = e.supersedesId == null ? 1 : controller.eventRevisions(e.id).length;
     final cost = [
       if (e.cost.minutes != null) '${e.cost.minutes} мин',
@@ -259,6 +280,11 @@ class _EventTile extends StatelessWidget {
                   Text(
                     '→ ${e.goalIds.map((id) => goalTitles[id] ?? 'цель удалена').join(', ')}',
                     style: const TextStyle(color: AppColors.violet, fontSize: 11),
+                  ),
+                if (e.processIds.isNotEmpty)
+                  Text(
+                    '⟳ ${e.processIds.map((id) => processTitles[id] ?? 'процесс удалён').join(', ')}',
+                    style: const TextStyle(color: AppColors.amber, fontSize: 11),
                   ),
                 if (e.note.isNotEmpty)
                   Padding(

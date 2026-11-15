@@ -58,12 +58,20 @@ class ResourceSummary {
 /// [dimension] == null — все события (каждое один раз). Для конкретного измерения событие,
 /// затрагивающее несколько измерений, учитывается в каждом — поэтому суммы по измерениям не складываются.
 /// Период — полуинтервал [from, to).
-ResourceSummary summarizeResources(List<LifeEvent> current, {required DateTime from, required DateTime to, String? dimension}) {
+/// [processId] — только события этого процесса.
+ResourceSummary summarizeResources(
+  List<LifeEvent> current, {
+  required DateTime from,
+  required DateTime to,
+  String? dimension,
+  String? processId,
+}) {
   var n = 0, min = 0, minK = 0, rub = 0, rubK = 0;
   final energy = <int, int>{};
   for (final e in current) {
     if (e.at.isBefore(from) || !e.at.isBefore(to)) continue;
     if (dimension != null && !e.touches(dimension)) continue;
+    if (processId != null && !e.processIds.contains(processId)) continue;
     n++;
     if (e.cost.minutes != null) {
       min += e.cost.minutes!;
@@ -76,4 +84,29 @@ ResourceSummary summarizeResources(List<LifeEvent> current, {required DateTime f
     if (e.cost.energy != null) energy[e.cost.energy!] = (energy[e.cost.energy!] ?? 0) + 1;
   }
   return ResourceSummary(events: n, minutes: min, minutesKnown: minK, money: rub, moneyKnown: rubK, energy: energy);
+}
+
+/// Что вложено в процесс за всё время: ресурсы, первое и последнее событие.
+class ProcessActivity {
+  final ResourceSummary resources;
+  final DateTime? firstAt;
+  final DateTime? lastAt;
+  const ProcessActivity({required this.resources, this.firstAt, this.lastAt});
+}
+
+ProcessActivity processActivity(List<LifeEvent> current, String processId) {
+  DateTime? first, last;
+  for (final e in current) {
+    if (!e.processIds.contains(processId)) continue;
+    if (first == null || e.at.isBefore(first)) first = e.at;
+    if (last == null || e.at.isAfter(last)) last = e.at;
+  }
+  // за всё время: весь допустимый диапазон дат
+  final resources = summarizeResources(
+    current,
+    from: DateTime.fromMillisecondsSinceEpoch(-8640000000000000),
+    to: DateTime.fromMillisecondsSinceEpoch(8640000000000000),
+    processId: processId,
+  );
+  return ProcessActivity(resources: resources, firstAt: first, lastAt: last);
 }
