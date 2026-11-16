@@ -73,11 +73,11 @@ class BodyMapCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 440,
+            height: 500,
             width: double.infinity,
             child: LayoutBuilder(
               builder: (ctx, constraints) {
-                final size = Size(constraints.maxWidth, 440);
+                final size = Size(constraints.maxWidth, 500);
                 return GestureDetector(
                   onTapUp: (d) => _handleAnatomicalTap(d.localPosition, size),
                   child: RepaintBoundary(
@@ -178,12 +178,8 @@ class BodyMapCard extends StatelessWidget {
     final dy = (size.height - AnatomicalGeometry.baseHeight * scale) / 2;
     final touch = Offset((localPos.dx - dx) / scale, (localPos.dy - dy) / scale);
 
-    for (final entry in AnatomicalGeometry.pathsFor(selection.showFront).entries) {
-      if (entry.value.contains(touch)) {
-        selection.select(entry.key);
-        return;
-      }
-    }
+    final group = AnatomicalGeometry.groupAt(selection.showFront, touch);
+    if (group != null && c.muscles.containsKey(group)) selection.select(group);
   }
 }
 

@@ -7,9 +7,10 @@ import '../../core/theme.dart';
 import '../../models/models.dart';
 import 'anatomy_geometry.dart';
 
-/// Плоская анатомическая фигура в общем стиле приложения: тёмно-сланцевый силуэт, мышцы — светлее,
-/// разделены тонкими просветами цвета фона. Коралловый — группа ещё восстанавливается (насыщеннее —
-/// больше часов осталось по оценке), светлая с белым контуром — выбранная. Без свечения и градиентов.
+/// Плоская анатомическая фигура в общем стиле приложения. Тело состоит из мышц: сегменты лежат прямо на
+/// фоне плитки, разделены тонкими линиями цвета фона, а голова, кисти, колени и стопы показаны контуром.
+/// Коралловый — группа ещё восстанавливается (насыщеннее — больше часов осталось по оценке),
+/// светлая — выбранная. Без свечения и градиентов.
 class AnatomicalSilhouettePainter extends CustomPainter {
   final Map<String, MuscleGroup> muscles;
   final bool isFront;
@@ -18,12 +19,26 @@ class AnatomicalSilhouettePainter extends CustomPainter {
 
   AnatomicalSilhouettePainter({required this.muscles, required this.isFront, this.selectedMuscleId, DateTime? now}) : now = now ?? DateTime.now();
 
-  static const body = Color(0xFF262C35); // силуэт
-  static const muscle = Color(0xFF3A4452); // мышца в покое
-  static const neutral = Color(0xFF313946); // сегменты без группы (приводящие, разгибатели спины)
+  static const muscle = Color(0xFF566A84); // мышца в покое
   static const load = Color(0xFFE5484D); // восстанавливается
-  static const selected = Color(0xFFD8DEE6); // выбранная
-  static const gap = AppColors.card; // просветы между мышцами = фон плитки
+  static const selected = Color(0xFFE6EBF2); // выбранная
+  static const outline = Color(0xFF5A6678); // контур тела там, где мышц нет
+  static const gap = AppColors.card; // линии между мышцами = фон плитки
+
+  /// Цвет группы: покой → коралловый по доле оставшегося восстановления → осветление, если выбрана.
+  Color _fill(String? group) {
+    var fill = muscle;
+    final m = group == null ? null : muscles[group];
+    if (m != null) {
+      final r = muscleRecovery(m, now);
+      if (!r.recovered && m.recoveryHours > 0) {
+        final share = (r.hoursLeft / m.recoveryHours).clamp(0.0, 1.0);
+        fill = Color.lerp(muscle, load, 0.4 + 0.6 * share)!;
+      }
+    }
+    if (group != null && group == selectedMuscleId) fill = Color.lerp(fill, selected, fill == muscle ? 1.0 : 0.5)!;
+    return fill;
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -35,43 +50,33 @@ class AnatomicalSilhouettePainter extends CustomPainter {
     canvas.translate(dx, dy);
     canvas.scale(scale);
 
-    AnatomicalGeometry.paintSilhouette(canvas, Paint()..color = body);
-
+    final silhouette = AnatomicalGeometry.silhouetteFor(isFront);
+    final outlinePaint = Paint()
+      ..color = outline
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0
+      ..strokeJoin = StrokeJoin.round;
     final gapPaint = Paint()
       ..color = gap
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.2
+      ..strokeWidth = 1.3
       ..strokeJoin = StrokeJoin.round;
 
-    final neutralPath = AnatomicalGeometry.neutralFor(isFront);
-    canvas.drawPath(neutralPath, Paint()..color = neutral);
-    canvas.drawPath(neutralPath, gapPaint);
+    canvas.drawPath(silhouette, outlinePaint);
 
-    for (final entry in AnatomicalGeometry.pathsFor(isFront).entries) {
-      final id = entry.key;
-      final path = entry.value;
-      final m = muscles[id];
-      Color fill = muscle;
-      if (m != null) {
-        final r = muscleRecovery(m, now);
-        if (!r.recovered && m.recoveryHours > 0) {
-          final share = (r.hoursLeft / m.recoveryHours).clamp(0.0, 1.0);
-          fill = Color.lerp(muscle, load, 0.35 + 0.65 * share)!;
-        }
-      }
-      if (id == selectedMuscleId) fill = Color.lerp(fill, selected, 0.55)!;
-      canvas.drawPath(path, Paint()..color = fill);
-      canvas.drawPath(path, gapPaint);
-      if (id == selectedMuscleId) {
-        canvas.drawPath(
-          path,
-          Paint()
-            ..color = Colors.white
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 1.4,
-        );
-      }
+    // Сегменты — по порядку, каждый следующий поверх предыдущих; всё обрезано по контуру тела.
+    canvas.save();
+    canvas.clipPath(silhouette);
+    final fills = <String?, Color>{};
+    for (final s in AnatomicalGeometry.shapesFor(isFront)) {
+      canvas.drawPath(s.path, Paint()..color = fills.putIfAbsent(s.group, () => _fill(s.group)));
+      canvas.drawPath(s.path, gapPaint);
     }
+    canvas.restore();
+
+    // Голова поверх: закрывает стык шеи.
+    canvas.drawPath(AnatomicalGeometry.head, Paint()..color = gap);
+    canvas.drawPath(AnatomicalGeometry.head, outlinePaint);
 
     canvas.restore();
   }

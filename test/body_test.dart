@@ -48,18 +48,31 @@ void main() {
   });
 
   test('фигура: нажатия попадают в свои группы мышц, обе стороны тела', () {
-    final f = AnatomicalGeometry.frontPaths, b = AnatomicalGeometry.backPaths;
-    expect(f['chest']!.contains(const Offset(125, 155)), isTrue);
-    expect(f['chest']!.contains(const Offset(175, 155)), isTrue); // правая сторона — зеркально
-    expect(f['abs']!.contains(const Offset(140, 206)), isTrue);
-    expect(f['quads']!.contains(const Offset(106, 370)), isTrue);
-    expect(f['biceps']!.contains(const Offset(74, 212)), isTrue);
-    expect(b['lats']!.contains(const Offset(120, 225)), isTrue);
-    expect(b['glutes']!.contains(const Offset(125, 330)), isTrue);
-    expect(b['hamstrings']!.contains(const Offset(110, 400)), isTrue);
-    expect(f['chest']!.contains(const Offset(150, 20)), isFalse); // голова — не мышца
-    // все группы приложения есть хотя бы на одной стороне
-    expect({...f.keys, ...b.keys}, containsAll(MuscleGroupIds.all));
+    String? front(double x, double y) => AnatomicalGeometry.groupAt(true, Offset(x, y));
+    String? back(double x, double y) => AnatomicalGeometry.groupAt(false, Offset(x, y));
+    expect(front(150, 190), 'chest');
+    expect(front(220, 190), 'chest'); // правая сторона — зеркально
+    expect(front(168, 240), 'abs');
+    expect(front(100, 180), 'delts');
+    expect(front(104, 240), 'biceps');
+    expect(front(72, 320), 'forearms');
+    expect(front(122, 440), 'quads');
+    expect(front(157, 610), 'calves');
+    expect(back(160, 180), 'traps');
+    expect(back(135, 260), 'lats');
+    expect(back(105, 240), 'triceps');
+    expect(back(150, 395), 'glutes');
+    expect(back(130, 480), 'hamstrings');
+    expect(back(125, 600), 'calves');
+    expect(front(185, 60), isNull); // голова — не мышца
+    expect(front(40, 430), isNull); // кисть
+    expect(front(10, 10), isNull); // мимо фигуры
+    expect(front(140, 330), isNull); // косая мышца рисуется, но группой не является
+    // все группы приложения есть хотя бы на одной стороне, и у каждой группы списка есть сегменты
+    expect({...AnatomicalGeometry.frontGroups, ...AnatomicalGeometry.backGroups}, containsAll(MuscleGroupIds.all));
+    for (final front in [true, false]) {
+      expect({for (final s in AnatomicalGeometry.shapesFor(front)) if (s.group != null) s.group}, AnatomicalGeometry.groupsFor(front).toSet());
+    }
   });
 
   group('контроллер', () {
