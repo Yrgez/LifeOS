@@ -9,6 +9,7 @@ import 'package:life_os/data/app_repository.dart';
 import 'package:life_os/data/sqlite_app_repository.dart';
 import 'package:life_os/models/body.dart';
 import 'package:life_os/state/app_controller.dart';
+import 'package:life_os/ui/painters/anatomy_geometry.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
@@ -44,6 +45,21 @@ void main() {
       final e = WeightEntry.tryFromJson({'id': 'a', 't': 1, 'kg': 80.5})!;
       expect(WeightEntry.tryFromJson(e.toJson())!.kg, 80.5);
     });
+  });
+
+  test('фигура: нажатия попадают в свои группы мышц, обе стороны тела', () {
+    final f = AnatomicalGeometry.frontPaths, b = AnatomicalGeometry.backPaths;
+    expect(f['chest']!.contains(const Offset(125, 155)), isTrue);
+    expect(f['chest']!.contains(const Offset(175, 155)), isTrue); // правая сторона — зеркально
+    expect(f['abs']!.contains(const Offset(140, 206)), isTrue);
+    expect(f['quads']!.contains(const Offset(106, 370)), isTrue);
+    expect(f['biceps']!.contains(const Offset(74, 212)), isTrue);
+    expect(b['lats']!.contains(const Offset(120, 225)), isTrue);
+    expect(b['glutes']!.contains(const Offset(125, 330)), isTrue);
+    expect(b['hamstrings']!.contains(const Offset(110, 400)), isTrue);
+    expect(f['chest']!.contains(const Offset(150, 20)), isFalse); // голова — не мышца
+    // все группы приложения есть хотя бы на одной стороне
+    expect({...f.keys, ...b.keys}, containsAll(MuscleGroupIds.all));
   });
 
   group('контроллер', () {
@@ -123,4 +139,9 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     c.dispose();
   });
+}
+
+/// Группы мышц приложения (как в MuscleGroup.defaultRecoveryHours).
+class MuscleGroupIds {
+  static const all = ['delts', 'chest', 'abs', 'biceps', 'forearms', 'quads', 'traps', 'lats', 'triceps', 'glutes', 'hamstrings', 'calves'];
 }

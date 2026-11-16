@@ -20,6 +20,7 @@ class AnatomicalSilhouettePainter extends CustomPainter {
 
   static const body = Color(0xFF262C35); // силуэт
   static const muscle = Color(0xFF3A4452); // мышца в покое
+  static const neutral = Color(0xFF313946); // сегменты без группы (приводящие, разгибатели спины)
   static const load = Color(0xFFE5484D); // восстанавливается
   static const selected = Color(0xFFD8DEE6); // выбранная
   static const gap = AppColors.card; // просветы между мышцами = фон плитки
@@ -41,6 +42,10 @@ class AnatomicalSilhouettePainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.2
       ..strokeJoin = StrokeJoin.round;
+
+    final neutralPath = AnatomicalGeometry.neutralFor(isFront);
+    canvas.drawPath(neutralPath, Paint()..color = neutral);
+    canvas.drawPath(neutralPath, gapPaint);
 
     for (final entry in AnatomicalGeometry.pathsFor(isFront).entries) {
       final id = entry.key;

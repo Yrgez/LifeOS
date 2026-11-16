@@ -73,11 +73,11 @@ class BodyMapCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 380,
+            height: 440,
             width: double.infinity,
             child: LayoutBuilder(
               builder: (ctx, constraints) {
-                final size = Size(constraints.maxWidth, 380);
+                final size = Size(constraints.maxWidth, 440);
                 return GestureDetector(
                   onTapUp: (d) => _handleAnatomicalTap(d.localPosition, size),
                   child: RepaintBoundary(
