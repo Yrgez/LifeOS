@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/life_events.dart';
+import '../../core/currency.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../models/life_event.dart';
@@ -19,7 +20,7 @@ List<String> resourceLines(ResourceSummary s) {
   String part(int known, String value) => known == 0 ? 'не указано' : known == s.events ? value : '$value (указано в $known из ${s.events})';
   return [
     'Время: ${part(s.minutesKnown, fmtMinutes(s.minutes))}',
-    'Деньги: ${part(s.moneyKnown, '${fmtMoney(s.money)} ₽')}',
+    'Деньги: ${part(s.moneyKnown, '${fmtCur(s.money)}')}',
     'Энергия: ${s.energyKnown == 0 ? 'не указано' : [for (var i = 1; i <= 5; i++) if (s.energy[i] != null) '$i×${s.energy[i]}'].join(', ')}',
   ];
 }

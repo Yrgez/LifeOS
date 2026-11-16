@@ -6,6 +6,7 @@ import 'dart:ui' show Offset;
 import 'package:flutter/foundation.dart';
 
 import '../core/app_log.dart';
+import '../core/currency.dart';
 import '../core/chronicle.dart';
 import '../core/finance_categories.dart';
 import '../core/finance_stats.dart';
@@ -314,6 +315,7 @@ class AppController extends ChangeNotifier {
 
   /// Подписи «системных» узлов графа и снимок текущего дня всегда отражают реальные цифры.
   void _syncDerived() {
+    currentCurrency = currencyByCode(_d.currency) ?? currencies.first;
     void set(String id, String label) {
       for (final n in _d.graphNodes) {
         if (n.id == id) n.label = label;
@@ -671,9 +673,9 @@ class AppController extends ChangeNotifier {
       case MetricLink.oneRM:
         return '1RM «${_d.muscles[l.muscleId]?.name ?? l.muscleId}» ≥ ${trimNum(l.target)} кг';
       case MetricLink.netWorth:
-        return 'Капитал ≥ ${fmtMoney(l.target.round())} ₽';
+        return 'Капитал ≥ ${fmtCur(l.target.round())}';
       default:
-        return 'Доход ≥ ${fmtMoney(l.target.round())} ₽ / мес';
+        return 'Доход ≥ ${fmtCur(l.target.round())} / мес';
     }
   }
 
@@ -1364,6 +1366,16 @@ class AppController extends ChangeNotifier {
     return t.length > 40 ? t.substring(0, 40).trim() : t;
   }
 
+  /// Код основной валюты (RUB, USD…).
+  String get currency => _d.currency;
+
+  /// Меняет обозначение валюты. Суммы НЕ пересчитываются: курс неизвестен, а выдумывать его нельзя.
+  bool setCurrency(String code) {
+    if (currencyByCode(code) == null) return false;
+    _commit(() => _d.currency = code);
+    return true;
+  }
+
   /// Меняет настройки. false — значение недопустимо (ничего не изменено).
   bool updateSettings({String? userName, int? stepsGoal, int? proteinGoal}) {
     if (stepsGoal != null && (stepsGoal < 1 || stepsGoal > 100000)) return false;
@@ -1414,6 +1426,7 @@ class AppController extends ChangeNotifier {
       ..stepsGoal = _d.stepsGoal
       ..proteinGoal = _d.proteinGoal
       ..healthEnabled = _d.healthEnabled
+      ..currency = _d.currency
       ..lastHealthSyncMs = _d.lastHealthSyncMs
       ..onboardingDone = true;
     _d = fresh;

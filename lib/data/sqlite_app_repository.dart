@@ -48,7 +48,7 @@ class SqliteAppRepository implements AppRepository {
   static const _kvKeys = [
     'netWorth', 'monthlyIncome', 'monthlyExpense', 'dailySteps', 'activeCalories', 'proteinGrams', 'lastDay',
     'healthEnabled', 'lastHealthSyncMs',
-    'userName', 'stepsGoal', 'proteinGoal', 'onboardingDone',
+    'userName', 'stepsGoal', 'proteinGoal', 'onboardingDone', 'currency',
   ];
 
   static const _listCollections = ['goals', 'achievements', 'salaryHistory', 'graphNodes', 'graphEdges', 'recurring', 'processes'];

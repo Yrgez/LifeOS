@@ -5,6 +5,14 @@ import 'package:life_os/data/health_source.dart';
 import 'package:life_os/state/app_controller.dart';
 
 void main() {
+  test('итог шагов запрашивается за полные сутки, даже сегодня (иначе HC делит дневную запись пропорционально)', () {
+    final i = stepsDayInterval(DateTime(2026, 11, 16, 12, 39));
+    expect(i.start, DateTime(2026, 11, 16));
+    expect(i.end, DateTime(2026, 11, 17));
+    final last = stepsDayInterval(DateTime(2026, 12, 31, 23, 59));
+    expect(last.end, DateTime(2027, 1, 1)); // переход через год
+  });
+
   // 24.10.2026, суббота
   late DateTime now;
   late FakeHealthSource src;

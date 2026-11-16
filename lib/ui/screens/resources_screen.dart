@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/life_events.dart';
+import '../../core/currency.dart';
 import '../../core/resource_stats.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
@@ -83,7 +84,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
           title: 'РАСХОДЫ ПО ЖУРНАЛУ ОПЕРАЦИЙ',
           children: [
             Text(
-              b.financeExpenseCount == 0 ? 'Операций расхода за период нет' : '${fmtMoney(b.financeExpense)} ₽ · операций: ${b.financeExpenseCount}',
+              b.financeExpenseCount == 0 ? 'Операций расхода за период нет' : '${fmtCur(b.financeExpense)} · операций: ${b.financeExpenseCount}',
               style: const TextStyle(fontSize: 13),
             ),
             const SizedBox(height: 4),
@@ -117,7 +118,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
         Text(
           'Предыдущие ${period.label.toLowerCase()}: событий ${p.events}'
           '${p.minutesKnown > 0 ? ' · время ${fmtMinutes(p.minutes)}' : ''}'
-          '${p.moneyKnown > 0 ? ' · деньги ${fmtMoney(p.money)} ₽' : ''}',
+          '${p.moneyKnown > 0 ? ' · деньги ${fmtCur(p.money)}' : ''}',
           style: const TextStyle(color: Colors.white54, fontSize: 11),
         ),
       ],
@@ -149,7 +150,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
               value: b.byDimension[d]!.money,
               max: total.money,
               color: dimensionChartColor(d),
-              text: _known(b.byDimension[d]!, b.byDimension[d]!.moneyKnown, '${fmtMoney(b.byDimension[d]!.money)} ₽'),
+              text: _known(b.byDimension[d]!, b.byDimension[d]!.moneyKnown, '${fmtCur(b.byDimension[d]!.money)}'),
             ),
         ],
         const _Sub('События и энергия'),
@@ -180,7 +181,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
     String detail(ResourceSummary s) => [
           'событий ${s.events}',
           if (s.minutesKnown > 0) fmtMinutes(s.minutes),
-          if (s.moneyKnown > 0) '${fmtMoney(s.money)} ₽',
+          if (s.moneyKnown > 0) '${fmtCur(s.money)}',
         ].join(' · ');
     return _Card(
       title: 'ПО ПРОЦЕССАМ',

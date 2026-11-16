@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/chronicle.dart';
+import '../../core/currency.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../models/day_snapshot.dart';
@@ -173,7 +174,7 @@ class _MonthSection extends StatelessWidget {
         if (s.steps != null) 'шаги ${fmtMoney(s.steps!)}',
         if (s.activeCalories != null) '${s.activeCalories} ккал',
         if (s.protein != null) 'белок ${s.protein} г',
-        if (s.netWorth != null) 'капитал ${fmtMoney(s.netWorth!)} ₽',
+        if (s.netWorth != null) 'капитал ${fmtCur(s.netWorth!)}',
       ].join(' · ');
 }
 

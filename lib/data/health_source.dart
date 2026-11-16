@@ -7,6 +7,15 @@ class HealthDay {
   const HealthDay(this.day, {this.steps, this.activeCalories, this.protein});
 }
 
+/// Интервал запроса итога шагов за день: ПОЛНЫЕ сутки [полночь, следующая полночь), даже для сегодняшнего дня.
+///
+/// Health Connect при агрегации делит запись, выходящую за границы интервала, пропорционально времени.
+/// Samsung Health пишет шаги одной записью на весь день (00:00–24:00), поэтому запрос «с полуночи до сейчас»
+/// возвращал долю: в 12:39 — 52,7% суток, 2 196 вместо 4 163. Шагов из будущего не бывает, так что полные
+/// сутки ничего лишнего не добавляют.
+({DateTime start, DateTime end}) stepsDayInterval(DateTime day) =>
+    (start: DateTime(day.year, day.month, day.day), end: DateTime(day.year, day.month, day.day + 1));
+
 /// Граница между приложением и платформенным источником (Health Connect).
 /// Весь платформенный код — в одной реализации; остальное приложение и тесты от плагина не зависят.
 abstract class HealthDataSource {

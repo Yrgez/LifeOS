@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/app_log.dart';
+import '../../core/currency.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/app_data.dart';
@@ -43,6 +44,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     if (r == null || !mounted) return;
     c.updateSettings(userName: r['n']);
+  }
+
+  Future<void> _editCurrency() async {
+    final r = await showFormDialog(
+      context,
+      title: 'Основная валюта',
+      actionLabel: 'Сохранить',
+      fields: [
+        FieldSpec('c', 'Валюта', initial: c.currency, options: {for (final x in currencies) x.code: '${x.symbol} — ${x.name}'}),
+      ],
+    );
+    if (r == null || !mounted || r['c'] == c.currency) return;
+    c.setCurrency(r['c']!);
+    showToast(context, 'Обозначение сменилось на $cur. Суммы не пересчитываются — курс приложению неизвестен.');
   }
 
   Future<void> _editStepsGoal() async {
@@ -217,6 +232,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ]),
         _section('ПРОФИЛЬ', [
           _tile(Icons.person, 'Имя', c.userName.isEmpty ? 'не задано' : c.userName, onTap: _editName),
+          _tile(Icons.currency_exchange, 'Валюта', '${currentCurrency.symbol} — ${currentCurrency.name} (только обозначение)', onTap: _editCurrency),
         ]),
         _section('ЦЕЛИ НА ДЕНЬ', [
           _tile(Icons.directions_walk, 'Шаги', fmtMoney(c.stepsGoal), onTap: _editStepsGoal),

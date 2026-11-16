@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../../core/finance_categories.dart';
+import '../../core/currency.dart';
 import '../../core/finance_stats.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
@@ -31,7 +32,7 @@ Future<void> showTransactionDialog(BuildContext context, AppController c, {Money
     accent: AppColors.gold,
     fields: [
       FieldSpec('c', 'Категория', initial: existing?.categoryId ?? 'food', options: _allCategoryOptions()),
-      FieldSpec('a', 'Сумма (₽)', numeric: true, initial: existing == null ? '' : '${existing.amount}'),
+      FieldSpec('a', 'Сумма ($cur)', numeric: true, initial: existing == null ? '' : '${existing.amount}'),
       FieldSpec('d', 'Дата (дд.мм.гггг)', initial: fmtDate(existing?.at ?? c.now)),
       FieldSpec('n', 'Заметка (необязательно)', initial: existing?.note ?? ''),
       FieldSpec('w', 'Учитывать в капитале', initial: (existing?.affectsNetWorth ?? true) ? '1' : '0', options: _capitalOptions),
@@ -72,7 +73,7 @@ Future<void> showBudgetDialog(BuildContext context, AppController c, {String? ca
     accent: AppColors.gold,
     fields: [
       FieldSpec('c', 'Категория расходов', initial: cat, options: expenseOptions),
-      FieldSpec('l', 'Лимит (₽ в месяц, пусто — без лимита)', numeric: true, initial: current == null ? '' : '$current'),
+      FieldSpec('l', 'Лимит ($cur в месяц, пусто — без лимита)', numeric: true, initial: current == null ? '' : '$current'),
     ],
     validate: (v) => v['l']!.isEmpty || (parseNum(v['l']!) ?? -1) >= 0,
   );
@@ -89,7 +90,7 @@ Future<void> showRecurringDialog(BuildContext context, AppController c, {Recurri
     accent: AppColors.gold,
     fields: [
       FieldSpec('c', 'Категория', initial: existing?.categoryId ?? 'housing', options: _allCategoryOptions()),
-      FieldSpec('a', 'Сумма (₽)', numeric: true, initial: existing == null ? '' : '${existing.amount}'),
+      FieldSpec('a', 'Сумма ($cur)', numeric: true, initial: existing == null ? '' : '${existing.amount}'),
       FieldSpec('d', 'Число месяца (1–31)', numeric: true, initial: '${existing?.dayOfMonth ?? c.now.day}'),
       FieldSpec('n', 'Заметка (необязательно)', initial: existing?.note ?? ''),
       FieldSpec('w', 'Учитывать в капитале', initial: (existing?.affectsNetWorth ?? true) ? '1' : '0', options: _capitalOptions),
@@ -158,7 +159,7 @@ Future<void> showRecurringSheet(BuildContext context, AppController c) {
                             ),
                             title: Text('${finCategory(r.categoryId)?.name ?? r.categoryId}${r.note.isEmpty ? '' : ' • ${r.note}'}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                             subtitle: Text(
-                              'каждое ${r.dayOfMonth}-е • ${finCategory(r.categoryId)?.isIncome == true ? '+' : '−'}${fmtMoney(r.amount)} ₽${r.affectsNetWorth ? '' : ' • вне капитала'}',
+                              'каждое ${r.dayOfMonth}-е • ${finCategory(r.categoryId)?.isIncome == true ? '+' : '−'}${fmtCur(r.amount)}${r.affectsNetWorth ? '' : ' • вне капитала'}',
                               style: const TextStyle(color: Colors.white54, fontSize: 11),
                             ),
                             trailing: IconButton(
@@ -232,14 +233,14 @@ class _FinanceScreenState extends State<FinanceScreen> {
         const SizedBox(height: 8),
         Row(
           children: [
-            Expanded(child: _tile('ДОХОД', '+${fmtMoney(totals.income)} ₽', AppColors.green, '')),
+            Expanded(child: _tile('ДОХОД', '+${fmtCur(totals.income)}', AppColors.green, '')),
             const SizedBox(width: 8),
-            Expanded(child: _tile('РАСХОД', '−${fmtMoney(totals.expense)} ₽', AppColors.red, '')),
+            Expanded(child: _tile('РАСХОД', '−${fmtCur(totals.expense)}', AppColors.red, '')),
             const SizedBox(width: 8),
             Expanded(
               child: _tile(
                 'БАЛАНС',
-                '${totals.saldo >= 0 ? '+' : '−'}${fmtMoney(totals.saldo.abs())} ₽',
+                '${totals.saldo >= 0 ? '+' : '−'}${fmtCur(totals.saldo.abs())}',
                 totals.saldo >= 0 ? AppColors.gold : AppColors.red,
                 totals.savingsRate == null ? 'нет дохода' : 'сбережения ${totals.savingsRate!.round()}%',
               ),
@@ -379,8 +380,8 @@ class _FinanceScreenState extends State<FinanceScreen> {
     final pct = total <= 0 ? 0 : (st.spent / total * 100).round();
     final double value = st.hasLimit ? min(1.0, st.ratio) : (maxSum <= 0 ? 0.0 : st.spent / maxSum);
     final label = st.hasLimit
-        ? '${fmtMoney(st.spent)} / ${fmtMoney(st.limit)} ₽'
-        : '${fmtMoney(st.spent)} ₽ · $pct%';
+        ? '${fmtMoney(st.spent)} / ${fmtCur(st.limit)}'
+        : '${fmtCur(st.spent)} · $pct%';
     return InkWell(
       onTap: () => showBudgetDialog(context, c, categoryId: st.categoryId),
       child: Row(
@@ -433,7 +434,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(shortDate(t.at), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-              Text('${dayTotal >= 0 ? '+' : '−'}${fmtMoney(dayTotal.abs())} ₽', style: const TextStyle(color: Colors.white38, fontSize: 11)),
+              Text('${dayTotal >= 0 ? '+' : '−'}${fmtCur(dayTotal.abs())}', style: const TextStyle(color: Colors.white38, fontSize: 11)),
             ],
           ),
         ));
@@ -475,7 +476,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
             ),
           ),
           Text(
-            '${t.isIncome ? '+' : '−'}${fmtMoney(t.amount)} ₽',
+            '${t.isIncome ? '+' : '−'}${fmtCur(t.amount)}',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: t.isIncome ? AppColors.green : Colors.white),
           ),
           IconButton(

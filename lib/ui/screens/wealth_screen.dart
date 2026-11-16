@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/finance_stats.dart';
+import '../../core/currency.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../state/app_controller.dart';
@@ -47,7 +48,7 @@ class _WealthScreenState extends State<WealthScreen> {
                     Text(
                       fact.isEmpty
                           ? 'Доходы и расходы по категориям, динамика по месяцам'
-                          : '${monthYear(c.now)}: +${fmtMoney(fact.income)} / −${fmtMoney(fact.expense)} ₽',
+                          : '${monthYear(c.now)}: +${fmtMoney(fact.income)} / −${fmtCur(fact.expense)}',
                       style: const TextStyle(color: Colors.white54, fontSize: 11),
                     ),
                   ],
@@ -68,9 +69,9 @@ class _WealthScreenState extends State<WealthScreen> {
       actionLabel: 'Сохранить',
       accent: AppColors.gold,
       fields: [
-        FieldSpec('w', 'Чистый капитал (₽)', initial: '${c.netWorth}', numeric: true),
-        FieldSpec('i', 'Доход в месяц (₽)', initial: '${c.monthlyIncome}', numeric: true),
-        FieldSpec('e', 'Расходы в месяц (₽)', initial: '${c.monthlyExpense}', numeric: true),
+        FieldSpec('w', 'Чистый капитал ($cur)', initial: '${c.netWorth}', numeric: true),
+        FieldSpec('i', 'Доход в месяц ($cur)', initial: '${c.monthlyIncome}', numeric: true),
+        FieldSpec('e', 'Расходы в месяц ($cur)', initial: '${c.monthlyExpense}', numeric: true),
       ],
     );
     if (r == null || !mounted) return;
@@ -87,7 +88,7 @@ class _WealthScreenState extends State<WealthScreen> {
       fields: [
         FieldSpec('y', 'Год / Период', initial: old?.year ?? ''),
         FieldSpec('r', 'Должность', initial: old?.role ?? ''),
-        FieldSpec('s', 'Зарплата (₽)', numeric: true, initial: old == null ? '' : '${old.salary}'),
+        FieldSpec('s', 'Зарплата ($cur)', numeric: true, initial: old == null ? '' : '${old.salary}'),
       ],
       validate: (v) => v['y']!.isNotEmpty && (parseInt(v['s']!) ?? 0) > 0,
     );
@@ -109,7 +110,7 @@ class _WealthScreenState extends State<WealthScreen> {
         children: [
           SizedBox(width: 56, child: Text(st.year, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
           Expanded(child: Text(st.role.isEmpty ? '—' : st.role, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white54, fontSize: 12))),
-          Text('${fmtMoney(st.salary)} ₽', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+          Text('${fmtCur(st.salary)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
           IconButton(icon: const Icon(Icons.edit, size: 16, color: Colors.white38), tooltip: 'Изменить', onPressed: () => _addSalaryStepDialog(i)),
           IconButton(
             icon: const Icon(Icons.close, size: 16, color: Colors.white24),
@@ -139,7 +140,7 @@ class _WealthScreenState extends State<WealthScreen> {
         children: [
           Text(title, style: const TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
-          Text('${fmtMoney(value)} ₽', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+          Text('${fmtCur(value)}', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
         ],
       ),
     );
@@ -178,7 +179,7 @@ class _WealthScreenState extends State<WealthScreen> {
               children: [
                 const Text('ЧИСТЫЙ КАПИТАЛ (NET WORTH)', style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 6),
-                Text('${fmtMoney(c.netWorth)} ₽', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.gold)),
+                Text('${fmtCur(c.netWorth)}', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.gold)),
                 const SizedBox(height: 4),
                 Text(
                   'Норма сбережений ${isFact ? 'за месяц (факт)' : '(план)'}: $savingsRate%',
