@@ -8,7 +8,7 @@ import '../../models/models.dart';
 
 void drawText(Canvas canvas, String text, Offset offset, TextStyle style, {double anchor = 0, TextAlign align = TextAlign.start}) {
   final tp = TextPainter(
-    text: TextSpan(text: text, style: style),
+    text: TextSpan(text: text, style: style.copyWith(fontFamily: 'Inter')),
     textAlign: align,
     textDirection: TextDirection.ltr,
   )..layout();
@@ -69,7 +69,7 @@ class DualLineComparisonPainter extends CustomPainter {
 
     final pathA = Path(), pathB = Path();
     final dotA = Paint()..color = colorA, dotB = Paint()..color = colorB;
-    final labelStyle = const TextStyle(color: Colors.white38, fontSize: 9);
+    final labelStyle = const TextStyle(color: AppColors.muted, fontSize: 9);
 
     for (int i = 0; i < n; i++) {
       final x = padX + i * stepX;
@@ -166,7 +166,7 @@ class SalaryLineChartPainter extends CustomPainter {
 
     const padX = 24.0; // поля, чтобы первая/последняя подписи не обрезались
     const labelStyle = TextStyle(color: Colors.white70, fontSize: 10);
-    final dot = Paint()..color = AppColors.green;
+    final dot = Paint()..color = AppColors.text;
 
     if (steps.length == 1) {
       final x = size.width / 2, y = size.height / 2;
@@ -209,12 +209,12 @@ class SalaryLineChartPainter extends CustomPainter {
       fillPath,
       Paint()
         ..shader = LinearGradient(
-          colors: [AppColors.green.withValues(alpha: 0.35), Colors.transparent],
+          colors: [AppColors.text.withValues(alpha: 0.18), Colors.transparent],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ).createShader(Rect.fromLTWH(0, 0, size.width, size.height)),
     );
-    canvas.drawPath(path, Paint()..color = AppColors.green..strokeWidth = 3.0..style = PaintingStyle.stroke);
+    canvas.drawPath(path, Paint()..color = AppColors.text..strokeWidth = 3.0..style = PaintingStyle.stroke);
   }
 
   @override
@@ -257,10 +257,10 @@ class VolumeBarsPainter extends CustomPainter {
       );
       canvas.drawRRect(rect, Paint()..color = color.withValues(alpha: isLast ? 0.95 : 0.45));
       if (values[i] > 0) {
-        drawText(canvas, fmtVolume(values[i]), Offset(cx, baseY - max(h, 2.0) - 12), const TextStyle(color: Colors.white54, fontSize: 8), anchor: 0.5);
+        drawText(canvas, fmtVolume(values[i]), Offset(cx, baseY - max(h, 2.0) - 12), const TextStyle(color: AppColors.muted, fontSize: 8), anchor: 0.5);
       }
       if (i < labels.length) {
-        drawText(canvas, labels[i], Offset(cx, baseY + 3), const TextStyle(color: Colors.white38, fontSize: 9), anchor: 0.5);
+        drawText(canvas, labels[i], Offset(cx, baseY + 3), const TextStyle(color: AppColors.muted, fontSize: 9), anchor: 0.5);
       }
     }
   }
@@ -307,7 +307,7 @@ class DualBarsPainter extends CustomPainter {
       bar(cx - barW * 0.6, a[i], colorA, isLast);
       bar(cx + barW * 0.6, b[i], colorB, isLast);
       if (i < labels.length) {
-        drawText(canvas, labels[i], Offset(cx, baseY + 3), const TextStyle(color: Colors.white38, fontSize: 9), anchor: 0.5);
+        drawText(canvas, labels[i], Offset(cx, baseY + 3), const TextStyle(color: AppColors.muted, fontSize: 9), anchor: 0.5);
       }
     }
   }

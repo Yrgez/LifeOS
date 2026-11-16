@@ -179,7 +179,7 @@ class _EventDialogState extends State<_EventDialog> {
 
   Widget _label(String t) => Padding(
         padding: const EdgeInsets.only(top: 12, bottom: 6),
-        child: Text(t, style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
+        child: Text(t, style: const TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
       );
 
   @override
@@ -212,7 +212,7 @@ class _EventDialogState extends State<_EventDialog> {
             if (editing)
               const Padding(
                 padding: EdgeInsets.only(bottom: 10),
-                child: Text('Прежняя версия останется в истории.', style: TextStyle(color: Colors.white38, fontSize: 11)),
+                child: Text('Прежняя версия останется в истории.', style: TextStyle(color: AppColors.muted, fontSize: 11)),
               ),
             TextField(
               key: const ValueKey('event_title'),
@@ -273,7 +273,7 @@ class _EventDialogState extends State<_EventDialog> {
               ],
             ),
             const SizedBox(height: 8),
-            const Text('Энергия — ваша оценка, сколько сил ушло (1 — почти не ушло, 5 — всё)', style: TextStyle(color: Colors.white38, fontSize: 11)),
+            const Text('Энергия — ваша оценка, сколько сил ушло (1 — почти не ушло, 5 — всё)', style: TextStyle(color: AppColors.muted, fontSize: 11)),
             const SizedBox(height: 4),
             Wrap(
               spacing: 6,

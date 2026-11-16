@@ -36,13 +36,12 @@ class _ProcessesScreenState extends State<ProcessesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ПРОЦЕССЫ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
+        title: const Text('Процессы'),
         backgroundColor: AppColors.panel,
         elevation: 0,
       ),
       floatingActionButton: FloatingActionButton.extended(
         key: const ValueKey('add_process'),
-        backgroundColor: AppColors.green,
         foregroundColor: Colors.black,
         icon: const Icon(Icons.add),
         label: const Text('Процесс', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -59,7 +58,7 @@ class _ProcessesScreenState extends State<ProcessesScreen> {
     Widget card(LifeProcess p) => ProcessCard(key: ValueKey(p.id), process: p, activity: c.processActivityOf(p.id), onTap: () => _open(p));
     Widget section(String t) => Padding(
           padding: const EdgeInsets.only(top: 12, bottom: 8),
-          child: Text(t, style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
+          child: Text(t, style: const TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
         );
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
@@ -84,7 +83,7 @@ class _ProcessesScreenState extends State<ProcessesScreen> {
               'Процессов пока нет. Процесс — длительное направление: изучение языка, тренировочный цикл, '
               'накопление на цель. Отмечайте события процесса — и будет видно, сколько в него вложено.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white38, fontSize: 13),
+              style: TextStyle(color: AppColors.muted, fontSize: 13),
             ),
           ),
         if (open.isNotEmpty) ...[section('ИДУТ И НА ПАУЗЕ'), for (final p in open) card(p)],

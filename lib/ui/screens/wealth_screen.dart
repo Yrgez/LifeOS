@@ -30,31 +30,31 @@ class _WealthScreenState extends State<WealthScreen> {
     return Material(
       color: AppColors.card,
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: AppColors.gold.withValues(alpha: 0.3))),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.tile), side: const BorderSide(color: AppColors.border)),
       child: InkWell(
         onTap: _openFinance,
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              const Icon(Icons.receipt_long, color: AppColors.gold),
+              const Icon(Icons.receipt_long_outlined, color: AppColors.text),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('УЧЁТ ОПЕРАЦИЙ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 0.6)),
+                    const Text('Учёт операций', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
                     const SizedBox(height: 2),
                     Text(
                       fact.isEmpty
                           ? 'Доходы и расходы по категориям, динамика по месяцам'
                           : '${monthYear(c.now)}: +${fmtMoney(fact.income)} / −${fmtCur(fact.expense)}',
-                      style: const TextStyle(color: Colors.white54, fontSize: 11),
+                      style: const TextStyle(color: AppColors.muted, fontSize: 11),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Colors.white38),
+              const Icon(Icons.chevron_right, color: AppColors.muted),
             ],
           ),
         ),
@@ -67,7 +67,7 @@ class _WealthScreenState extends State<WealthScreen> {
       context,
       title: 'Параметры капитала',
       actionLabel: 'Сохранить',
-      accent: AppColors.gold,
+      accent: AppColors.accent,
       fields: [
         FieldSpec('w', 'Чистый капитал ($cur)', initial: '${c.netWorth}', numeric: true),
         FieldSpec('i', 'Доход в месяц ($cur)', initial: '${c.monthlyIncome}', numeric: true),
@@ -105,13 +105,13 @@ class _WealthScreenState extends State<WealthScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.fromLTRB(12, 2, 0, 2),
-      decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(12)),
+      decoration: tileDecoration(radius: 20),
       child: Row(
         children: [
           SizedBox(width: 56, child: Text(st.year, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-          Expanded(child: Text(st.role.isEmpty ? '—' : st.role, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white54, fontSize: 12))),
+          Expanded(child: Text(st.role.isEmpty ? '—' : st.role, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted, fontSize: 12))),
           Text('${fmtCur(st.salary)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-          IconButton(icon: const Icon(Icons.edit, size: 16, color: Colors.white38), tooltip: 'Изменить', onPressed: () => _addSalaryStepDialog(i)),
+          IconButton(icon: const Icon(Icons.edit, size: 16, color: AppColors.muted), tooltip: 'Изменить', onPressed: () => _addSalaryStepDialog(i)),
           IconButton(
             icon: const Icon(Icons.close, size: 16, color: Colors.white24),
             tooltip: 'Удалить точку',
@@ -134,13 +134,13 @@ class _WealthScreenState extends State<WealthScreen> {
   Widget _moneyTile(String title, int value, Color color) {
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(16)),
+      decoration: tileDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold)),
+          Text(title, style: const TextStyle(color: AppColors.muted, fontSize: 13)),
           const SizedBox(height: 4),
-          Text('${fmtCur(value)}', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
+          Text(fmtCur(value), style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: color)),
         ],
       ),
     );
@@ -154,32 +154,37 @@ class _WealthScreenState extends State<WealthScreen> {
     final savingsRate = (factRate ?? (c.monthlyIncome > 0 ? ((c.monthlyIncome - c.monthlyExpense) / c.monthlyIncome) * 100 : 0)).round();
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Flexible(child: Text('КАПИТАЛ И КАРЬЕРА', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
-              IconButton(onPressed: _editWealthDialog, icon: const Icon(Icons.edit, color: AppColors.gold, size: 22)),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Материальное', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8)),
+                    SizedBox(height: 2),
+                    Text('Капитал, доход, финансы', style: TextStyle(color: AppColors.muted, fontSize: 13)),
+                  ],
+                ),
+              ),
+              IconButton(tooltip: 'Изменить капитал и доход', onPressed: _editWealthDialog, icon: const Icon(Icons.edit_outlined, color: AppColors.text, size: 22)),
             ],
           ),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(20),
             width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [Color(0xFF1F242F), AppColors.card], begin: Alignment.topLeft, end: Alignment.bottomRight),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
-            ),
+            decoration: tileDecoration(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('ЧИСТЫЙ КАПИТАЛ (NET WORTH)', style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold)),
+                const Text('Чистый капитал', style: TextStyle(color: AppColors.muted, fontSize: 13)),
                 const SizedBox(height: 6),
-                Text('${fmtCur(c.netWorth)}', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.gold)),
+                Text(fmtCur(c.netWorth), style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8)),
                 const SizedBox(height: 4),
                 Text(
                   'Норма сбережений ${isFact ? 'за месяц (факт)' : '(план)'}: $savingsRate%',
@@ -191,9 +196,9 @@ class _WealthScreenState extends State<WealthScreen> {
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(child: _moneyTile('ДОХОД / МЕС', c.monthlyIncome, Colors.white)),
+              Expanded(child: _moneyTile('Доход в месяц', c.monthlyIncome, AppColors.text)),
               const SizedBox(width: 12),
-              Expanded(child: _moneyTile('ТРАТЫ / МЕС', c.monthlyExpense, AppColors.red)),
+              Expanded(child: _moneyTile('Траты в месяц', c.monthlyExpense, AppColors.red)),
             ],
           ),
           const SizedBox(height: 12),
@@ -202,8 +207,8 @@ class _WealthScreenState extends State<WealthScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Flexible(child: Text('ГРАФИК РОСТА ЗАРПЛАТЫ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
-              IconButton(onPressed: _addSalaryStepDialog, icon: const Icon(Icons.add_circle, color: AppColors.green, size: 24)),
+              const Flexible(child: Text('Рост зарплаты', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600))),
+              IconButton(tooltip: 'Добавить точку зарплаты', onPressed: _addSalaryStepDialog, icon: const Icon(Icons.add_circle_outline, color: AppColors.text, size: 24)),
             ],
           ),
           const SizedBox(height: 12),

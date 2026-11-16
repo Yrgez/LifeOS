@@ -7,6 +7,7 @@ import '../../models/models.dart';
 import '../../state/app_controller.dart';
 import '../painters/anatomy_geometry.dart';
 import '../widgets/body_map_card.dart';
+import '../widgets/body_metrics.dart';
 import '../widgets/comparison_card.dart';
 import '../widgets/log_set_dialog.dart';
 import 'journal_screen.dart';
@@ -44,29 +45,29 @@ class _GymScreenState extends State<GymScreen> {
     return Material(
       color: AppColors.card,
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: AppColors.green.withValues(alpha: 0.3))),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.tile), side: const BorderSide(color: AppColors.border)),
       child: InkWell(
         onTap: _openJournal,
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(18),
           child: Row(
             children: [
-              const Icon(Icons.menu_book, color: AppColors.green),
-              const SizedBox(width: 12),
+              const Icon(Icons.menu_book_outlined, color: AppColors.text),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('ЖУРНАЛ ТРЕНИРОВОК', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, letterSpacing: 0.6)),
+                    const Text('Журнал тренировок', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
                     const SizedBox(height: 2),
                     Text(
-                      sets.isEmpty ? 'История подходов, прогрессия и объём нагрузки' : 'За 7 дней: $cnt подх. • ${fmtVolume(vol)} кг',
-                      style: const TextStyle(color: Colors.white54, fontSize: 11),
+                      sets.isEmpty ? 'История подходов, прогрессия и объём' : 'За 7 дней: $cnt подх. · ${fmtVolume(vol)} кг',
+                      style: const TextStyle(color: AppColors.muted, fontSize: 13),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Colors.white38),
+              const Icon(Icons.chevron_right, color: AppColors.muted),
             ],
           ),
         ),
@@ -74,75 +75,48 @@ class _GymScreenState extends State<GymScreen> {
     );
   }
 
-  Widget _toggleBtn(String text, bool active, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        decoration: BoxDecoration(color: active ? AppColors.green : Colors.transparent, borderRadius: BorderRadius.circular(20)),
-        child: Text(text, style: TextStyle(color: active ? Colors.black : Colors.white60, fontSize: 12, fontWeight: FontWeight.bold)),
-      ),
-    );
-  }
-
   Widget _buildGymScreen() {
     final paths = AnatomicalGeometry.pathsFor(selection.showFront);
-    // порядок — как на силуэте; «икры» теперь есть и в списке заднего вида
+    // порядок — как на силуэте; «икры» есть и в списке заднего вида
     final visible = [for (final k in paths.keys) if (c.muscles[k] != null) c.muscles[k]!];
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Flexible(child: Text('АНАТОМИЧЕСКАЯ КАРТА ТЕЛА', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
-              const SizedBox(width: 8),
-              Container(
-                decoration: BoxDecoration(color: AppColors.field, borderRadius: BorderRadius.circular(20)),
-                child: Row(
-                  children: [
-                    _toggleBtn('Спереди', selection.showFront, () => selection.setFront(true)),
-                    _toggleBtn('Сзади', !selection.showFront, () => selection.setFront(false)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
+          const Text('Тело', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8)),
+          const SizedBox(height: 2),
+          const Text('Вес, восстановление, тренировки', style: TextStyle(color: AppColors.muted, fontSize: 13)),
+          const SizedBox(height: 20),
+          BodyMetrics(controller: c),
+          const SizedBox(height: 12),
           BodyMapCard(controller: c, selection: selection),
           const SizedBox(height: 12),
           _journalEntryCard(),
           const SizedBox(height: 16),
           ComparisonCard(controller: c),
           const SizedBox(height: 16),
-          const Text('СПИСОК МЫШЕЧНЫХ ГРУПП:', style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold)),
+          const Text('Группы мышц', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
           const SizedBox(height: 10),
           for (final muscle in visible)
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Material(
-                color: selection.muscleId == muscle.id ? const Color(0xFF1C2330) : AppColors.card,
+                color: AppColors.card,
                 clipBehavior: Clip.antiAlias,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: selection.muscleId == muscle.id ? AppColors.green : Colors.transparent, width: 1.2),
+                  borderRadius: BorderRadius.circular(20),
+                  side: BorderSide(color: selection.muscleId == muscle.id ? AppColors.text : AppColors.border, width: selection.muscleId == muscle.id ? 1.2 : 1),
                 ),
                 child: ListTile(
                   onTap: () => selection.select(muscle.id),
-                  leading: CircleAvatar(
-                    backgroundColor: muscle.color.withValues(alpha: 0.2),
-                    radius: 14,
-                    child: CircleAvatar(backgroundColor: muscle.color, radius: 5),
-                  ),
-                  title: Text(muscle.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                  subtitle: Text('1RM: ${muscle.maxWeight.toInt()} кг • ${muscle.lastTrained}', style: const TextStyle(color: Colors.white38, fontSize: 12)),
-                  trailing: ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF202630), elevation: 0),
+                  title: Text(muscle.name, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15)),
+                  subtitle: Text('1RM ${muscle.maxWeight.toInt()} кг · ${muscle.lastTrained}', style: const TextStyle(color: AppColors.muted, fontSize: 13)),
+                  trailing: OutlinedButton(
+                    style: OutlinedButton.styleFrom(minimumSize: const Size(0, 36), padding: const EdgeInsets.symmetric(horizontal: 12)),
                     onPressed: () => _logWorkoutForMuscle(muscle),
-                    child: const Text('+ Подход', style: TextStyle(fontSize: 12, color: AppColors.green)),
+                    child: const Text('+ Подход', style: TextStyle(fontSize: 13)),
                   ),
                 ),
               ),

@@ -136,12 +136,12 @@ Future<void> showRecurringSheet(BuildContext context, AppController c) {
                     ),
                   ],
                 ),
-                const Text('Нажмите на правило, чтобы изменить. Изменения касаются будущих операций — созданные не меняются.', style: TextStyle(color: Colors.white38, fontSize: 11)),
+                const Text('Нажмите на правило, чтобы изменить. Изменения касаются будущих операций — созданные не меняются.', style: TextStyle(color: AppColors.muted, fontSize: 11)),
                 const SizedBox(height: 4),
                 if (rules.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 20),
-                    child: Text('Правил нет. Создайте правило (аренда, подписка, зарплата) — операция будет появляться сама каждый месяц.', style: TextStyle(color: Colors.white38, fontSize: 12)),
+                    child: Text('Правил нет. Создайте правило (аренда, подписка, зарплата) — операция будет появляться сама каждый месяц.', style: TextStyle(color: AppColors.muted, fontSize: 12)),
                   )
                 else
                   Flexible(
@@ -155,12 +155,12 @@ Future<void> showRecurringSheet(BuildContext context, AppController c) {
                             leading: CircleAvatar(
                               radius: 16,
                               backgroundColor: (finCategory(r.categoryId)?.color ?? Colors.white24).withValues(alpha: 0.18),
-                              child: Icon(finCategory(r.categoryId)?.icon ?? Icons.help_outline, size: 16, color: finCategory(r.categoryId)?.color ?? Colors.white38),
+                              child: Icon(finCategory(r.categoryId)?.icon ?? Icons.help_outline, size: 16, color: finCategory(r.categoryId)?.color ?? AppColors.muted),
                             ),
                             title: Text('${finCategory(r.categoryId)?.name ?? r.categoryId}${r.note.isEmpty ? '' : ' • ${r.note}'}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                             subtitle: Text(
                               'каждое ${r.dayOfMonth}-е • ${finCategory(r.categoryId)?.isIncome == true ? '+' : '−'}${fmtCur(r.amount)}${r.affectsNetWorth ? '' : ' • вне капитала'}',
-                              style: const TextStyle(color: Colors.white54, fontSize: 11),
+                              style: const TextStyle(color: AppColors.muted, fontSize: 11),
                             ),
                             trailing: IconButton(
                               icon: const Icon(Icons.delete_outline, color: Colors.white24, size: 18),
@@ -197,7 +197,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('УЧЁТ ФИНАНСОВ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
+        title: const Text('Учёт финансов'),
         backgroundColor: AppColors.panel,
         elevation: 0,
         actions: [
@@ -252,7 +252,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
         const SizedBox(height: 12),
         _categoriesCard(totals),
         const SizedBox(height: 16),
-        const Text('ОПЕРАЦИИ', style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold)),
+        const Text('ОПЕРАЦИИ', style: TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         ..._list(monthTxs),
       ],
@@ -280,11 +280,11 @@ class _FinanceScreenState extends State<FinanceScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold)),
+          Text(title, style: const TextStyle(color: AppColors.muted, fontSize: 9, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
           FittedBox(fit: BoxFit.scaleDown, child: Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color))),
           const SizedBox(height: 2),
-          Text(sub.isEmpty ? ' ' : sub, style: const TextStyle(color: Colors.white38, fontSize: 9)),
+          Text(sub.isEmpty ? ' ' : sub, style: const TextStyle(color: AppColors.muted, fontSize: 9)),
         ],
       ),
     );
@@ -306,11 +306,11 @@ class _FinanceScreenState extends State<FinanceScreen> {
               Row(children: [
                 const CircleAvatar(radius: 4, backgroundColor: AppColors.green),
                 const SizedBox(width: 4),
-                const Text('доход', style: TextStyle(color: Colors.white38, fontSize: 10)),
+                const Text('доход', style: TextStyle(color: AppColors.muted, fontSize: 10)),
                 const SizedBox(width: 8),
                 const CircleAvatar(radius: 4, backgroundColor: AppColors.red),
                 const SizedBox(width: 4),
-                const Text('расход', style: TextStyle(color: Colors.white38, fontSize: 10)),
+                const Text('расход', style: TextStyle(color: AppColors.muted, fontSize: 10)),
               ]),
             ],
           ),
@@ -362,7 +362,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
             ),
           const SizedBox(height: 8),
           if (statuses.isEmpty)
-            const Text('В этом месяце расходов и лимитов нет', style: TextStyle(color: Colors.white38, fontSize: 12))
+            const Text('В этом месяце расходов и лимитов нет', style: TextStyle(color: AppColors.muted, fontSize: 12))
           else
             for (final st in statuses)
               Padding(
@@ -376,7 +376,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
 
   Widget _categoryRow(BudgetStatus st, int total, int maxSum) {
     final cat = finCategory(st.categoryId);
-    final color = st.exceeded ? AppColors.red : (cat?.color ?? Colors.white38);
+    final color = st.exceeded ? AppColors.red : (cat?.color ?? AppColors.muted);
     final pct = total <= 0 ? 0 : (st.spent / total * 100).round();
     final double value = st.hasLimit ? min(1.0, st.ratio) : (maxSum <= 0 ? 0.0 : st.spent / maxSum);
     final label = st.hasLimit
@@ -386,7 +386,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
       onTap: () => showBudgetDialog(context, c, categoryId: st.categoryId),
       child: Row(
         children: [
-          Icon(cat?.icon ?? Icons.help_outline, size: 16, color: cat?.color ?? Colors.white38),
+          Icon(cat?.icon ?? Icons.help_outline, size: 16, color: cat?.color ?? AppColors.muted),
           const SizedBox(width: 8),
           SizedBox(width: 92, child: Text(cat?.name ?? st.categoryId, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12))),
           Expanded(
@@ -404,7 +404,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
             child: Text(
               st.exceeded ? '$label ⚠' : label,
               textAlign: TextAlign.right,
-              style: TextStyle(color: st.exceeded ? AppColors.red : Colors.white54, fontSize: 10, fontWeight: st.exceeded ? FontWeight.bold : FontWeight.normal),
+              style: TextStyle(color: st.exceeded ? AppColors.red : AppColors.muted, fontSize: 10, fontWeight: st.exceeded ? FontWeight.bold : FontWeight.normal),
             ),
           ),
         ],
@@ -417,7 +417,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
       return const [
         Padding(
           padding: EdgeInsets.symmetric(vertical: 24),
-          child: Center(child: Text('В этом месяце операций нет.\nНажмите «+ Операция», чтобы добавить.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white38, fontSize: 12))),
+          child: Center(child: Text('В этом месяце операций нет.\nНажмите «+ Операция», чтобы добавить.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted, fontSize: 12))),
         ),
       ];
     }
@@ -434,7 +434,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(shortDate(t.at), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-              Text('${dayTotal >= 0 ? '+' : '−'}${fmtCur(dayTotal.abs())}', style: const TextStyle(color: Colors.white38, fontSize: 11)),
+              Text('${dayTotal >= 0 ? '+' : '−'}${fmtCur(dayTotal.abs())}', style: const TextStyle(color: AppColors.muted, fontSize: 11)),
             ],
           ),
         ));
@@ -458,7 +458,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
             padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
             child: Row(
         children: [
-          CircleAvatar(radius: 15, backgroundColor: (cat?.color ?? Colors.white24).withValues(alpha: 0.18), child: Icon(cat?.icon ?? Icons.help_outline, size: 15, color: cat?.color ?? Colors.white38)),
+          CircleAvatar(radius: 15, backgroundColor: (cat?.color ?? Colors.white24).withValues(alpha: 0.18), child: Icon(cat?.icon ?? Icons.help_outline, size: 15, color: cat?.color ?? AppColors.muted)),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -470,7 +470,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
                     [if (t.recurringId != null) '↻ повтор', if (t.note.isNotEmpty) t.note, if (!t.affectsNetWorth) 'вне капитала'].join(' • '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white38, fontSize: 11),
+                    style: const TextStyle(color: AppColors.muted, fontSize: 11),
                   ),
               ],
             ),

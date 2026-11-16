@@ -29,7 +29,7 @@ Color processStatusColor(String s) => switch (s) {
       ProcessStatus.active => AppColors.green,
       ProcessStatus.paused => AppColors.amber,
       ProcessStatus.completed => AppColors.violet,
-      _ => Colors.white38,
+      _ => AppColors.muted,
     };
 
 // ---------------- диалог процесса ----------------
@@ -82,7 +82,7 @@ class _ProcessDialogState extends State<_ProcessDialog> {
 
   Widget _label(String t) => Padding(
         padding: const EdgeInsets.only(top: 12, bottom: 6),
-        child: Text(t, style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
+        child: Text(t, style: const TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
       );
 
   @override
@@ -103,7 +103,7 @@ class _ProcessDialogState extends State<_ProcessDialog> {
                 const Padding(
                   padding: EdgeInsets.only(bottom: 10),
                   child: Text('Длительное направление усилий: «Изучение Java», «Набор массы», «Ремонт». '
-                      'Что в него вложено, считается по событиям.', style: TextStyle(color: Colors.white38, fontSize: 11)),
+                      'Что в него вложено, считается по событиям.', style: TextStyle(color: AppColors.muted, fontSize: 11)),
                 ),
               TextField(
                 key: const ValueKey('process_title'),
@@ -159,10 +159,10 @@ class _ProcessDialogState extends State<_ProcessDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Отмена', style: TextStyle(color: Colors.white54))),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Отмена', style: TextStyle(color: AppColors.muted))),
         ElevatedButton(
           key: const ValueKey('process_save'),
-          style: ElevatedButton.styleFrom(backgroundColor: AppColors.green),
+          style: ElevatedButton.styleFrom(),
           onPressed: valid
               ? () => Navigator.pop(
                     context,
@@ -195,7 +195,7 @@ class ProcessCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(12)),
+        decoration: tileDecoration(radius: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -210,7 +210,7 @@ class ProcessCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               '$since · событий: ${a.resources.events}${a.lastAt == null ? '' : ' · последнее ${dayKey(a.lastAt!)}'}',
-              style: const TextStyle(color: Colors.white38, fontSize: 11),
+              style: const TextStyle(color: AppColors.muted, fontSize: 11),
             ),
             if (a.resources.events > 0) ...[
               const SizedBox(height: 4),
@@ -281,7 +281,7 @@ class ProcessHeader extends StatelessWidget {
     final goalTitles = {for (final g in controller.goals) g.id: g.title};
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(12)),
+      decoration: tileDecoration(radius: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -295,7 +295,7 @@ class ProcessHeader extends StatelessWidget {
               ),
               PopupMenuButton<String>(
                 key: const ValueKey('process_menu'),
-                icon: const Icon(Icons.more_vert, color: Colors.white38, size: 18),
+                icon: const Icon(Icons.more_vert, color: AppColors.muted, size: 18),
                 onSelected: (v) => switch (v) {
                   'edit' => _edit(context),
                   'remove' => _remove(context),
@@ -318,11 +318,11 @@ class ProcessHeader extends StatelessWidget {
             ),
           const SizedBox(height: 8),
           Text('ВЛОЖЕНО ЗА ВСЁ ВРЕМЯ: событий ${a.resources.events}',
-              style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold)),
+              style: const TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold)),
           if (a.resources.events > 0)
             for (final line in resourceLines(a.resources)) Text(line, style: const TextStyle(fontSize: 12)),
           const SizedBox(height: 8),
-          const Text('ЖУРНАЛ СТАТУСОВ', style: TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold)),
+          const Text('ЖУРНАЛ СТАТУСОВ', style: TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold)),
           for (final c in p.statusLog.reversed)
             Text(
               '${dayKey(c.at)} — ${ProcessStatus.labels[c.status]}${c.note.isEmpty ? '' : ': ${c.note}'}',

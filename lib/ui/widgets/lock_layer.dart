@@ -76,14 +76,14 @@ class _LockScreenState extends State<LockScreen> {
                 const SizedBox(height: 20),
                 const Text('Life OS заблокирован', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                const Text('Подтвердите личность, чтобы продолжить', textAlign: TextAlign.center, style: TextStyle(color: Colors.white54, fontSize: 13)),
+                const Text('Подтвердите личность, чтобы продолжить', textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted, fontSize: 13)),
                 if (lock.message != null) ...[
                   const SizedBox(height: 14),
                   Text(lock.message!, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.amber, fontSize: 12)),
                 ],
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.green, minimumSize: const Size(200, 46)),
+                  style: ElevatedButton.styleFrom(minimumSize: const Size(200, 46)),
                   onPressed: lock.authenticating ? null : lock.unlock,
                   icon: const Icon(Icons.fingerprint, color: Colors.black),
                   label: const Text('Разблокировать', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),

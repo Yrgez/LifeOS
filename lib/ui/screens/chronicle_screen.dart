@@ -32,7 +32,7 @@ class _ChronicleScreenState extends State<ChronicleScreen> {
     if (widget.embedded) return ListenableBuilder(listenable: c, builder: (context, _) => _content());
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ХРОНИКА', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
+        title: const Text('Хроника'),
         backgroundColor: AppColors.panel,
         elevation: 0,
       ),
@@ -49,8 +49,8 @@ class _ChronicleScreenState extends State<ChronicleScreen> {
       children: [
         if (widget.embedded)
           const Padding(
-            padding: EdgeInsets.only(bottom: 10),
-            child: Text('ХРОНИКА', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            padding: EdgeInsets.only(top: 8, bottom: 16),
+            child: Text('Хроника', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8)),
           ),
         Wrap(
           spacing: 8,
@@ -80,7 +80,7 @@ class _ChronicleScreenState extends State<ChronicleScreen> {
             child: Text(
               'Хроника пока пуста. Она складывается сама: из событий, процессов, достижений и состояния каждого дня.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white38, fontSize: 13),
+              style: TextStyle(color: AppColors.muted, fontSize: 13),
             ),
           ),
         for (final m in months.take(_months)) _MonthSection(month: m, controller: c),
@@ -88,7 +88,7 @@ class _ChronicleScreenState extends State<ChronicleScreen> {
           TextButton(onPressed: () => setState(() => _months += 6), child: Text('Ранее (ещё месяцев: ${months.length - _months})')),
         if (undated.isNotEmpty) ...[
           const _Header('БЕЗ ДАТЫ'),
-          for (final a in undated) _Line(icon: Icons.emoji_events_outlined, color: AppColors.green, title: a.title, detail: a.category),
+          for (final a in undated) _Line(icon: Icons.emoji_events_outlined, color: AppColors.text, title: a.title, detail: a.category),
         ],
       ],
     );
@@ -102,7 +102,7 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(top: 16, bottom: 6),
-        child: Text(text, style: const TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
+        child: Text(text, style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
       );
 }
 
@@ -122,7 +122,7 @@ class _MonthSection extends StatelessWidget {
           Container(
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(12)),
+            decoration: tileDecoration(radius: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -130,7 +130,7 @@ class _MonthSection extends StatelessWidget {
                 if (d.snapshot != null && _snapshotLine(d.snapshot!).isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
-                    child: Text(_snapshotLine(d.snapshot!), style: const TextStyle(color: Colors.white38, fontSize: 11)),
+                    child: Text(_snapshotLine(d.snapshot!), style: const TextStyle(color: AppColors.muted, fontSize: 11)),
                   ),
                 for (final e in d.entries) _entry(context, e),
               ],
@@ -142,9 +142,9 @@ class _MonthSection extends StatelessWidget {
 
   Widget _entry(BuildContext context, ChronicleEntry e) {
     final (icon, color) = switch (e.kind) {
-      ChronicleKind.event => (Icons.circle, e.dimensions.isEmpty ? Colors.white38 : dimensionColor(e.dimensions.first)),
+      ChronicleKind.event => (Icons.circle, e.dimensions.isEmpty ? AppColors.muted : dimensionColor(e.dimensions.first)),
       ChronicleKind.process => (Icons.autorenew, AppColors.amber),
-      _ => (Icons.emoji_events_outlined, AppColors.green),
+      _ => (Icons.emoji_events_outlined, AppColors.text),
     };
     final hasTarget = e.kind == ChronicleKind.process && controller.processById(e.refId ?? '') != null;
     return InkWell(
@@ -198,7 +198,7 @@ class _Line extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title, style: const TextStyle(fontSize: 13)),
-                  if (detail.isNotEmpty) Text(detail, style: const TextStyle(color: Colors.white38, fontSize: 11)),
+                  if (detail.isNotEmpty) Text(detail, style: const TextStyle(color: AppColors.muted, fontSize: 11)),
                 ],
               ),
             ),

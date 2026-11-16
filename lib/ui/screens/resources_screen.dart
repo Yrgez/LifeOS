@@ -30,7 +30,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('РЕСУРСЫ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
+        title: const Text('Ресурсы'),
         backgroundColor: AppColors.panel,
         elevation: 0,
       ),
@@ -52,7 +52,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
           ],
         ),
         const SizedBox(height: 4),
-        Text('${dayKey(b.from)} — ${dayKey(b.to.subtract(const Duration(days: 1)))}', style: const TextStyle(color: Colors.white38, fontSize: 11)),
+        Text('${dayKey(b.from)} — ${dayKey(b.to.subtract(const Duration(days: 1)))}', style: const TextStyle(color: AppColors.muted, fontSize: 11)),
         const SizedBox(height: 12),
         if (b.total.events == 0)
           _Card(
@@ -60,7 +60,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
             children: [
               const Text(
                 'Ресурсы считаются по событиям: отмечайте в них время, деньги и энергию — и здесь будет видно, куда они уходят.',
-                style: TextStyle(color: Colors.white54, fontSize: 12),
+                style: TextStyle(color: AppColors.muted, fontSize: 12),
               ),
               const SizedBox(height: 8),
               Align(
@@ -90,7 +90,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
             const SizedBox(height: 4),
             const Text(
               'Отдельный источник: деньги в событиях и операции финансов не складываются друг с другом.',
-              style: TextStyle(color: Colors.white38, fontSize: 11),
+              style: TextStyle(color: AppColors.muted, fontSize: 11),
             ),
           ],
         ),
@@ -111,7 +111,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
             padding: const EdgeInsets.only(top: 4),
             child: Text(
               'Записано ${fmtMinutes(t.minutes)} из $hours ч, прошедших с начала периода. Остальное время не отмечено — это не «потеря», а просто не записано.',
-              style: const TextStyle(color: Colors.white38, fontSize: 11),
+              style: const TextStyle(color: AppColors.muted, fontSize: 11),
             ),
           ),
         const SizedBox(height: 8),
@@ -119,7 +119,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
           'Предыдущие ${period.label.toLowerCase()}: событий ${p.events}'
           '${p.minutesKnown > 0 ? ' · время ${fmtMinutes(p.minutes)}' : ''}'
           '${p.moneyKnown > 0 ? ' · деньги ${fmtCur(p.money)}' : ''}',
-          style: const TextStyle(color: Colors.white54, fontSize: 11),
+          style: const TextStyle(color: AppColors.muted, fontSize: 11),
         ),
       ],
     );
@@ -168,7 +168,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
             padding: EdgeInsets.only(top: 6),
             child: Text(
               'Событие нескольких измерений учтено в каждом из них, поэтому по измерениям суммы больше общего итога.',
-              style: TextStyle(color: Colors.white38, fontSize: 11),
+              style: TextStyle(color: AppColors.muted, fontSize: 11),
             ),
           ),
       ],
@@ -187,7 +187,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
       title: 'ПО ПРОЦЕССАМ',
       children: [
         if (b.byProcess.isEmpty)
-          const Text('События периода не отнесены ни к одному процессу.', style: TextStyle(color: Colors.white54, fontSize: 12)),
+          const Text('События периода не отнесены ни к одному процессу.', style: TextStyle(color: AppColors.muted, fontSize: 12)),
         for (final s in b.byProcess)
           InkWell(
             onTap: titles.containsKey(s.processId)
@@ -206,7 +206,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
         if (b.byProcess.isNotEmpty)
           const Padding(
             padding: EdgeInsets.only(top: 6),
-            child: Text('Длина полосы — указанное время.', style: TextStyle(color: Colors.white38, fontSize: 11)),
+            child: Text('Длина полосы — указанное время.', style: TextStyle(color: AppColors.muted, fontSize: 11)),
           ),
       ],
     );
@@ -226,11 +226,11 @@ class _Card extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(12)),
+        decoration: tileDecoration(radius: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
+            Text(title, style: const TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
             const SizedBox(height: 8),
             ...children,
           ],

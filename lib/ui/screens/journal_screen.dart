@@ -29,12 +29,11 @@ class _JournalScreenState extends State<JournalScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ЖУРНАЛ ТРЕНИРОВОК', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
+        title: const Text('Журнал тренировок'),
         backgroundColor: AppColors.panel,
         elevation: 0,
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: AppColors.green,
         foregroundColor: Colors.black,
         icon: const Icon(Icons.add),
         label: const Text('Подход', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -63,11 +62,11 @@ class _JournalScreenState extends State<JournalScreen> {
         const SizedBox(height: 12),
         Row(
           children: [
-            Expanded(child: _statTile('ОБЪЁМ 7 ДН', '${fmtVolume(vol7)} кг', change == null ? 'нет данных за прошлую' : '${change >= 0 ? '+' : '−'}${change.abs().toStringAsFixed(0)}% к прошлой', change == null ? Colors.white38 : (change >= 0 ? AppColors.green : AppColors.red))),
+            Expanded(child: _statTile('ОБЪЁМ 7 ДН', '${fmtVolume(vol7)} кг', change == null ? 'нет данных за прошлую' : '${change >= 0 ? '+' : '−'}${change.abs().toStringAsFixed(0)}% к прошлой', change == null ? AppColors.muted : (change >= 0 ? AppColors.green : AppColors.red))),
             const SizedBox(width: 8),
-            Expanded(child: _statTile('ПОДХОДОВ 7 ДН', '${setsInWindow(sets, now, 7)}', 'всего: ${sets.length}', Colors.white38)),
+            Expanded(child: _statTile('ПОДХОДОВ 7 ДН', '${setsInWindow(sets, now, 7)}', 'всего: ${sets.length}', AppColors.muted)),
             const SizedBox(width: 8),
-            Expanded(child: _statTile('ДНЕЙ / 28', '${trainingDaysInWindow(sets, now, 28)}', 'с тренировками', Colors.white38)),
+            Expanded(child: _statTile('ДНЕЙ / 28', '${trainingDaysInWindow(sets, now, 28)}', 'с тренировками', AppColors.muted)),
           ],
         ),
         const SizedBox(height: 12),
@@ -75,7 +74,7 @@ class _JournalScreenState extends State<JournalScreen> {
         const SizedBox(height: 12),
         if (filter == 'all') _distributionCard(sets, now) else _progressionCard(filter, sets),
         const SizedBox(height: 16),
-        const Text('ИСТОРИЯ ПОДХОДОВ', style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold)),
+        const Text('ИСТОРИЯ ПОДХОДОВ', style: TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         ..._history(sets),
       ],
@@ -123,7 +122,7 @@ class _JournalScreenState extends State<JournalScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold)),
+          Text(title, style: const TextStyle(color: AppColors.muted, fontSize: 9, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
           FittedBox(fit: BoxFit.scaleDown, child: Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
           const SizedBox(height: 2),
@@ -188,7 +187,7 @@ class _JournalScreenState extends State<JournalScreen> {
           const Text('РАСПРЕДЕЛЕНИЕ ОБЪЁМА ЗА 7 ДНЕЙ', style: TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
           if (byMuscle.isEmpty)
-            const Text('За последние 7 дней подходов нет', style: TextStyle(color: Colors.white38, fontSize: 12))
+            const Text('За последние 7 дней подходов нет', style: TextStyle(color: AppColors.muted, fontSize: 12))
           else
             for (final e in byMuscle)
               Padding(
@@ -206,7 +205,7 @@ class _JournalScreenState extends State<JournalScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    SizedBox(width: 54, child: Text('${fmtVolume(e.value)} кг', textAlign: TextAlign.right, style: const TextStyle(color: Colors.white54, fontSize: 10))),
+                    SizedBox(width: 54, child: Text('${fmtVolume(e.value)} кг', textAlign: TextAlign.right, style: const TextStyle(color: AppColors.muted, fontSize: 10))),
                   ],
                 ),
               ),
@@ -240,7 +239,7 @@ class _JournalScreenState extends State<JournalScreen> {
           Text(
             'Рекорд 1RM: ${trimNum(m?.maxWeight ?? 0)} кг'
             '${bestDay == null ? '' : '  •  лучший день по объёму: ${fmtVolume(bestDay.volume)} кг (${shortDate(bestDay.day)})'}',
-            style: const TextStyle(color: Colors.white54, fontSize: 11),
+            style: const TextStyle(color: AppColors.muted, fontSize: 11),
           ),
         ],
       ),
@@ -252,7 +251,7 @@ class _JournalScreenState extends State<JournalScreen> {
       return const [
         Padding(
           padding: EdgeInsets.symmetric(vertical: 24),
-          child: Center(child: Text('Пока нет записей.\nНажмите «+ Подход», чтобы начать журнал.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white38, fontSize: 12))),
+          child: Center(child: Text('Пока нет записей.\nНажмите «+ Подход», чтобы начать журнал.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted, fontSize: 12))),
         ),
       ];
     }
@@ -272,7 +271,7 @@ class _JournalScreenState extends State<JournalScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(shortDate(st.day), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-              Text('${st.sets} подх. • ${fmtVolume(st.volume)} кг', style: const TextStyle(color: Colors.white38, fontSize: 11)),
+              Text('${st.sets} подх. • ${fmtVolume(st.volume)} кг', style: const TextStyle(color: AppColors.muted, fontSize: 11)),
             ],
           ),
         ));
@@ -290,7 +289,7 @@ class _JournalScreenState extends State<JournalScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
-      decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(12)),
+      decoration: tileDecoration(radius: 20),
       child: Row(
         children: [
           CircleAvatar(radius: 4, backgroundColor: m?.color ?? Colors.white24),
@@ -302,7 +301,7 @@ class _JournalScreenState extends State<JournalScreen> {
                 Text(m?.name ?? s.muscleId, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                 Text(
                   '${trimNum(s.weight)} кг × ${s.reps}  •  объём ${fmtVolume(s.volume)}  •  1RM ${trimNum(s.estimated1RM)}',
-                  style: const TextStyle(color: Colors.white54, fontSize: 11),
+                  style: const TextStyle(color: AppColors.muted, fontSize: 11),
                 ),
               ],
             ),

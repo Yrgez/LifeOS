@@ -269,7 +269,7 @@ class _GraphScreenState extends State<GraphScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('SECOND BRAIN GRAPH', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  Text('Щипок — зум, перетаскивание фона — панорама', style: TextStyle(color: Colors.white38, fontSize: 11)),
+                  Text('Щипок — зум, перетаскивание фона — панорама', style: TextStyle(color: AppColors.muted, fontSize: 11)),
                 ],
               ),
               Row(
@@ -325,7 +325,7 @@ class _GraphScreenState extends State<GraphScreen> {
               Expanded(
                 child: Text(
                   '→ помогает   ┄ мешает   — связаны   толщина = сила',
-                  style: const TextStyle(color: Colors.white38, fontSize: 9),
+                  style: const TextStyle(color: AppColors.muted, fontSize: 9),
                 ),
               ),
               if (isolatedCount > 0)
@@ -465,12 +465,12 @@ class _GraphScreenState extends State<GraphScreen> {
             CircleAvatar(radius: 5, backgroundColor: node.color),
             const SizedBox(width: 8),
             Expanded(child: Text(node.label, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14))),
-            IconButton(icon: const Icon(Icons.close, color: Colors.white38, size: 18), onPressed: _clearSelection, padding: EdgeInsets.zero, constraints: const BoxConstraints()),
+            IconButton(icon: const Icon(Icons.close, color: AppColors.muted, size: 18), onPressed: _clearSelection, padding: EdgeInsets.zero, constraints: const BoxConstraints()),
           ],
         ),
         Text(
           '${_categoryNames[node.category] ?? node.category}${auto ? ' • значение обновляется автоматически' : ''}',
-          style: const TextStyle(color: Colors.white38, fontSize: 10),
+          style: const TextStyle(color: AppColors.muted, fontSize: 10),
         ),
         if (node.ref != null) _refLine(node.ref!),
         const SizedBox(height: 8),
@@ -501,7 +501,7 @@ class _GraphScreenState extends State<GraphScreen> {
           const SizedBox(height: 8),
           Text(
             'Влияет по цепочке на ${reachNames.length}: ${reachNames.take(4).join(', ')}${reachNames.length > 4 ? '…' : ''}',
-            style: const TextStyle(color: Colors.white54, fontSize: 11),
+            style: const TextStyle(color: AppColors.muted, fontSize: 11),
           ),
         ],
         const SizedBox(height: 10),
@@ -571,11 +571,11 @@ class _GraphScreenState extends State<GraphScreen> {
         Row(
           children: [
             Expanded(child: Text('$from $arrow $to', overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14))),
-            IconButton(icon: const Icon(Icons.close, color: Colors.white38, size: 18), onPressed: _clearSelection, padding: EdgeInsets.zero, constraints: const BoxConstraints()),
+            IconButton(icon: const Icon(Icons.close, color: AppColors.muted, size: 18), onPressed: _clearSelection, padding: EdgeInsets.zero, constraints: const BoxConstraints()),
           ],
         ),
         const SizedBox(height: 8),
-        const Text('ТИП СВЯЗИ', style: TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold)),
+        const Text('ТИП СВЯЗИ', style: TextStyle(color: AppColors.muted, fontSize: 9, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
         Wrap(
           spacing: 6,
@@ -591,7 +591,7 @@ class _GraphScreenState extends State<GraphScreen> {
           ],
         ),
         const SizedBox(height: 8),
-        const Text('СИЛА СВЯЗИ', style: TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold)),
+        const Text('СИЛА СВЯЗИ', style: TextStyle(color: AppColors.muted, fontSize: 9, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
         Wrap(
           spacing: 6,

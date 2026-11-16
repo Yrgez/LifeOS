@@ -18,8 +18,8 @@ Future<void> showNewGoalDialog(BuildContext context, AppController c) async {
     context,
     title: 'Новая глобальная цель (OKR)',
     actionLabel: 'Создать',
-    accent: AppColors.violet,
-    actionTextColor: Colors.white,
+    accent: AppColors.accent,
+    actionTextColor: Colors.black,
     fields: const [
       FieldSpec('t', 'Формулировка цели'),
       FieldSpec('c', 'Категория', initial: 'Стратегия'),
@@ -37,8 +37,8 @@ Future<void> showEditGoalDialog(BuildContext context, AppController c, GlobalGoa
     context,
     title: 'Изменить цель',
     actionLabel: 'Сохранить',
-    accent: AppColors.violet,
-    actionTextColor: Colors.white,
+    accent: AppColors.accent,
+    actionTextColor: Colors.black,
     fields: [
       FieldSpec('t', 'Формулировка цели', initial: g.title),
       FieldSpec('c', 'Категория', initial: g.category),
@@ -58,8 +58,8 @@ Future<void> showGoalPlanDialog(BuildContext context, AppController c, GlobalGoa
     context,
     title: 'План ресурсов цели',
     actionLabel: 'Сохранить',
-    accent: AppColors.violet,
-    actionTextColor: Colors.white,
+    accent: AppColors.accent,
+    actionTextColor: Colors.black,
     fields: [
       FieldSpec('h', 'Время, часов (пусто — не задано)', numeric: true, initial: p?.minutes == null ? '' : trimNum(p!.minutes! / 60)),
       FieldSpec('m', 'Деньги, $cur (пусто — не задано)', numeric: true, initial: p?.money?.toString() ?? ''),
@@ -78,8 +78,8 @@ Future<void> showAddCheckpointDialog(BuildContext context, AppController c, Glob
     context,
     title: 'Новый чекпоинт',
     actionLabel: 'Добавить',
-    accent: AppColors.violet,
-    actionTextColor: Colors.white,
+    accent: AppColors.accent,
+    actionTextColor: Colors.black,
     fields: [
       const FieldSpec('k', 'Тип', initial: 'manual', options: {
         'manual': 'Ручной — отмечаю сам',
@@ -119,8 +119,8 @@ class GoalCard extends StatelessWidget {
       child: Material(
         color: AppColors.card,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: goal.isComplete ? AppColors.green.withValues(alpha: 0.5) : Colors.white10),
+          borderRadius: BorderRadius.circular(AppRadii.tile),
+          side: BorderSide(color: goal.isComplete ? AppColors.green.withValues(alpha: 0.5) : AppColors.border),
         ),
         clipBehavior: Clip.antiAlias,
         child: Padding(
@@ -131,16 +131,16 @@ class GoalCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Flexible(child: Text(goal.category.toUpperCase(), overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.violet, fontSize: 10, fontWeight: FontWeight.bold))),
+                  Flexible(child: Text(goal.category.toUpperCase(), overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted, fontSize: 10, fontWeight: FontWeight.bold))),
                   Row(
                     children: [
                       // счёт, а не процент: «2 из 5» не прячет, из чего сложился прогресс
                       Text(
                         goal.checkpoints.isEmpty ? '—' : '${goal.checkpoints.where((x) => x.isCompleted).length} из ${goal.checkpoints.length}',
-                        style: const TextStyle(color: AppColors.violet, fontWeight: FontWeight.bold),
+                        style: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w600),
                       ),
                       PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert, color: Colors.white38, size: 20),
+                        icon: const Icon(Icons.more_vert, color: AppColors.muted, size: 20),
                         color: AppColors.field,
                         onSelected: (v) {
                           switch (v) {
@@ -176,7 +176,7 @@ class GoalCard extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: goal.progress,
                   backgroundColor: const Color(0xFF222834),
-                  valueColor: AlwaysStoppedAnimation(goal.isComplete ? AppColors.green : AppColors.violet),
+                  valueColor: AlwaysStoppedAnimation(goal.isComplete ? AppColors.green : AppColors.text),
                   minHeight: 6,
                   borderRadius: BorderRadius.circular(4),
                 ),
@@ -185,7 +185,7 @@ class GoalCard extends StatelessWidget {
               if (goal.checkpoints.isEmpty)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Text('Чекпоинтов нет — добавьте через меню ⋮', style: TextStyle(color: Colors.white38, fontSize: 12)),
+                  child: Text('Чекпоинтов нет — добавьте через меню ⋮', style: TextStyle(color: AppColors.muted, fontSize: 12)),
                 ),
               for (int i = 0; i < goal.checkpoints.length; i++) _checkpointRow(i, goal.checkpoints[i]),
               GoalResources(controller: c, goal: goal),
@@ -203,7 +203,7 @@ class GoalCard extends StatelessWidget {
     Color color;
     if (goal.isComplete) {
       text = 'Срок: ${fmtDate(d)}';
-      color = Colors.white38;
+      color = AppColors.muted;
     } else if (left < 0) {
       text = 'Просрочено на ${-left} дн. • ${fmtDate(d)}';
       color = AppColors.red;
@@ -212,7 +212,7 @@ class GoalCard extends StatelessWidget {
       color = AppColors.amber;
     } else {
       text = 'Осталось $left дн. • ${fmtDate(d)}';
-      color = left <= 7 ? AppColors.amber : Colors.white54;
+      color = left <= 7 ? AppColors.amber : AppColors.muted;
     }
     return Padding(
       padding: const EdgeInsets.only(top: 4),
@@ -234,7 +234,8 @@ class GoalCard extends StatelessWidget {
       children: [
         Checkbox(
           value: cp.isCompleted,
-          activeColor: AppColors.violet,
+          activeColor: AppColors.text,
+          checkColor: Colors.black,
           visualDensity: VisualDensity.compact,
           // привязанные к метрике отмечаются сами
           onChanged: link == null ? (v) => c.toggleCheckpoint(goal.id, index, v ?? false) : null,
@@ -250,18 +251,18 @@ class GoalCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     decoration: cp.isCompleted ? TextDecoration.lineThrough : null,
-                    color: cp.isCompleted ? Colors.white38 : Colors.white,
+                    color: cp.isCompleted ? AppColors.muted : Colors.white,
                   ),
                 ),
                 if (link != null) ...[
                   const SizedBox(height: 3),
                   Row(
                     children: [
-                      const Icon(Icons.bolt, size: 12, color: AppColors.violet),
+                      const Icon(Icons.bolt, size: 12, color: AppColors.muted),
                       const SizedBox(width: 3),
                       Text(
                         current == null ? 'метрика недоступна' : 'сейчас ${_fmt(link, current)} / ${_fmt(link, link.target)} ${link.unit}',
-                        style: const TextStyle(color: Colors.white54, fontSize: 10),
+                        style: const TextStyle(color: AppColors.muted, fontSize: 10),
                       ),
                     ],
                   ),
@@ -272,7 +273,7 @@ class GoalCard extends StatelessWidget {
                       minHeight: 3,
                       borderRadius: BorderRadius.circular(2),
                       backgroundColor: const Color(0xFF222834),
-                      valueColor: const AlwaysStoppedAnimation(AppColors.violet),
+                      valueColor: const AlwaysStoppedAnimation(AppColors.text),
                     ),
                   ],
                 ],
@@ -316,10 +317,10 @@ class GoalResources extends StatelessWidget {
           Text(
             'ВЛОЖЕНО: событий ${r.events}'
             '${r.events > 0 && f.viaProcess > 0 ? ' (напрямую ${f.direct}, через процессы ${f.viaProcess})' : ''}',
-            style: const TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.6),
+            style: const TextStyle(color: AppColors.muted, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.6),
           ),
           if (f.dimensions.isNotEmpty)
-            Text('Затрагивает: ${f.dimensions.map((d) => LifeDimension.labels[d]).join(' + ')}', style: const TextStyle(color: Colors.white38, fontSize: 11)),
+            Text('Затрагивает: ${f.dimensions.map((d) => LifeDimension.labels[d]).join(' + ')}', style: const TextStyle(color: AppColors.muted, fontSize: 11)),
           if (f.processIds.isNotEmpty)
             Text('Процессы: ${f.processIds.map((id) => titles[id]).join(', ')}', style: const TextStyle(color: AppColors.amber, fontSize: 11)),
           if (plan?.minutes != null || r.minutesKnown > 0)

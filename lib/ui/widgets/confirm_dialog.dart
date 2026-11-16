@@ -17,7 +17,7 @@ Future<bool> confirmDialog(
       title: Text(title, style: const TextStyle(fontSize: 16)),
       content: Text(message, style: const TextStyle(color: Colors.white70, fontSize: 13)),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена', style: TextStyle(color: Colors.white54))),
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена', style: TextStyle(color: AppColors.muted))),
         ElevatedButton(
           style: ElevatedButton.styleFrom(backgroundColor: danger ? AppColors.red : AppColors.green),
           onPressed: () => Navigator.pop(ctx, true),

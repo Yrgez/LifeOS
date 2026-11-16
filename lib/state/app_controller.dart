@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 
 import '../core/app_log.dart';
 import '../core/currency.dart';
+import '../core/body_stats.dart';
 import '../core/chronicle.dart';
 import '../core/finance_categories.dart';
 import '../core/finance_stats.dart';
@@ -20,6 +21,7 @@ import '../data/app_data.dart';
 import '../data/app_repository.dart';
 import '../data/change_set.dart';
 import '../data/health_source.dart';
+import '../models/body.dart';
 import '../models/day_snapshot.dart';
 import '../models/life_event.dart';
 import '../models/life_process.dart';
@@ -516,6 +518,60 @@ class AppController extends ChangeNotifier {
         if (protein != null) _d.proteinGrams = max(0, protein);
         if (steps != null || calories != null) _touchToday(activitySource: 'manual');
       });
+
+  // ---------------- тело: вес, рост, цель ----------------
+
+  /// Замеры веса по возрастанию времени.
+  List<WeightEntry> get weights => List.unmodifiable(_d.weights);
+  WeightEntry? get latestWeightEntry => latestWeight(_d.weights);
+  int? get heightCm => _d.heightCm;
+  String? get bodyGoal => _d.bodyGoal;
+
+  /// ИМТ по последнему замеру и росту; null — нет веса или роста.
+  double? get bodyMassIndex => bmi(latestWeightEntry?.kg, _d.heightCm);
+
+  /// Записывает замер веса. [at] — когда взвешивались (не в будущем). Возвращает id или null.
+  String? addWeight(double kg, {DateTime? at}) {
+    final now = _clock();
+    final when = at ?? now;
+    if (when.isAfter(now.add(const Duration(minutes: 5))) || _d.weights.length >= kMaxSnapshots) return null;
+    final e = WeightEntry(id: 'w_${now.microsecondsSinceEpoch}_${_random.nextInt(1 << 20)}', at: when, kg: round1(kg));
+    if (!e.isValid) return null;
+    _commit(() => _d.weights
+      ..add(e)
+      ..sort((a, b) => a.at.compareTo(b.at)));
+    return e.id;
+  }
+
+  /// Удаляет ошибочный замер (явное действие). Возвращает удалённый — для «Отменить».
+  WeightEntry? removeWeight(String id) {
+    final i = _d.weights.indexWhere((w) => w.id == id);
+    if (i < 0) return null;
+    late WeightEntry removed;
+    _commit(() => removed = _d.weights.removeAt(i));
+    return removed;
+  }
+
+  void restoreWeight(WeightEntry e) {
+    if (_d.weights.any((w) => w.id == e.id) || !e.isValid) return;
+    _commit(() => _d.weights
+      ..add(e)
+      ..sort((a, b) => a.at.compareTo(b.at)));
+  }
+
+  /// Рост в см (50–272); null снимает.
+  bool setHeight(int? cm) {
+    if (cm != null && (cm < 50 || cm > 272)) return false;
+    _commit(() => _d.heightCm = cm);
+    return true;
+  }
+
+  /// Цель по весу; null снимает.
+  bool setBodyGoal(String? goal) {
+    if (goal != null && !BodyGoal.isValid(goal)) return false;
+    _commit(() => _d.bodyGoal = goal);
+    return true;
+  }
 
   // ---------------- граф ----------------
 
@@ -1427,6 +1483,8 @@ class AppController extends ChangeNotifier {
       ..proteinGoal = _d.proteinGoal
       ..healthEnabled = _d.healthEnabled
       ..currency = _d.currency
+      ..heightCm = _d.heightCm
+      ..bodyGoal = _d.bodyGoal
       ..lastHealthSyncMs = _d.lastHealthSyncMs
       ..onboardingDone = true;
     _d = fresh;

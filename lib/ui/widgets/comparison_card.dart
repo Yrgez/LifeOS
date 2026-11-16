@@ -59,20 +59,16 @@ class _ComparisonCardState extends State<ComparisonCard> {
 
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.3)),
-      ),
+      decoration: tileDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Row(
             children: [
-              Icon(Icons.compare_arrows, color: Colors.cyanAccent, size: 18),
+              Icon(Icons.compare_arrows, color: AppColors.text, size: 18),
               SizedBox(width: 8),
               Flexible(
-                child: Text('СРАВНЕНИЕ МЕТРИК', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
+                child: Text('Сравнение метрик', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
               ),
             ],
           ),
@@ -121,7 +117,7 @@ class _ComparisonCardState extends State<ComparisonCard> {
           const SizedBox(height: 8),
           Text(corrText, style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600)),
           const SizedBox(height: 2),
-          const Text('Каждая кривая приведена к своему диапазону (от минимума до максимума), чтобы сравнить форму.', style: TextStyle(color: Colors.white38, fontSize: 10)),
+          const Text('Каждая кривая приведена к своему диапазону (от минимума до максимума), чтобы сравнить форму.', style: TextStyle(color: AppColors.muted, fontSize: 10)),
         ],
       ),
     );

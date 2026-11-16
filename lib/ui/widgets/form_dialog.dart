@@ -121,7 +121,7 @@ class _FormDialogState extends State<_FormDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Отмена', style: TextStyle(color: Colors.white54)),
+          child: const Text('Отмена', style: TextStyle(color: AppColors.muted)),
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(backgroundColor: widget.accent),
