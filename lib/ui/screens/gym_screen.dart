@@ -76,9 +76,9 @@ class _GymScreenState extends State<GymScreen> {
   }
 
   Widget _buildGymScreen() {
-    final groups = AnatomicalGeometry.groupsFor(selection.showFront);
-    // порядок — сверху вниз по телу, как на фигуре
-    final visible = [for (final k in groups) if (c.muscles[k] != null) c.muscles[k]!];
+    final paths = AnatomicalGeometry.pathsFor(selection.showFront);
+    // порядок — как на силуэте; «икры» есть и в списке заднего вида
+    final visible = [for (final k in paths.keys) if (c.muscles[k] != null) c.muscles[k]!];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),

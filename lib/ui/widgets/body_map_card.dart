@@ -73,41 +73,22 @@ class BodyMapCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 500,
+            height: 380,
             width: double.infinity,
             child: LayoutBuilder(
               builder: (ctx, constraints) {
-                final size = Size(constraints.maxWidth, 500);
+                final size = Size(constraints.maxWidth, 380);
                 return GestureDetector(
                   onTapUp: (d) => _handleAnatomicalTap(d.localPosition, size),
                   child: RepaintBoundary(
                     child: CustomPaint(
                       size: size,
-                      painter: AnatomicalSilhouettePainter(muscles: c.muscles, isFront: selection.showFront, selectedMuscleId: selection.muscleId, now: c.now),
+                      painter: AnatomicalSilhouettePainter(muscles: c.muscles, isFront: selection.showFront, selectedMuscleId: selection.muscleId),
                     ),
                   ),
                 );
               },
             ),
-          ),
-          const SizedBox(height: 8),
-          // легенда переносится на узком экране
-          const Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 14,
-            runSpacing: 6,
-            children: [
-              Row(mainAxisSize: MainAxisSize.min, children: [
-                _LegendDot(AnatomicalSilhouettePainter.load),
-                SizedBox(width: 6),
-                Flexible(child: Text('восстанавливается (оценка)', style: TextStyle(color: AppColors.muted, fontSize: 12))),
-              ]),
-              Row(mainAxisSize: MainAxisSize.min, children: [
-                _LegendDot(AnatomicalSilhouettePainter.muscle),
-                SizedBox(width: 6),
-                Flexible(child: Text('восстановлена', style: TextStyle(color: AppColors.muted, fontSize: 12))),
-              ]),
-            ],
           ),
           const SizedBox(height: 14),
           if (activeMuscle != null)
@@ -178,8 +159,12 @@ class BodyMapCard extends StatelessWidget {
     final dy = (size.height - AnatomicalGeometry.baseHeight * scale) / 2;
     final touch = Offset((localPos.dx - dx) / scale, (localPos.dy - dy) / scale);
 
-    final group = AnatomicalGeometry.groupAt(selection.showFront, touch);
-    if (group != null && c.muscles.containsKey(group)) selection.select(group);
+    for (final entry in AnatomicalGeometry.pathsFor(selection.showFront).entries) {
+      if (entry.value.contains(touch)) {
+        selection.select(entry.key);
+        return;
+      }
+    }
   }
 }
 
@@ -187,12 +172,4 @@ class BodyMapCard extends StatelessWidget {
 String _recoveryText(MuscleRecovery r, String lastTrained) {
   if (r.lastTrainedAt == null) return lastTrained;
   return 'Тренировка ${lastTrained.toLowerCase()} · ${r.recovered ? 'восстановлена' : 'ещё ${fmtHoursLeft(r.hoursLeft)}'} (оценка)';
-}
-
-class _LegendDot extends StatelessWidget {
-  final Color color;
-  const _LegendDot(this.color);
-
-  @override
-  Widget build(BuildContext context) => Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle));
 }

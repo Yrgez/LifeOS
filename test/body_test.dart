@@ -9,7 +9,6 @@ import 'package:life_os/data/app_repository.dart';
 import 'package:life_os/data/sqlite_app_repository.dart';
 import 'package:life_os/models/body.dart';
 import 'package:life_os/state/app_controller.dart';
-import 'package:life_os/ui/painters/anatomy_geometry.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
@@ -45,34 +44,6 @@ void main() {
       final e = WeightEntry.tryFromJson({'id': 'a', 't': 1, 'kg': 80.5})!;
       expect(WeightEntry.tryFromJson(e.toJson())!.kg, 80.5);
     });
-  });
-
-  test('фигура: нажатия попадают в свои группы мышц, обе стороны тела', () {
-    String? front(double x, double y) => AnatomicalGeometry.groupAt(true, Offset(x, y));
-    String? back(double x, double y) => AnatomicalGeometry.groupAt(false, Offset(x, y));
-    expect(front(150, 190), 'chest');
-    expect(front(220, 190), 'chest'); // правая сторона — зеркально
-    expect(front(168, 240), 'abs');
-    expect(front(100, 180), 'delts');
-    expect(front(104, 240), 'biceps');
-    expect(front(72, 320), 'forearms');
-    expect(front(122, 440), 'quads');
-    expect(front(157, 610), 'calves');
-    expect(back(160, 180), 'traps');
-    expect(back(135, 260), 'lats');
-    expect(back(105, 240), 'triceps');
-    expect(back(150, 395), 'glutes');
-    expect(back(130, 480), 'hamstrings');
-    expect(back(125, 600), 'calves');
-    expect(front(185, 60), isNull); // голова — не мышца
-    expect(front(40, 430), isNull); // кисть
-    expect(front(10, 10), isNull); // мимо фигуры
-    expect(front(140, 330), isNull); // косая мышца рисуется, но группой не является
-    // все группы приложения есть хотя бы на одной стороне, и у каждой группы списка есть сегменты
-    expect({...AnatomicalGeometry.frontGroups, ...AnatomicalGeometry.backGroups}, containsAll(MuscleGroupIds.all));
-    for (final front in [true, false]) {
-      expect({for (final s in AnatomicalGeometry.shapesFor(front)) if (s.group != null) s.group}, AnatomicalGeometry.groupsFor(front).toSet());
-    }
   });
 
   group('контроллер', () {
@@ -152,9 +123,4 @@ void main() {
     await tester.pumpWidget(const SizedBox());
     c.dispose();
   });
-}
-
-/// Группы мышц приложения (как в MuscleGroup.defaultRecoveryHours).
-class MuscleGroupIds {
-  static const all = ['delts', 'chest', 'abs', 'biceps', 'forearms', 'quads', 'traps', 'lats', 'triceps', 'glutes', 'hamstrings', 'calves'];
 }
