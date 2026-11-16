@@ -118,10 +118,10 @@ class HealthConnectSource implements HealthDataSource {
     // Шаги — агрегат платформы (корректно объединяет источники) отдельно на каждый день.
     final out = <HealthDay>[];
     for (final d in days) {
-      final next = DateTime(d.year, d.month, d.day + 1);
+      final interval = stepsDayInterval(d); // полные сутки, иначе запись Samsung Health на весь день делится пропорционально
       int? steps;
       try {
-        steps = await _health.getTotalStepsInInterval(d, next.isAfter(now) ? now : next);
+        steps = await _health.getTotalStepsInInterval(interval.start, interval.end);
       } catch (e, st) {
         AppLog.e('Health Connect: не удалось прочитать шаги за ${d.toIso8601String()}', e, st);
       }
