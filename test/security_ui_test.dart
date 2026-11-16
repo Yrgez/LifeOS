@@ -98,11 +98,11 @@ void main() {
   }
 
   Future<void> openSettings(WidgetTester tester) async {
-    await tester.tap(find.byIcon(Icons.settings));
+    await tester.tap(find.byTooltip('Настройки'));
     await tester.pumpAndSettle();
   }
 
-  Finder hubVisible() => find.textContaining('СЕГОДНЯ ·').hitTestable();
+  Finder hubVisible() => find.byKey(const ValueKey('today_date')).hitTestable();
 
   group('экран блокировки', () {
     testWidgets('биометрия подтверждена — приложение открывается само', (tester) async {

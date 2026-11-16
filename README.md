@@ -27,7 +27,7 @@ lib/
     screens/                   hub (Сегодня), gym (Тело), mind (Разум), wealth (Материальное), chronicle (Хроника); graph, journal, finance,
     events, processes, resources, settings, onboarding — открываются из вкладок
     widgets/                   body_map_card, health_card, comparison_card, goals_ui, form_dialog,
-                               log_set_dialog, event_dialog, process_ui, resources_card, backup_actions, health_actions, confirm_dialog, toast
+                               log_set_dialog, event_dialog, process_ui, backup_actions, health_actions, confirm_dialog, toast
     painters/                  chart_painters, body_painter, graph_painter, anatomy_geometry
 test/                          юнит-тесты логики и хранилищ + ui_smoke_test (виджеты, знакомство, настройки)
 docs/HEALTH_SETUP.md           настройка Health Connect на Android
@@ -67,8 +67,14 @@ docs/SECURITY_SETUP.md         настройка и модель угроз: б
   оправдана только если замеры на устройстве покажут медленный запуск.
 - Тесты репозитория используют `sqflite_common_ffi` и системную библиотеку sqlite3.
 
+## Дизайн
+Практичный минимализм (`core/theme.dart`): чёрный фон, тёмно-серые плитки (радиус 28, тонкая рамка), белое главное
+действие, шрифт Inter (в `assets/fonts`, лицензия OFL — из сети не загружается). Цвет — только со смыслом: метки
+измерений, доход/расход, предупреждения. Нижняя панель плавающая, вкладки — иконки с подсказками.
+
 ## Навигация
-Нижняя панель: **Сегодня** (PRESENT: быстрая запись события, идущие процессы, здоровье дня, ресурсы недели) /
+Нижняя панель: **Сегодня** (PRESENT: плитки восстановления и шагов, идущие процессы с точечным календарём, ресурсы недели;
+запись события — кнопка «＋», здоровье дня — по нажатию на шаги) /
 **Тело** (карта тела, журнал тренировок, сравнение метрик) / **Разум** (цели, достижения, граф связей, процессы) /
 **Материальное** (капитал, зарплата, финансы) / **Хроника** (PAST). Три измерения жизни — три вкладки посередине.
 

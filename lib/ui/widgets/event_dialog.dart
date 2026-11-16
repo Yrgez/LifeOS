@@ -54,8 +54,11 @@ Future<EventDraft?> showEventDialog(
   String? presetProcessId,
   String? presetGoalId,
 }) {
-  return showDialog<EventDraft>(
+  // нижняя панель во всю высоту содержимого (как в макете), клавиатура её поднимает
+  return showModalBottomSheet<EventDraft>(
     context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
     builder: (_) => _EventDialog(
       now: now,
       goals: goals,
@@ -125,7 +128,10 @@ class _EventDialogState extends State<_EventDialog> {
   }
 
   // выбирать можно открытые процессы; уже связанные закрытые остаются видны, чтобы связь можно было снять
-  List<LifeProcess> get _processOptions => [for (final p in widget.processes) if (p.isOpen || _procs.contains(p.id)) p];
+  List<LifeProcess> get _processOptions => [
+        for (final p in widget.processes)
+          if (p.isOpen || _procs.contains(p.id)) p
+      ];
 
   @override
   void dispose() {
@@ -179,155 +185,175 @@ class _EventDialogState extends State<_EventDialog> {
   @override
   Widget build(BuildContext context) {
     final editing = widget.initial != null;
-    return AlertDialog(
-      backgroundColor: AppColors.card,
-      title: Text(editing ? 'Новая версия события' : 'Зафиксировать событие', style: const TextStyle(fontSize: 16)),
-      content: SizedBox(
-        width: 420,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (editing)
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 10),
-                  child: Text('Прежняя версия останется в истории.', style: TextStyle(color: Colors.white38, fontSize: 11)),
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, 0, 20, 16 + MediaQuery.of(context).viewInsets.bottom),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    editing ? 'Новая версия события' : 'Новое событие',
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600, letterSpacing: -0.4),
+                  ),
                 ),
-              TextField(
-                key: const ValueKey('event_title'),
-                controller: _title,
-                maxLength: LifeEvent.maxTitle,
-                decoration: _dec('Что произошло?'),
-                onChanged: (_) => setState(() {}),
+                IconButton(
+                  tooltip: 'Закрыть',
+                  onPressed: () => Navigator.pop(context),
+                  style: IconButton.styleFrom(backgroundColor: AppColors.raised, side: const BorderSide(color: AppColors.border)),
+                  icon: const Icon(Icons.close, size: 18, color: Color(0xFFC8C8CC)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (editing)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 10),
+                child: Text('Прежняя версия останется в истории.', style: TextStyle(color: Colors.white38, fontSize: 11)),
               ),
-              _label('ИЗМЕРЕНИЯ'),
-              Wrap(
-                spacing: 8,
-                children: [
-                  for (final d in LifeDimension.all)
-                    FilterChip(
-                      key: ValueKey('dim_$d'),
-                      label: Text(LifeDimension.labels[d]!),
-                      selected: _dims.contains(d),
-                      selectedColor: dimensionColor(d).withValues(alpha: 0.3),
-                      onSelected: (v) => setState(() => v ? _dims.add(d) : _dims.remove(d)),
-                    ),
-                ],
-              ),
-              _label('ВИД'),
-              DropdownButtonFormField<String>(
-                initialValue: _kind,
-                decoration: _dec('Вид события'),
-                items: [
-                  for (final e in LifeEventKind.labels.entries) DropdownMenuItem(value: e.key, child: Text(e.value)),
-                ],
-                onChanged: (v) => setState(() => _kind = v ?? _kind),
-              ),
-              _label('КОГДА'),
-              OutlinedButton.icon(
-                onPressed: _pickDate,
-                icon: const Icon(Icons.event, size: 16),
-                label: Text('${dayKey(_at)} ${_at.hour.toString().padLeft(2, '0')}:${_at.minute.toString().padLeft(2, '0')}'),
-              ),
-              _label('РЕСУРСЫ (НЕОБЯЗАТЕЛЬНО)'),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _minutes,
-                      keyboardType: TextInputType.number,
-                      decoration: _dec('Время, мин'),
-                      onChanged: (_) => setState(() {}),
-                    ),
+            TextField(
+              key: const ValueKey('event_title'),
+              controller: _title,
+              maxLength: LifeEvent.maxTitle,
+              decoration: _dec('Что произошло?'),
+              onChanged: (_) => setState(() {}),
+            ),
+            _label('ИЗМЕРЕНИЯ'),
+            Wrap(
+              spacing: 8,
+              children: [
+                for (final d in LifeDimension.all)
+                  FilterChip(
+                    key: ValueKey('dim_$d'),
+                    label: Text(LifeDimension.labels[d]!),
+                    selected: _dims.contains(d),
+                    selectedColor: dimensionColor(d).withValues(alpha: 0.3),
+                    onSelected: (v) => setState(() => v ? _dims.add(d) : _dims.remove(d)),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      controller: _money,
-                      keyboardType: TextInputType.number,
-                      decoration: _dec('Деньги, $cur'),
-                      onChanged: (_) => setState(() {}),
-                    ),
+              ],
+            ),
+            _label('ВИД'),
+            DropdownButtonFormField<String>(
+              initialValue: _kind,
+              decoration: _dec('Вид события'),
+              items: [
+                for (final e in LifeEventKind.labels.entries) DropdownMenuItem(value: e.key, child: Text(e.value)),
+              ],
+              onChanged: (v) => setState(() => _kind = v ?? _kind),
+            ),
+            _label('КОГДА'),
+            OutlinedButton.icon(
+              onPressed: _pickDate,
+              icon: const Icon(Icons.event, size: 16),
+              label: Text('${dayKey(_at)} ${_at.hour.toString().padLeft(2, '0')}:${_at.minute.toString().padLeft(2, '0')}'),
+            ),
+            _label('РЕСУРСЫ (НЕОБЯЗАТЕЛЬНО)'),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _minutes,
+                    keyboardType: TextInputType.number,
+                    decoration: _dec('Время, мин'),
+                    onChanged: (_) => setState(() {}),
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              const Text('Энергия — ваша оценка, сколько сил ушло (1 — почти не ушло, 5 — всё)',
-                  style: TextStyle(color: Colors.white38, fontSize: 11)),
-              const SizedBox(height: 4),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: _money,
+                    keyboardType: TextInputType.number,
+                    decoration: _dec('Деньги, $cur'),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Text('Энергия — ваша оценка, сколько сил ушло (1 — почти не ушло, 5 — всё)', style: TextStyle(color: Colors.white38, fontSize: 11)),
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 6,
+              children: [
+                for (var i = ResourceCost.minEnergy; i <= ResourceCost.maxEnergy; i++)
+                  ChoiceChip(
+                    label: Text('$i'),
+                    selected: _energy == i,
+                    onSelected: (v) => setState(() => _energy = v ? i : null),
+                  ),
+              ],
+            ),
+            if (widget.goals.isNotEmpty) ...[
+              _label('ВЕДЁТ К ЦЕЛЯМ'),
               Wrap(
                 spacing: 6,
+                runSpacing: 4,
                 children: [
-                  for (var i = ResourceCost.minEnergy; i <= ResourceCost.maxEnergy; i++)
-                    ChoiceChip(
-                      label: Text('$i'),
-                      selected: _energy == i,
-                      onSelected: (v) => setState(() => _energy = v ? i : null),
+                  for (final g in widget.goals)
+                    FilterChip(
+                      label: Text(g.title, overflow: TextOverflow.ellipsis),
+                      selected: _goals.contains(g.id),
+                      onSelected: (v) => setState(() => v ? _goals.add(g.id) : _goals.remove(g.id)),
                     ),
                 ],
               ),
-              if (widget.goals.isNotEmpty) ...[
-                _label('ВЕДЁТ К ЦЕЛЯМ'),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: [
-                    for (final g in widget.goals)
-                      FilterChip(
-                        label: Text(g.title, overflow: TextOverflow.ellipsis),
-                        selected: _goals.contains(g.id),
-                        onSelected: (v) => setState(() => v ? _goals.add(g.id) : _goals.remove(g.id)),
-                      ),
-                  ],
-                ),
-              ],
-              if (_processOptions.isNotEmpty) ...[
-                _label('В ПРОЦЕССЕ'),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: [
-                    for (final p in _processOptions)
-                      FilterChip(
-                        key: ValueKey('proc_${p.id}'),
-                        label: Text(p.title, overflow: TextOverflow.ellipsis),
-                        selected: _procs.contains(p.id),
-                        onSelected: (v) => setState(() => v ? _procs.add(p.id) : _procs.remove(p.id)),
-                      ),
-                  ],
-                ),
-              ],
-              _label('ЗАМЕТКА'),
-              TextField(controller: _note, maxLines: 3, maxLength: LifeEvent.maxNote, decoration: _dec('Подробности, контекст')),
             ],
-          ),
+            if (_processOptions.isNotEmpty) ...[
+              _label('В ПРОЦЕССЕ'),
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: [
+                  for (final p in _processOptions)
+                    FilterChip(
+                      key: ValueKey('proc_${p.id}'),
+                      label: Text(p.title, overflow: TextOverflow.ellipsis),
+                      selected: _procs.contains(p.id),
+                      onSelected: (v) => setState(() => v ? _procs.add(p.id) : _procs.remove(p.id)),
+                    ),
+                ],
+              ),
+            ],
+            _label('ЗАМЕТКА'),
+            TextField(controller: _note, maxLines: 3, maxLength: LifeEvent.maxNote, decoration: _dec('Подробности, контекст')),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              key: const ValueKey('event_save'),
+              style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(56), padding: const EdgeInsets.fromLTRB(24, 0, 8, 0)),
+              onPressed: _valid
+                  ? () => Navigator.pop(
+                        context,
+                        EventDraft(
+                          title: _title.text.trim(),
+                          dimensions: _dims,
+                          kind: _kind,
+                          at: _at,
+                          note: _note.text.trim(),
+                          cost: ResourceCost(minutes: _opt(_minutes), money: _opt(_money), energy: _energy),
+                          // цели, удалённые после записи события, сохраняются в его истории
+                          goalIds: _goals,
+                          processIds: _procs,
+                        ),
+                      )
+                  : null,
+              child: Row(
+                children: [
+                  Expanded(child: Text(editing ? 'Сохранить версию' : 'Зафиксировать', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(color: _valid ? Colors.black : Colors.black26, shape: BoxShape.circle),
+                    child: const Icon(Icons.arrow_forward, size: 18, color: AppColors.text),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Отмена', style: TextStyle(color: Colors.white54))),
-        ElevatedButton(
-          key: const ValueKey('event_save'),
-          style: ElevatedButton.styleFrom(backgroundColor: AppColors.green),
-          onPressed: _valid
-              ? () => Navigator.pop(
-                    context,
-                    EventDraft(
-                      title: _title.text.trim(),
-                      dimensions: _dims,
-                      kind: _kind,
-                      at: _at,
-                      note: _note.text.trim(),
-                      cost: ResourceCost(minutes: _opt(_minutes), money: _opt(_money), energy: _energy),
-                      // цели, удалённые после записи события, сохраняются в его истории
-                      goalIds: _goals,
-                      processIds: _procs,
-                    ),
-                  )
-              : null,
-          child: const Text('Сохранить', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-        ),
-      ],
     );
   }
 }
