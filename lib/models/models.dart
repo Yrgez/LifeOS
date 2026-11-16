@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme.dart';
+import '../core/currency.dart';
 import '../core/utils.dart';
 
 // ---------------- безопасный разбор JSON ----------------
@@ -259,7 +260,7 @@ class MetricLink {
 
   const MetricLink({required this.kind, this.muscleId, required this.target});
 
-  String get unit => kind == oneRM ? 'кг' : '₽';
+  String get unit => kind == oneRM ? 'кг' : cur;
 
   Map<String, dynamic> toJson() => {'kind': kind, 'muscleId': muscleId, 'target': target};
 

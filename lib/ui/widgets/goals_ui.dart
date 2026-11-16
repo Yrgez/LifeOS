@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
+import '../../core/currency.dart';
 import '../../core/utils.dart';
 import '../../core/workout_stats.dart';
 import '../../models/models.dart';
@@ -61,7 +62,7 @@ Future<void> showGoalPlanDialog(BuildContext context, AppController c, GlobalGoa
     actionTextColor: Colors.white,
     fields: [
       FieldSpec('h', 'Время, часов (пусто — не задано)', numeric: true, initial: p?.minutes == null ? '' : trimNum(p!.minutes! / 60)),
-      FieldSpec('m', 'Деньги, ₽ (пусто — не задано)', numeric: true, initial: p?.money?.toString() ?? ''),
+      FieldSpec('m', 'Деньги, $cur (пусто — не задано)', numeric: true, initial: p?.money?.toString() ?? ''),
     ],
     validate: (v) => ok(v['h']!) && ok(v['m']!),
   );
@@ -88,7 +89,7 @@ Future<void> showAddCheckpointDialog(BuildContext context, AppController c, Glob
       }),
       const FieldSpec('t', 'Название (для авто можно пусто)'),
       FieldSpec('m', 'Мышца (только для 1RM)', initial: muscleOptions.keys.contains('chest') ? 'chest' : muscleOptions.keys.first, options: muscleOptions),
-      const FieldSpec('v', 'Целевое значение (кг или ₽)', numeric: true),
+      FieldSpec('v', 'Целевое значение (кг или $cur)', numeric: true),
     ],
     validate: (v) => v['k'] == 'manual' ? v['t']!.isNotEmpty : (parseNum(v['v']!) ?? 0) > 0,
   );
@@ -331,8 +332,8 @@ class GoalResources extends StatelessWidget {
           if (plan?.money != null || r.moneyKnown > 0)
             _PlanRow(
               label: 'Деньги',
-              fact: r.moneyKnown == 0 ? 'не указано' : known(r.moneyKnown, '${fmtMoney(r.money)} ₽'),
-              plan: plan?.money == null ? null : '${fmtMoney(plan!.money!)} ₽',
+              fact: r.moneyKnown == 0 ? 'не указано' : known(r.moneyKnown, '${fmtCur(r.money)}'),
+              plan: plan?.money == null ? null : '${fmtCur(plan!.money!)}',
               ratio: plan?.money == null ? null : r.money / plan!.money!,
             ),
           if (r.events > 0)

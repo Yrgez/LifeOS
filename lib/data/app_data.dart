@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import '../core/app_log.dart';
+import '../core/currency.dart';
 import '../core/finance_categories.dart';
 import '../core/utils.dart';
 import '../models/day_snapshot.dart';
@@ -14,7 +15,8 @@ import 'default_data.dart';
 /// 4 — журнал событий жизни (`events`). 5 — процессы (`processes`) и связь событий с ними.
 /// 6 — дневные снимки (`snapshots`) вместо недельных массивов (старые массивы переносятся при чтении).
 /// 7 — план ресурсов цели (`goals[].plan`). 8 — связь узла графа с процессом или целью (`graphNodes[].ref`).
-const int kSchemaVersion = 8;
+/// 9 — основная валюта (`currency`).
+const int kSchemaVersion = 9;
 
 /// Предел журналов в памяти (при превышении удаляются самые старые). Хранилище (SQLite) пишет только
 /// изменения, но весь журнал пока загружается в память целиком — поэтому предел сохранён.
@@ -59,6 +61,7 @@ class AppData {
   int proteinGoal; // норма белка, г в день
   bool onboardingDone; // знакомство пройдено
   bool healthEnabled; // подключён Health Connect (автосинхронизация включена)
+  String currency; // код основной валюты (RUB, USD…): только обозначение, суммы не пересчитываются
   int? lastHealthSyncMs;
 
   AppData({
@@ -87,6 +90,7 @@ class AppData {
     this.proteinGoal = 140,
     this.onboardingDone = true,
     this.healthEnabled = false,
+    this.currency = kDefaultCurrency,
     this.lastHealthSyncMs,
   })  : workoutSets = workoutSets ?? <WorkoutSet>[],
         transactions = transactions ?? <MoneyTx>[],
@@ -174,6 +178,7 @@ class AppData {
         'proteinGoal': proteinGoal,
         'onboardingDone': onboardingDone,
         'healthEnabled': healthEnabled,
+        'currency': currency,
         'lastHealthSyncMs': lastHealthSyncMs,
       };
 
@@ -326,6 +331,11 @@ class AppData {
       // старые данные без поля: пользователь уже работал с приложением — знакомство не показываем
       onboardingDone: pick<bool>('onboardingDone', (v) => v as bool, true),
       healthEnabled: pick<bool>('healthEnabled', (v) => v as bool, false),
+      // старые данные без поля — рубли (единственная валюта прежних версий)
+      currency: pick<String>('currency', (v) {
+        if (v is! String || currencyByCode(v) == null) throw FormatException('AppData: неизвестная валюта "$v"');
+        return v;
+      }, kDefaultCurrency),
       lastHealthSyncMs: pick<int?>('lastHealthSyncMs', (v) => (v as num).toInt(), null),
     );
   }

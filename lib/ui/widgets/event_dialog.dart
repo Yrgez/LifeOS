@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
+import '../../core/currency.dart';
 import '../../core/utils.dart';
 import '../../models/life_event.dart';
 import '../../models/life_process.dart';
@@ -245,7 +246,7 @@ class _EventDialogState extends State<_EventDialog> {
                     child: TextField(
                       controller: _money,
                       keyboardType: TextInputType.number,
-                      decoration: _dec('Деньги, ₽'),
+                      decoration: _dec('Деньги, $cur'),
                       onChanged: (_) => setState(() {}),
                     ),
                   ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
+import '../../core/currency.dart';
 import '../../core/utils.dart';
 import '../../state/app_controller.dart';
 import '../widgets/health_actions.dart';
@@ -174,9 +175,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         'Деньги (по желанию)',
         'Стартовые цифры для вкладки «Капитал». Можно пропустить и заполнить позже — суммы нигде не отправляются.',
         [
-          _field(_worth, 'Чистый капитал, ₽', numeric: true),
-          _field(_income, 'Доход в месяц, ₽', numeric: true),
-          _field(_expense, 'Расходы в месяц, ₽', numeric: true),
+          _field(_worth, 'Чистый капитал, $cur', numeric: true),
+          _field(_income, 'Доход в месяц, $cur', numeric: true),
+          _field(_expense, 'Расходы в месяц, $cur', numeric: true),
         ],
       );
 
