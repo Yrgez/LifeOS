@@ -4,6 +4,7 @@ import '../core/app_log.dart';
 import '../core/currency.dart';
 import '../core/finance_categories.dart';
 import '../core/utils.dart';
+import '../models/body.dart';
 import '../models/day_snapshot.dart';
 import '../models/life_event.dart';
 import '../models/life_process.dart';
@@ -16,7 +17,8 @@ import 'default_data.dart';
 /// 6 — дневные снимки (`snapshots`) вместо недельных массивов (старые массивы переносятся при чтении).
 /// 7 — план ресурсов цели (`goals[].plan`). 8 — связь узла графа с процессом или целью (`graphNodes[].ref`).
 /// 9 — основная валюта (`currency`).
-const int kSchemaVersion = 9;
+/// 10 — тело: замеры веса (`weights`), рост (`heightCm`), цель по весу (`bodyGoal`).
+const int kSchemaVersion = 10;
 
 /// Предел журналов в памяти (при превышении удаляются самые старые). Хранилище (SQLite) пишет только
 /// изменения, но весь журнал пока загружается в память целиком — поэтому предел сохранён.
@@ -55,6 +57,9 @@ class AppData {
   Map<String, int> budgets; // лимит расходов в месяц по категории, ₽
   List<RecurringTx> recurring; // правила повторяющихся операций
   List<LifeProcess> processes; // процессы жизни (длительные направления усилий)
+  List<WeightEntry> weights; // замеры веса, по возрастанию времени
+  int? heightCm; // рост, см; null — не указан
+  String? bodyGoal; // цель по весу (BodyGoal); null — не выбрана
   List<LifeEvent> events; // журнал событий жизни (все версии, включая отменённые), по возрастанию времени
   String userName; // как обращаться (пусто — без имени)
   int stepsGoal; // цель шагов в день
@@ -85,6 +90,9 @@ class AppData {
     List<RecurringTx>? recurring,
     List<LifeEvent>? events,
     List<LifeProcess>? processes,
+    List<WeightEntry>? weights,
+    this.heightCm,
+    this.bodyGoal,
     this.userName = '',
     this.stepsGoal = 10000,
     this.proteinGoal = 140,
@@ -98,7 +106,8 @@ class AppData {
         recurring = recurring ?? <RecurringTx>[],
         snapshots = SplayTreeMap.of(snapshots ?? const {}),
         events = events ?? <LifeEvent>[],
-        processes = processes ?? <LifeProcess>[];
+        processes = processes ?? <LifeProcess>[],
+        weights = weights ?? <WeightEntry>[];
 
   factory AppData.defaults({DateTime? now}) => AppData(
         netWorth: 2450000,
@@ -173,6 +182,9 @@ class AppData {
         'budgets': budgets,
         'recurring': recurring.map((r) => r.toJson()).toList(),
         'processes': processes.map((p) => p.toJson()).toList(),
+        'weights': weights.map((w) => w.toJson()).toList(),
+        'heightCm': heightCm,
+        'bodyGoal': bodyGoal,
         'userName': userName,
         'stepsGoal': stepsGoal,
         'proteinGoal': proteinGoal,
@@ -191,8 +203,8 @@ class AppData {
       final v = j[key];
       if (v == null) {
         // Missing fields are valid in older schemas; explicit null is not valid for
-        // required exported fields. lastHealthSyncMs is intentionally nullable.
-        if (strict && j.containsKey(key) && key != 'lastHealthSyncMs') {
+        // required exported fields. lastHealthSyncMs, heightCm and bodyGoal are intentionally nullable.
+        if (strict && j.containsKey(key) && !const {'lastHealthSyncMs', 'heightCm', 'bodyGoal'}.contains(key)) {
           throw FormatException('AppData: поле "$key" не может быть null');
         }
         return fallback;
@@ -332,6 +344,22 @@ class AppData {
       onboardingDone: pick<bool>('onboardingDone', (v) => v as bool, true),
       healthEnabled: pick<bool>('healthEnabled', (v) => v as bool, false),
       // старые данные без поля — рубли (единственная валюта прежних версий)
+      weights: pick<List<WeightEntry>>('weights', (v) {
+        final list = uniqueCollection(v, 'weights', WeightEntry.fromJson, (entry) => entry.id);
+        if (strict && list.length > kMaxSnapshots) {
+          throw const FormatException('AppData: поле "weights" превышает допустимый размер ($kMaxSnapshots)');
+        }
+        return list..sort((a, b) => a.at.compareTo(b.at));
+      }, <WeightEntry>[]),
+      heightCm: pick<int?>('heightCm', (v) {
+        final h = (v as num).toInt();
+        if (h < 50 || h > 272 || v != h) throw FormatException('AppData: недопустимый рост $v');
+        return h;
+      }, null),
+      bodyGoal: pick<String?>('bodyGoal', (v) {
+        if (v is! String || !BodyGoal.isValid(v)) throw FormatException('AppData: неизвестная цель по весу "$v"');
+        return v;
+      }, null),
       currency: pick<String>('currency', (v) {
         if (v is! String || currencyByCode(v) == null) throw FormatException('AppData: неизвестная валюта "$v"');
         return v;

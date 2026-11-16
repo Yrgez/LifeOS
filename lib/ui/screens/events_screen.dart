@@ -116,7 +116,7 @@ class _EventsScreenState extends State<EventsScreen> {
                   subtitle: Text(
                     'событие: ${_fmt(chain[i].at)} · записано: ${_fmt(chain[i].recordedAt)}'
                     '${chain[i].isVoided ? ' · отменено ${_fmt(chain[i].voidedAt!)}' : ''}',
-                    style: const TextStyle(color: Colors.white38, fontSize: 11),
+                    style: const TextStyle(color: AppColors.muted, fontSize: 11),
                   ),
                 ),
             ],
@@ -140,7 +140,7 @@ class _EventsScreenState extends State<EventsScreen> {
                 ? (c.processById(widget.processId!)?.title ?? 'Процесс')
                 : widget.goalId != null
                     ? (c.goals.where((g) => g.id == widget.goalId).firstOrNull?.title ?? 'Цель')
-                    : 'СОБЫТИЯ ЖИЗНИ',
+                    : 'События',
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1),
           ),
         ),
@@ -149,7 +149,6 @@ class _EventsScreenState extends State<EventsScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         key: const ValueKey('add_event'),
-        backgroundColor: AppColors.green,
         foregroundColor: Colors.black,
         icon: const Icon(Icons.add),
         label: const Text('Событие', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -202,7 +201,7 @@ class _EventsScreenState extends State<EventsScreen> {
               'Событий пока нет. Фиксируйте то, что происходит: тренировку, занятие, покупку, решение — '
               'так складывается объективная история вашего пути.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white38, fontSize: 13),
+              style: TextStyle(color: AppColors.muted, fontSize: 13),
             ),
           ),
         for (final e in all.take(_shown)) _EventTile(event: e, controller: c, onRevise: _revise, onVoid: _void, onPurge: _purge, onHistory: _showHistory),
@@ -221,11 +220,11 @@ class _WeekCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(12)),
+      decoration: tileDecoration(radius: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('ЗА 7 ДНЕЙ: ${summary.events} событий', style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold)),
+          Text('ЗА 7 ДНЕЙ: ${summary.events} событий', style: const TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold)),
           if (summary.events > 0) ...[
             const SizedBox(height: 6),
             for (final line in resourceLines(summary)) Text(line, style: const TextStyle(fontSize: 12)),
@@ -266,7 +265,7 @@ class _EventTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
-      decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(12)),
+      decoration: tileDecoration(radius: 20),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -283,7 +282,7 @@ class _EventTile extends StatelessWidget {
                 Text(
                   '${LifeEventKind.labels[e.kind]} · ${e.dimensions.map((d) => LifeDimension.labels[d]).join(' + ')} · ${dayKey(e.at)}'
                   '${versions > 1 ? ' · версий: $versions' : ''}',
-                  style: const TextStyle(color: Colors.white38, fontSize: 11),
+                  style: const TextStyle(color: AppColors.muted, fontSize: 11),
                 ),
                 if (cost.isNotEmpty) Text(cost.join(' · '), style: const TextStyle(color: Colors.white70, fontSize: 11)),
                 if (e.goalIds.isNotEmpty)
@@ -299,13 +298,13 @@ class _EventTile extends StatelessWidget {
                 if (e.note.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
-                    child: Text(e.note, maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white54, fontSize: 11)),
+                    child: Text(e.note, maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted, fontSize: 11)),
                   ),
               ],
             ),
           ),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.white38, size: 18),
+            icon: const Icon(Icons.more_vert, color: AppColors.muted, size: 18),
             onSelected: (v) => switch (v) {
               'edit' => onRevise(e),
               'history' => onHistory(e),

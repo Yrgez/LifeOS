@@ -50,7 +50,7 @@ class _HealthCardState extends State<HealthCard> {
         children: [
           Row(
             children: [
-              const Expanded(child: Text('HEALTH & ACTIVITY (7 ДНЕЙ)', style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold))),
+              const Expanded(child: Text('HEALTH & ACTIVITY (7 ДНЕЙ)', style: TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold))),
               if (c.healthSyncing)
                 const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.green))
               else if (c.healthSupported)
@@ -62,7 +62,7 @@ class _HealthCardState extends State<HealthCard> {
                   constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                 ),
               IconButton(
-                icon: const Icon(Icons.edit, color: Colors.white54, size: 18),
+                icon: const Icon(Icons.edit, color: AppColors.muted, size: 18),
                 tooltip: 'Ввести вручную',
                 onPressed: _editHealthMetricsDialog,
                 padding: EdgeInsets.zero,
@@ -75,14 +75,14 @@ class _HealthCardState extends State<HealthCard> {
               Expanded(
                 child: Text(
                   healthStatusLine(c),
-                  style: TextStyle(color: c.healthMessage != null ? AppColors.red : Colors.white38, fontSize: 10),
+                  style: TextStyle(color: c.healthMessage != null ? AppColors.red : AppColors.muted, fontSize: 10),
                 ),
               ),
               if (c.healthEnabled)
                 TextButton(
                   onPressed: c.disconnectHealth,
                   style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 24)),
-                  child: const Text('Отключить', style: TextStyle(fontSize: 10, color: Colors.white38)),
+                  child: const Text('Отключить', style: TextStyle(fontSize: 10, color: AppColors.muted)),
                 ),
             ],
           ),
@@ -97,7 +97,7 @@ class _HealthCardState extends State<HealthCard> {
             ],
           ),
           const SizedBox(height: 14),
-          const Text('ДИНАМИКА ШАГОВ ЗА НЕДЕЛЮ:', style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold)),
+          const Text('ДИНАМИКА ШАГОВ ЗА НЕДЕЛЮ:', style: TextStyle(color: AppColors.muted, fontSize: 10, fontWeight: FontWeight.bold)),
           const SizedBox(height: 6),
           SizedBox(
             height: 48,
@@ -126,7 +126,7 @@ class _MetricCol extends StatelessWidget {
         const SizedBox(height: 4),
         Text(val, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: col)),
         const SizedBox(height: 2),
-        Text(sub, style: const TextStyle(color: Colors.white38, fontSize: 10)),
+        Text(sub, style: const TextStyle(color: AppColors.muted, fontSize: 10)),
       ],
     );
   }

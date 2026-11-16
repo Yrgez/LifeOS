@@ -38,12 +38,12 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('tab_body')));
     await tester.pumpAndSettle();
-    expect(find.text('АНАТОМИЧЕСКАЯ КАРТА ТЕЛА'), findsOneWidget);
-    expect(find.text('СРАВНЕНИЕ МЕТРИК'), findsOneWidget); // переехало с HUB
+    expect(find.byKey(const ValueKey('weight_tile')), findsOneWidget);
+    expect(find.text('Сравнение метрик'), findsOneWidget); // переехало с HUB
 
     await tester.tap(find.byKey(const ValueKey('tab_mind')));
     await tester.pumpAndSettle();
-    expect(find.text('СТРАТЕГИЧЕСКИЕ ЦЕЛИ'), findsOneWidget);
+    expect(find.text('Цели'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('open_graph')));
     await tester.pumpAndSettle();
     expect(find.text('SECOND BRAIN GRAPH'), findsOneWidget);
@@ -52,11 +52,11 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('tab_material')));
     await tester.pumpAndSettle();
-    expect(find.text('КАПИТАЛ И КАРЬЕРА'), findsOneWidget);
+    expect(find.text('Чистый капитал'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('tab_chronicle')));
     await tester.pumpAndSettle();
-    expect(find.text('ХРОНИКА'), findsOneWidget);
+    expect(find.text('Хроника'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('tab_today')));
     await tester.pumpAndSettle();
@@ -69,7 +69,7 @@ void main() {
     final c = await boot(tester);
     await tester.tap(find.byKey(const ValueKey('open_events')));
     await tester.pumpAndSettle();
-    expect(find.text('СОБЫТИЯ ЖИЗНИ'), findsOneWidget);
+    expect(find.text('События').last, findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('add_event')));
     await tester.pumpAndSettle();
@@ -95,7 +95,7 @@ void main() {
     final c = await boot(tester);
     await tester.tap(find.byKey(const ValueKey('open_processes')));
     await tester.pumpAndSettle();
-    expect(find.text('ПРОЦЕССЫ'), findsOneWidget);
+    expect(find.text('Процессы').last, findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('add_process')));
     await tester.pumpAndSettle();
@@ -236,7 +236,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('tab_body')));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('ЖУРНАЛ ТРЕНИРОВОК'));
+    await tester.tap(find.text('Журнал тренировок'));
     await tester.pumpAndSettle();
     expect(find.text('Пока нет записей.\nНажмите «+ Подход», чтобы начать журнал.'), findsOneWidget);
 
@@ -260,9 +260,9 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('tab_material')));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('УЧЁТ ОПЕРАЦИЙ'));
+    await tester.tap(find.text('Учёт операций'));
     await tester.pumpAndSettle();
-    expect(find.text('УЧЁТ ФИНАНСОВ'), findsOneWidget);
+    expect(find.text('Учёт финансов'), findsOneWidget);
 
     await tester.tap(find.text('Операция'));
     await tester.pumpAndSettle();
@@ -371,7 +371,7 @@ void main() {
     Future<void> openSettings(WidgetTester tester) async {
       await tester.tap(find.byTooltip('Настройки'));
       await tester.pumpAndSettle();
-      expect(find.text('НАСТРОЙКИ'), findsOneWidget);
+      expect(find.text('Настройки'), findsOneWidget);
     }
 
     testWidgets('смена имени и целей дня отражается в данных и на «Сегодня»', (tester) async {
@@ -458,7 +458,7 @@ void main() {
       await tester.tap(find.text('Пройти знакомство заново'));
       await tester.pumpAndSettle();
       expect(find.text('Добро пожаловать в Life OS'), findsOneWidget);
-      expect(find.text('НАСТРОЙКИ'), findsNothing);
+      expect(find.text('Настройки'), findsNothing);
       expect(c.goals, isNotEmpty); // данные на месте
       await shutdown(tester, c);
     });

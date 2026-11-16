@@ -52,4 +52,45 @@ class AnatomicalGeometry {
   };
 
   static Map<String, Path> pathsFor(bool front) => front ? frontPaths : backPaths;
+
+  /// Силуэт (одинаков спереди и сзади): голова, шея, торс, руки и ноги — сглаженными «капсулами».
+  /// Координаты согласованы с контурами мышц выше (база 300×480).
+  static void paintSilhouette(Canvas canvas, Paint fill) {
+    canvas.drawOval(const Rect.fromLTWH(130, 2, 40, 50), fill); // голова
+    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(138, 42, 24, 26), const Radius.circular(9)), fill); // шея
+    final torso = Path()
+      ..moveTo(110, 66)
+      ..quadraticBezierTo(150, 56, 190, 66)
+      ..quadraticBezierTo(226, 72, 230, 104)
+      ..quadraticBezierTo(214, 124, 204, 132)
+      ..lineTo(198, 196)
+      ..quadraticBezierTo(206, 214, 200, 230)
+      ..lineTo(156, 236)
+      ..lineTo(150, 244)
+      ..lineTo(144, 236)
+      ..lineTo(100, 230)
+      ..quadraticBezierTo(94, 214, 102, 196)
+      ..lineTo(96, 132)
+      ..quadraticBezierTo(86, 124, 70, 104)
+      ..quadraticBezierTo(74, 72, 110, 66)
+      ..close();
+    canvas.drawPath(torso, fill);
+
+    final limb = Paint()
+      ..color = fill.color
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    for (final side in const [-1.0, 1.0]) {
+      double x(double v) => side < 0 ? v : 300 - v;
+      // плечо и предплечье
+      canvas.drawLine(Offset(x(86), 100), Offset(x(82), 160), limb..strokeWidth = 30);
+      canvas.drawLine(Offset(x(82), 160), Offset(x(74), 234), limb..strokeWidth = 22);
+      canvas.drawOval(Rect.fromCenter(center: Offset(x(72), 252), width: 18, height: 26), fill); // кисть
+      // бедро, голень, стопа
+      canvas.drawLine(Offset(x(126), 228), Offset(x(124), 330), limb..strokeWidth = 46);
+      canvas.drawLine(Offset(x(124), 334), Offset(x(122), 428), limb..strokeWidth = 30);
+      canvas.drawOval(Rect.fromCenter(center: Offset(x(120), 444), width: 26, height: 14), fill); // стопа
+    }
+  }
 }

@@ -47,40 +47,26 @@ class BodyMapCard extends StatelessWidget {
     final activeMuscle = c.muscles[selection.muscleId];
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white10)),
+      padding: const EdgeInsets.all(18),
+      decoration: tileDecoration(),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Row(
-                  children: [
-                    const Icon(Icons.biotech, color: AppColors.green, size: 16),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text(
-                        selection.showFront ? 'ПРОЕКЦИЯ: ANTERIOR (ФАС)' : 'ПРОЕКЦИЯ: POSTERIOR (ТЫЛ)',
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8),
-                      ),
-                    ),
-                  ],
-                ),
+                child: Text('Мышцы', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
               ),
-              GestureDetector(
-                onTap: selection.flip,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: AppColors.field, borderRadius: BorderRadius.circular(12)),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.flip_camera_android, size: 12, color: AppColors.green),
-                      const SizedBox(width: 4),
-                      Text(selection.showFront ? 'Повернуть спиной' : 'Повернуть лицом', style: const TextStyle(color: Colors.white70, fontSize: 10)),
-                    ],
-                  ),
+              // переключатель ракурса — «таблетка» из двух сегментов
+              Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(color: AppColors.field, borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.border)),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _segment('Спереди', selection.showFront, () => selection.setFront(true)),
+                    _segment('Сзади', !selection.showFront, () => selection.setFront(false)),
+                  ],
                 ),
               ),
             ],
@@ -97,67 +83,77 @@ class BodyMapCard extends StatelessWidget {
                   child: RepaintBoundary(
                     child: CustomPaint(
                       size: size,
-                      painter: AnatomicalSilhouettePainter(muscles: c.muscles, isFront: selection.showFront, selectedMuscleId: selection.muscleId),
+                      painter: AnatomicalSilhouettePainter(muscles: c.muscles, isFront: selection.showFront, selectedMuscleId: selection.muscleId, now: c.now),
                     ),
                   ),
                 );
               },
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
+          // легенда переносится на узком экране
+          const Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 14,
+            runSpacing: 6,
+            children: [
+              Row(mainAxisSize: MainAxisSize.min, children: [
+                _LegendDot(AnatomicalSilhouettePainter.load),
+                SizedBox(width: 6),
+                Flexible(child: Text('восстанавливается (оценка)', style: TextStyle(color: AppColors.muted, fontSize: 12))),
+              ]),
+              Row(mainAxisSize: MainAxisSize.min, children: [
+                _LegendDot(AnatomicalSilhouettePainter.muscle),
+                SizedBox(width: 6),
+                Flexible(child: Text('восстановлена', style: TextStyle(color: AppColors.muted, fontSize: 12))),
+              ]),
+            ],
+          ),
+          const SizedBox(height: 14),
           if (activeMuscle != null)
             Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.panel,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: activeMuscle.color.withValues(alpha: 0.4)),
-              ),
+              padding: const EdgeInsets.all(14),
+              decoration: tileDecoration(radius: 20, color: AppColors.field),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      CircleAvatar(radius: 5, backgroundColor: activeMuscle.color),
-                      const SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(activeMuscle.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            Text(activeMuscle.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                            const SizedBox(height: 2),
                             Text(
-                              '${_recoveryText(muscleRecovery(activeMuscle, controller.now), activeMuscle.lastTrainedOn(controller.now))} • 1RM: ${activeMuscle.maxWeight.toInt()} кг',
-                              style: const TextStyle(color: Colors.white54, fontSize: 11),
+                              _recoveryText(muscleRecovery(activeMuscle, controller.now), activeMuscle.lastTrainedOn(controller.now)),
+                              style: const TextStyle(color: AppColors.muted, fontSize: 13),
                             ),
                           ],
                         ),
                       ),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.green,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          minimumSize: Size.zero,
-                        ),
+                      const SizedBox(width: 8),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(minimumSize: const Size(0, 40), padding: const EdgeInsets.symmetric(horizontal: 14)),
                         onPressed: () => showLogSetDialog(context, c, muscleId: activeMuscle.id),
-                        child: const Text('Записать подход', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 11)),
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text('Подход'),
                       ),
                     ],
                   ),
-                  const Divider(color: Colors.white10, height: 16),
+                  const SizedBox(height: 14),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Flexible(child: Text('ИСТОРИЯ 1RM (ПРОГРЕСС СИЛЫ):', style: TextStyle(color: Colors.white38, fontSize: 10, fontWeight: FontWeight.bold))),
-                      const SizedBox(width: 8),
-                      // раньше показывался последний подход как «рекорд»; теперь — настоящий максимум
-                      Text('${activeMuscle.maxWeight.toInt()} кг рекорд', style: const TextStyle(color: AppColors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+                      const Expanded(child: Text('Рекорд 1RM', style: TextStyle(color: AppColors.muted, fontSize: 13))),
+                      // настоящий максимум, а не последний подход
+                      Text('${activeMuscle.maxWeight.toInt()} кг', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   SizedBox(
                     height: 42,
                     width: double.infinity,
-                    child: CustomPaint(painter: MiniSparklinePainter(data: c.progression(activeMuscle.id), color: activeMuscle.color)),
+                    child: CustomPaint(painter: MiniSparklinePainter(data: c.progression(activeMuscle.id), color: AppColors.text)),
                   ),
                 ],
               ),
@@ -166,6 +162,15 @@ class BodyMapCard extends StatelessWidget {
       ),
     );
   }
+
+  Widget _segment(String label, bool active, VoidCallback onTap) => GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(color: active ? AppColors.accent : Colors.transparent, borderRadius: BorderRadius.circular(16)),
+          child: Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: active ? Colors.black : AppColors.muted)),
+        ),
+      );
 
   void _handleAnatomicalTap(Offset localPos, Size size) {
     final scale = min(size.width / AnatomicalGeometry.baseWidth, size.height / AnatomicalGeometry.baseHeight);
@@ -186,4 +191,12 @@ class BodyMapCard extends StatelessWidget {
 String _recoveryText(MuscleRecovery r, String lastTrained) {
   if (r.lastTrainedAt == null) return lastTrained;
   return 'Тренировка ${lastTrained.toLowerCase()} · ${r.recovered ? 'восстановлена' : 'ещё ${fmtHoursLeft(r.hoursLeft)}'} (оценка)';
+}
+
+class _LegendDot extends StatelessWidget {
+  final Color color;
+  const _LegendDot(this.color);
+
+  @override
+  Widget build(BuildContext context) => Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle));
 }

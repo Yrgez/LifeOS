@@ -70,7 +70,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           children: [
             Align(
               alignment: Alignment.centerRight,
-              child: TextButton(onPressed: _skip, child: const Text('Пропустить', style: TextStyle(color: Colors.white38, fontSize: 12))),
+              child: TextButton(onPressed: _skip, child: const Text('Пропустить', style: TextStyle(color: AppColors.muted, fontSize: 12))),
             ),
             Expanded(
               child: PageView(
@@ -85,7 +85,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   SizedBox(
                     width: 72,
-                    child: _page > 0 ? TextButton(onPressed: () => _go(_page - 1), child: const Text('Назад', style: TextStyle(color: Colors.white54))) : null,
+                    child: _page > 0 ? TextButton(onPressed: () => _go(_page - 1), child: const Text('Назад', style: TextStyle(color: AppColors.muted))) : null,
                   ),
                   Expanded(
                     child: Row(
@@ -103,7 +103,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                   ),
                   ElevatedButton(
-                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.green, minimumSize: const Size(96, 40)),
+                    style: ElevatedButton.styleFrom(minimumSize: const Size(96, 40)),
                     onPressed: _next,
                     child: Text(last ? 'Начать' : 'Далее', style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
                   ),
@@ -194,12 +194,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               label: Text(c.healthEnabled ? 'Health Connect подключён' : 'Подключить Health Connect'),
             ),
             const SizedBox(height: 6),
-            Text(healthStatusLine(c), style: const TextStyle(color: Colors.white38, fontSize: 11)),
+            Text(healthStatusLine(c), style: const TextStyle(color: AppColors.muted, fontSize: 11)),
           ] else
-            const Text('Health Connect доступен на Android — подключить можно позже в настройках.', style: TextStyle(color: Colors.white38, fontSize: 12)),
+            const Text('Health Connect доступен на Android — подключить можно позже в настройках.', style: TextStyle(color: AppColors.muted, fontSize: 12)),
           if (c.isBlank) ...[
             const SizedBox(height: 22),
-            const Text('С ЧЕГО НАЧАТЬ', style: TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
+            const Text('С ЧЕГО НАЧАТЬ', style: TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -211,7 +211,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(height: 8),
             Text(
               _demo ? 'Заполним журнал, цели, граф и операции примерами — удобно, чтобы осмотреться. Удалить их можно в настройках.' : 'Всё начнётся с нуля — вы заполните только то, что нужно.',
-              style: const TextStyle(color: Colors.white54, fontSize: 12),
+              style: const TextStyle(color: AppColors.muted, fontSize: 12),
             ),
           ],
         ],

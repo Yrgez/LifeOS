@@ -214,7 +214,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('НАСТРОЙКИ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
+        title: const Text('Настройки'),
         backgroundColor: AppColors.panel,
         elevation: 0,
       ),
@@ -303,7 +303,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.only(left: 4, bottom: 6),
-            child: Text(title, style: const TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
+            child: Text(title, style: const TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
           ),
           Material(
             color: AppColors.card,
@@ -328,9 +328,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _switchTile(IconData icon, String title, String subtitle, bool value, ValueChanged<bool>? onChanged) {
     return SwitchListTile(
-      secondary: Icon(icon, color: Colors.white54, size: 20),
+      secondary: Icon(icon, color: AppColors.muted, size: 20),
       title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-      subtitle: Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 11)),
+      subtitle: Text(subtitle, style: const TextStyle(color: AppColors.muted, fontSize: 11)),
       value: value,
       activeThumbColor: AppColors.green,
       onChanged: onChanged,
@@ -340,9 +340,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _tile(IconData icon, String title, String subtitle, {VoidCallback? onTap, Widget? trailing, bool danger = false}) {
     final color = danger ? AppColors.red : Colors.white;
     return ListTile(
-      leading: Icon(icon, color: danger ? AppColors.red : Colors.white54, size: 20),
+      leading: Icon(icon, color: danger ? AppColors.red : AppColors.muted, size: 20),
       title: Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: color)),
-      subtitle: Text(subtitle, style: const TextStyle(color: Colors.white54, fontSize: 11)),
+      subtitle: Text(subtitle, style: const TextStyle(color: AppColors.muted, fontSize: 11)),
       trailing: trailing ?? (onTap != null ? const Icon(Icons.chevron_right, color: Colors.white24) : null),
       onTap: onTap,
     );

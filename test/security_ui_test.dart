@@ -145,12 +145,12 @@ void main() {
     testWidgets('блокировка закрывает и открытые экраны (настройки)', (tester) async {
       final e = await boot(tester, lockEnabled: true, timeout: 0);
       await openSettings(tester);
-      expect(find.text('НАСТРОЙКИ'), findsOneWidget);
+      expect(find.text('Настройки'), findsOneWidget);
       e.auth.nextOutcome = AuthOutcome.cancelled;
       e.lock.onLifecycle(AppLifecycleState.paused);
       await tester.pumpAndSettle();
       expect(find.text('Life OS заблокирован'), findsOneWidget);
-      expect(find.text('НАСТРОЙКИ').hitTestable(), findsNothing);
+      expect(find.text('Настройки').hitTestable(), findsNothing);
       await shutdown(tester, e);
     });
   });

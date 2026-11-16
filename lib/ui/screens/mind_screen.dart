@@ -39,10 +39,14 @@ class _MindScreenState extends State<MindScreen> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Text('Разум', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8)),
+          const SizedBox(height: 2),
+          const Text('Цели, достижения, связи', style: TextStyle(color: AppColors.muted, fontSize: 13)),
+          const SizedBox(height: 20),
           Row(
             children: [
               Expanded(
@@ -51,7 +55,7 @@ class _MindScreenState extends State<MindScreen> {
                   onPressed: () => Navigator.of(context).push(MaterialPageRoute(
                     builder: (_) => Scaffold(
                       appBar: AppBar(
-                        title: const Text('ГРАФ СВЯЗЕЙ', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                        title: const Text('Граф связей'),
                         backgroundColor: AppColors.panel,
                         elevation: 0,
                       ),
@@ -76,8 +80,8 @@ class _MindScreenState extends State<MindScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Flexible(child: Text('СТРАТЕГИЧЕСКИЕ ЦЕЛИ', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
-              IconButton(onPressed: _addNewGoalDialog, icon: const Icon(Icons.add_circle, color: AppColors.violet, size: 28)),
+              const Flexible(child: Text('Цели', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600))),
+              IconButton(tooltip: 'Новая цель', onPressed: _addNewGoalDialog, icon: const Icon(Icons.add_circle_outline, color: AppColors.text, size: 26)),
             ],
           ),
           const SizedBox(height: 12),
@@ -86,8 +90,8 @@ class _MindScreenState extends State<MindScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Flexible(child: Text('ИСТОРИЯ ДОСТИЖЕНИЙ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
-              IconButton(onPressed: _addNewAchievementDialog, icon: const Icon(Icons.add_circle, color: AppColors.green, size: 28)),
+              const Flexible(child: Text('Достижения', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600))),
+              IconButton(tooltip: 'Новое достижение', onPressed: _addNewAchievementDialog, icon: const Icon(Icons.add_circle_outline, color: AppColors.text, size: 26)),
             ],
           ),
           const SizedBox(height: 10),
@@ -95,13 +99,13 @@ class _MindScreenState extends State<MindScreen> {
             Container(
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(12)),
+              decoration: tileDecoration(radius: 20),
               child: Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: AppColors.green.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
-                    child: Icon(item.icon, color: AppColors.green, size: 20),
+                    decoration: BoxDecoration(color: AppColors.raised, borderRadius: BorderRadius.circular(14)),
+                    child: Icon(item.icon, color: AppColors.text, size: 20),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -109,7 +113,7 @@ class _MindScreenState extends State<MindScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        Text('${item.category} • ${item.date}', style: const TextStyle(color: Colors.white38, fontSize: 11)),
+                        Text('${item.category} • ${item.date}', style: const TextStyle(color: AppColors.muted, fontSize: 11)),
                       ],
                     ),
                   ),
