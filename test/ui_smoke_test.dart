@@ -34,14 +34,14 @@ void main() {
 
   testWidgets('все вкладки строятся', (tester) async {
     final c = await boot(tester);
-    expect(find.textContaining('СЕГОДНЯ ·'), findsOneWidget);
+    expect(find.byKey(const ValueKey('today_date')), findsOneWidget);
 
-    await tester.tap(find.text('Тело'));
+    await tester.tap(find.byKey(const ValueKey('tab_body')));
     await tester.pumpAndSettle();
     expect(find.text('АНАТОМИЧЕСКАЯ КАРТА ТЕЛА'), findsOneWidget);
     expect(find.text('СРАВНЕНИЕ МЕТРИК'), findsOneWidget); // переехало с HUB
 
-    await tester.tap(find.text('Разум'));
+    await tester.tap(find.byKey(const ValueKey('tab_mind')));
     await tester.pumpAndSettle();
     expect(find.text('СТРАТЕГИЧЕСКИЕ ЦЕЛИ'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('open_graph')));
@@ -50,17 +50,17 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Материальное'));
+    await tester.tap(find.byKey(const ValueKey('tab_material')));
     await tester.pumpAndSettle();
     expect(find.text('КАПИТАЛ И КАРЬЕРА'), findsOneWidget);
 
-    await tester.tap(find.text('Хроника'));
+    await tester.tap(find.byKey(const ValueKey('tab_chronicle')));
     await tester.pumpAndSettle();
     expect(find.text('ХРОНИКА'), findsOneWidget);
 
-    await tester.tap(find.text('Сегодня'));
+    await tester.tap(find.byKey(const ValueKey('tab_today')));
     await tester.pumpAndSettle();
-    expect(find.textContaining('СЕГОДНЯ ·'), findsOneWidget);
+    expect(find.byKey(const ValueKey('today_date')), findsOneWidget);
 
     await shutdown(tester, c);
   });
@@ -137,7 +137,7 @@ void main() {
     c.addEvent(title: 'Урок', dimensions: ['mind', 'material'], processIds: [p], cost: const ResourceCost(minutes: 90, money: 1500, energy: 3));
     c.addEvent(title: 'Пробежка', dimensions: ['body'], cost: const ResourceCost(minutes: 30));
     await tester.pumpAndSettle();
-    expect(find.text('РЕСУРСЫ ЗА 7 ДНЕЙ'), findsOneWidget);
+    expect(find.byKey(const ValueKey('open_resources')), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('open_resources')));
     await tester.pumpAndSettle();
@@ -157,7 +157,7 @@ void main() {
     final c = await boot(tester);
     c.addEvent(title: 'Первая тренировка', dimensions: ['body']);
     c.addProcess(title: 'Бег', dimensions: ['body']);
-    await tester.tap(find.text('Хроника'));
+    await tester.tap(find.byKey(const ValueKey('tab_chronicle')));
     await tester.pumpAndSettle();
     expect(find.text('Первая тренировка'), findsOneWidget);
     expect(find.text('Начат процесс «Бег»'), findsOneWidget);
@@ -177,7 +177,7 @@ void main() {
     c.setGoalPlan(g, const GoalPlan(minutes: 6000));
     c.addEvent(title: 'Урок Java', dimensions: ['mind'], goalIds: [g], cost: const ResourceCost(minutes: 90));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Разум'));
+    await tester.tap(find.byKey(const ValueKey('tab_mind')));
     await tester.pumpAndSettle();
     expect(find.text('Время: 1 ч 30 мин из 100 ч по плану'), findsOneWidget);
 
@@ -191,20 +191,20 @@ void main() {
 
   testWidgets('без ложной точности: восстановление счётом, граф со связанным узлом удалённого процесса', (tester) async {
     final c = await boot(tester);
-    expect(find.textContaining('Восстановлено '), findsOneWidget);
+    expect(find.text('Восстановлено'), findsOneWidget);
     expect(find.textContaining('Готовность тела'), findsNothing);
 
     final p = c.addProcess(title: 'Изучение Java', dimensions: ['mind'])!;
     c.addNodeFor(NodeRef(NodeRef.process, p));
     c.removeProcess(p);
-    await tester.tap(find.text('Разум'));
+    await tester.tap(find.byKey(const ValueKey('tab_mind')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('open_graph')));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     await tester.pageBack();
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Тело'));
+    await tester.tap(find.byKey(const ValueKey('tab_body')));
     await tester.pumpAndSettle();
     expect(find.textContaining('Корреляция Пирсона'), findsNothing);
 
@@ -217,8 +217,8 @@ void main() {
     tester.view.physicalSize = const Size(360, 2600);
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    for (final t in ['Тело', 'Разум', 'Материальное', 'Хроника', 'Сегодня']) {
-      await tester.tap(find.text(t).last);
+    for (final t in ['tab_body', 'tab_mind', 'tab_material', 'tab_chronicle', 'tab_today']) {
+      await tester.tap(find.byKey(ValueKey(t)));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull, reason: 'вкладка «$t»');
     }
@@ -233,7 +233,7 @@ void main() {
 
   testWidgets('запись подхода из журнала доходит до контроллера', (tester) async {
     final c = await boot(tester);
-    await tester.tap(find.text('Тело'));
+    await tester.tap(find.byKey(const ValueKey('tab_body')));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('ЖУРНАЛ ТРЕНИРОВОК'));
@@ -257,7 +257,7 @@ void main() {
 
   testWidgets('добавление операции из учёта финансов', (tester) async {
     final c = await boot(tester);
-    await tester.tap(find.text('Материальное'));
+    await tester.tap(find.byKey(const ValueKey('tab_material')));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('УЧЁТ ОПЕРАЦИЙ'));
@@ -280,7 +280,7 @@ void main() {
   testWidgets('смена вкладок не теряет данные контроллера', (tester) async {
     final c = await boot(tester);
     c.updateWealth(netWorth: 7777777);
-    await tester.tap(find.text('Материальное'));
+    await tester.tap(find.byKey(const ValueKey('tab_material')));
     await tester.pumpAndSettle();
     expect(find.textContaining('7\u00A0777\u00A0777'), findsWidgets);
     await shutdown(tester, c);
@@ -290,7 +290,7 @@ void main() {
     testWidgets('новая установка: прохождение до конца с примерами данных', (tester) async {
       final c = await boot(tester, blank: true);
       expect(find.text('Добро пожаловать в Life OS'), findsOneWidget);
-      expect(find.textContaining('СЕГОДНЯ ·'), findsNothing);
+      expect(find.byKey(const ValueKey('today_date')), findsNothing);
 
       await tester.enterText(find.byType(TextField).first, 'Мария');
       await tester.tap(find.text('Далее'));
@@ -313,8 +313,8 @@ void main() {
       expect(c.onboardingDone, isTrue);
       expect(c.userName, 'Мария');
       expect(c.goals, isNotEmpty);
-      expect(find.textContaining('СЕГОДНЯ ·'), findsOneWidget);
-      expect(find.text('Мария'), findsOneWidget);
+      expect(find.byKey(const ValueKey('today_date')), findsOneWidget);
+      expect(find.textContaining('Мария'), findsOneWidget);
       await shutdown(tester, c);
     });
 
@@ -348,14 +348,14 @@ void main() {
       await tester.pumpAndSettle();
       expect(c.onboardingDone, isTrue);
       expect(c.stepsGoal, 10000);
-      expect(find.textContaining('СЕГОДНЯ ·'), findsOneWidget);
+      expect(find.byKey(const ValueKey('today_date')), findsOneWidget);
       await shutdown(tester, c);
     });
 
     testWidgets('существующие данные: знакомство не показывается', (tester) async {
       final c = await boot(tester);
       expect(find.text('Добро пожаловать в Life OS'), findsNothing);
-      expect(find.textContaining('СЕГОДНЯ ·'), findsOneWidget);
+      expect(find.byKey(const ValueKey('today_date')), findsOneWidget);
       await shutdown(tester, c);
     });
 
@@ -369,12 +369,12 @@ void main() {
 
   group('настройки', () {
     Future<void> openSettings(WidgetTester tester) async {
-      await tester.tap(find.byIcon(Icons.settings));
+      await tester.tap(find.byTooltip('Настройки'));
       await tester.pumpAndSettle();
       expect(find.text('НАСТРОЙКИ'), findsOneWidget);
     }
 
-    testWidgets('смена имени и целей дня отражается в данных и на HUB', (tester) async {
+    testWidgets('смена имени и целей дня отражается в данных и на «Сегодня»', (tester) async {
       final c = await boot(tester);
       await openSettings(tester);
 
@@ -394,8 +394,8 @@ void main() {
 
       await tester.pageBack();
       await tester.pumpAndSettle();
-      expect(find.text('Мария'), findsOneWidget);
-      expect(find.textContaining('Цель: 12'), findsOneWidget);
+      expect(find.textContaining('Мария'), findsOneWidget);
+      expect(find.textContaining('Цель 12'), findsOneWidget); // плитка шагов на «Сегодня»
       await shutdown(tester, c);
     });
 

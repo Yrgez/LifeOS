@@ -103,25 +103,68 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
           ],
         ),
       ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(border: Border(top: BorderSide(color: Colors.white10, width: 1))),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) => setState(() => _currentIndex = index),
-          backgroundColor: AppColors.panel,
-          selectedItemColor: AppColors.green,
-          unselectedItemColor: Colors.white38,
-          type: BottomNavigationBarType.fixed,
-          selectedFontSize: 11,
-          unselectedFontSize: 10,
-          items: const [
-            // PRESENT, три измерения жизни, PAST
-            BottomNavigationBarItem(icon: Icon(Icons.today_outlined), activeIcon: Icon(Icons.today), label: 'Сегодня'),
-            BottomNavigationBarItem(icon: Icon(Icons.accessibility_new), label: 'Тело'),
-            BottomNavigationBarItem(icon: Icon(Icons.psychology_outlined), activeIcon: Icon(Icons.psychology), label: 'Разум'),
-            BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet_outlined), activeIcon: Icon(Icons.account_balance_wallet), label: 'Материальное'),
-            BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Хроника'),
-          ],
+      bottomNavigationBar: _FloatingNav(current: _currentIndex, onSelect: (i) => setState(() => _currentIndex = i)),
+    );
+  }
+}
+
+/// Вкладки: PRESENT, три измерения жизни, PAST.
+const _tabs = [
+  (key: 'tab_today', label: 'Сегодня', icon: Icons.grid_view_rounded),
+  (key: 'tab_body', label: 'Тело', icon: Icons.accessibility_new),
+  (key: 'tab_mind', label: 'Разум', icon: Icons.hub_outlined),
+  (key: 'tab_material', label: 'Материальное', icon: Icons.account_balance_wallet_outlined),
+  (key: 'tab_chronicle', label: 'Хроника', icon: Icons.history),
+];
+
+/// Плавающая нижняя панель: скруглённая «таблетка» над фоном, активная вкладка — в круге.
+/// Подписи — в подсказках и для экранного диктора (иконки без текста, как в макете).
+class _FloatingNav extends StatelessWidget {
+  final int current;
+  final ValueChanged<int> onSelect;
+  const _FloatingNav({required this.current, required this.onSelect});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+        child: Container(
+          height: 68,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            color: AppColors.raised,
+            borderRadius: BorderRadius.circular(34),
+            border: Border.all(color: const Color(0x1AFFFFFF)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              for (var i = 0; i < _tabs.length; i++)
+                Semantics(
+                  selected: i == current,
+                  child: Tooltip(
+                    message: _tabs[i].label,
+                    child: InkResponse(
+                      key: ValueKey(_tabs[i].key),
+                      onTap: () => onSelect(i),
+                      radius: 28,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: i == current ? const Color(0xFF2C2C2E) : Colors.transparent,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(_tabs[i].icon, size: 23, color: i == current ? AppColors.text : const Color(0xFF8E8E93), semanticLabel: _tabs[i].label),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
