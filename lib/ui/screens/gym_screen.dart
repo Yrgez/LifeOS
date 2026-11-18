@@ -8,6 +8,7 @@ import '../../state/app_controller.dart';
 import '../painters/anatomy_geometry.dart';
 import '../widgets/body_map_card.dart';
 import '../widgets/body_metrics.dart';
+import '../widgets/toast.dart';
 import '../widgets/comparison_card.dart';
 import '../widgets/log_set_dialog.dart';
 import 'journal_screen.dart';
@@ -75,6 +76,41 @@ class _GymScreenState extends State<GymScreen> {
     );
   }
 
+  /// Тренировка дня ещё не записана событием: подходы журнала → событие «Тело» со ссылками на них.
+  Widget _workoutEventTile() {
+    final sets = c.unrecordedSets(c.now);
+    final volume = sets.fold<double>(0, (a, s) => a + s.weight * s.reps);
+    return Container(
+      key: const ValueKey('workout_event_tile'),
+      padding: const EdgeInsets.fromLTRB(18, 14, 12, 14),
+      decoration: tileDecoration(),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Тренировка сегодня', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                const SizedBox(height: 2),
+                Text('${sets.length} подх. · ${fmtVolume(volume)} кг — ещё не в хронике', style: const TextStyle(color: AppColors.muted, fontSize: 13)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            key: const ValueKey('record_workout'),
+            style: ElevatedButton.styleFrom(minimumSize: const Size(0, 40), padding: const EdgeInsets.symmetric(horizontal: 14)),
+            onPressed: () {
+              final id = c.recordWorkoutEvent(c.now);
+              showToast(context, id == null ? 'Не удалось записать событие' : 'Тренировка записана событием');
+            },
+            child: const Text('В события'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildGymScreen() {
     final paths = AnatomicalGeometry.pathsFor(selection.showFront);
     // порядок — как на силуэте; «икры» есть и в списке заднего вида
@@ -94,6 +130,7 @@ class _GymScreenState extends State<GymScreen> {
           BodyMapCard(controller: c, selection: selection),
           const SizedBox(height: 12),
           _journalEntryCard(),
+          if (c.unrecordedSets(c.now).isNotEmpty) ...[const SizedBox(height: 12), _workoutEventTile()],
           const SizedBox(height: 16),
           ComparisonCard(controller: c),
           const SizedBox(height: 16),

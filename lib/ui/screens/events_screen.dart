@@ -75,6 +75,11 @@ class _EventsScreenState extends State<EventsScreen> {
     showToast(context, id == null ? 'Не удалось сохранить новую версию' : 'Сохранена новая версия');
   }
 
+  void _repeat(LifeEvent e) {
+    final id = c.repeatEvent(e.id);
+    showToast(context, id == null ? 'Не удалось повторить событие' : 'Записано такое же событие сегодня');
+  }
+
   void _void(LifeEvent e) {
     if (!c.voidEvent(e.id)) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -204,7 +209,7 @@ class _EventsScreenState extends State<EventsScreen> {
               style: TextStyle(color: AppColors.muted, fontSize: 13),
             ),
           ),
-        for (final e in all.take(_shown)) _EventTile(event: e, controller: c, onRevise: _revise, onVoid: _void, onPurge: _purge, onHistory: _showHistory),
+        for (final e in all.take(_shown)) _EventTile(event: e, controller: c, onRevise: _revise, onVoid: _void, onPurge: _purge, onHistory: _showHistory, onRepeat: _repeat),
         if (all.length > _shown)
           TextButton(onPressed: () => setState(() => _shown += 50), child: Text('Показать ещё (${all.length - _shown})')),
       ],
@@ -242,6 +247,7 @@ class _EventTile extends StatelessWidget {
   final void Function(LifeEvent) onVoid;
   final void Function(LifeEvent) onPurge;
   final void Function(LifeEvent) onHistory;
+  final void Function(LifeEvent) onRepeat;
   const _EventTile({
     required this.event,
     required this.controller,
@@ -249,6 +255,7 @@ class _EventTile extends StatelessWidget {
     required this.onVoid,
     required this.onPurge,
     required this.onHistory,
+    required this.onRepeat,
   });
 
   @override
@@ -308,10 +315,12 @@ class _EventTile extends StatelessWidget {
             onSelected: (v) => switch (v) {
               'edit' => onRevise(e),
               'history' => onHistory(e),
+              'repeat' => onRepeat(e),
               'void' => onVoid(e),
               _ => onPurge(e),
             },
             itemBuilder: (_) => [
+              if (e.kind != LifeEventKind.review) const PopupMenuItem(value: 'repeat', child: Text('Повторить сегодня')),
               const PopupMenuItem(value: 'edit', child: Text('Исправить (новая версия)')),
               if (versions > 1) const PopupMenuItem(value: 'history', child: Text('История версий')),
               const PopupMenuItem(value: 'void', child: Text('Отменить')),

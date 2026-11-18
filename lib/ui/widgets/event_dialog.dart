@@ -111,7 +111,11 @@ class _EventDialogState extends State<_EventDialog> {
     final e = widget.initial;
     _title = TextEditingController(text: e?.title ?? '');
     _note = TextEditingController(text: e?.note ?? '');
-    _minutes = TextEditingController(text: e?.cost.minutes?.toString() ?? '');
+    int? presetMinutes;
+    for (final p in widget.processes) {
+      if (p.id == widget.presetProcessId) presetMinutes = p.defaultMinutes;
+    }
+    _minutes = TextEditingController(text: (e?.cost.minutes ?? (e == null ? presetMinutes : null))?.toString() ?? '');
     _money = TextEditingController(text: e?.cost.money?.toString() ?? '');
     _dims = e != null ? e.dimensions.toSet() : {if (widget.presetDimension != null) widget.presetDimension!};
     _kind = e?.kind ?? LifeEventKind.action;

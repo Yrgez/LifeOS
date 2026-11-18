@@ -25,7 +25,14 @@ class _ProcessesScreenState extends State<ProcessesScreen> {
   Future<void> _add() async {
     final d = await showProcessDialog(context, now: c.now, goals: c.goals);
     if (d == null || !mounted) return;
-    final id = c.addProcess(title: d.title, dimensions: d.dimensions, description: d.description, goalIds: d.goalIds, startedAt: d.startedAt);
+    final id = c.addProcess(
+      title: d.title,
+      dimensions: d.dimensions,
+      description: d.description,
+      goalIds: d.goalIds,
+      startedAt: d.startedAt,
+      defaultMinutes: d.defaultMinutes,
+    );
     if (id == null) showToast(context, 'Процесс не сохранён: проверьте данные');
   }
 

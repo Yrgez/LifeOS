@@ -1004,6 +1004,82 @@ class AppController extends ChangeNotifier {
     return ids.length;
   }
 
+  // ---------------- быстрая запись ----------------
+
+  /// Записывает такое же событие сейчас (те же измерения, вид, ресурсы, цели и процессы; ссылки на записи не копируются).
+  String? repeatEvent(String id) {
+    final e = latestRevision(_d.events, id);
+    if (e == null || e.kind == LifeEventKind.review) return null;
+    return addEvent(
+      title: e.title,
+      dimensions: e.dimensions,
+      kind: e.kind,
+      note: e.note,
+      cost: e.cost,
+      goalIds: e.goalIds,
+      processIds: e.processIds,
+    );
+  }
+
+  /// Подходы за день [day], на которые ещё не ссылается ни одно актуальное событие.
+  List<WorkoutSet> unrecordedSets(DateTime day) {
+    final key = dayKey(day);
+    final referenced = {for (final e in events) for (final r in e.refs) if (r.type == EventRef.workoutSet) r.id};
+    return [for (final s in _d.workoutSets) if (dayKey(s.at) == key && !referenced.contains(s.id)) s];
+  }
+
+  /// Событие тренировки дня из подходов журнала: «Тренировка: Грудь, Бицепс», ссылки на подходы, источник — авто.
+  /// Если событие тренировки этого дня уже есть — дополняется новой версией, а не дублируется.
+  String? recordWorkoutEvent(DateTime day) {
+    final fresh = unrecordedSets(day);
+    if (fresh.isEmpty) return null;
+    final key = dayKey(day);
+    LifeEvent? existing;
+    for (final e in events) {
+      if (e.source == EventSource.auto && dayKey(e.at) == key && e.refs.any((r) => r.type == EventRef.workoutSet)) existing = e;
+    }
+    final setsById = {for (final s in _d.workoutSets) s.id: s};
+    final ids = [...?existing?.refs.where((r) => r.type == EventRef.workoutSet).map((r) => r.id), ...fresh.map((s) => s.id)];
+    final all = [for (final id in ids) if (setsById[id] != null) setsById[id]!];
+    final names = <String>[];
+    for (final s in all) {
+      final n = _d.muscles[s.muscleId]?.name ?? s.muscleId;
+      if (!names.contains(n)) names.add(n);
+    }
+    final volume = all.fold<double>(0, (a, s) => a + s.weight * s.reps);
+    final title = 'Тренировка: ${names.join(', ')}';
+    final note = 'Подходов: ${all.length} · объём ${volume.round()} кг (из журнала тренировок)';
+    final refs = [for (final s in all) EventRef(EventRef.workoutSet, s.id)];
+    if (existing != null) {
+      return reviseEvent(existing.id,
+          title: title, dimensions: existing.dimensions, kind: existing.kind, at: existing.at, note: note, cost: existing.cost,
+          goalIds: existing.goalIds, processIds: existing.processIds, refs: refs);
+    }
+    final first = all.map((s) => s.at).reduce((a, b) => a.isBefore(b) ? a : b);
+    return addEvent(title: title, dimensions: [LifeDimension.body], at: first, note: note, refs: refs, source: EventSource.auto);
+  }
+
+  /// Событие из денежной операции: материальное измерение, деньги расхода — в ресурсах, ссылка на операцию.
+  String? eventFromTransaction(String txId) {
+    MoneyTx? t;
+    for (final x in _d.transactions) {
+      if (x.id == txId) t = x;
+    }
+    if (t == null) return null;
+    for (final e in events) {
+      if (e.refs.any((r) => r.type == EventRef.transaction && r.id == txId)) return e.id; // уже есть
+    }
+    final cat = finCategory(t.categoryId);
+    return addEvent(
+      title: t.note.isNotEmpty ? t.note : (cat?.name ?? 'Операция'),
+      dimensions: [LifeDimension.material],
+      at: t.at,
+      cost: t.isIncome ? ResourceCost.none : ResourceCost(money: t.amount),
+      refs: [EventRef(EventRef.transaction, t.id)],
+      source: EventSource.auto,
+    );
+  }
+
   // ---------------- обзор недели и «в этот день» ----------------
 
   /// Факты для обзора: 7 дней, открытые процессы, прошлый обзор.
@@ -1075,6 +1151,7 @@ class AppController extends ChangeNotifier {
     String description = '',
     Iterable<String> goalIds = const [],
     DateTime? startedAt,
+    int? defaultMinutes,
   }) {
     if (_d.processes.length >= kMaxProcesses) return null;
     final now = _clock();
@@ -1086,6 +1163,7 @@ class AppController extends ChangeNotifier {
       description: description.trim(),
       dimensions: dimensions.where(LifeDimension.isValid),
       goalIds: goalIds,
+      defaultMinutes: defaultMinutes,
       createdAt: now,
       statusLog: [ProcessStatusChange(at: start, status: ProcessStatus.active)],
     );
@@ -1094,8 +1172,8 @@ class AppController extends ChangeNotifier {
     return p.id;
   }
 
-  /// Меняет описание процесса (название, измерения, цели). Статус меняется только через [setProcessStatus].
-  bool updateProcess(String id, {required String title, required Iterable<String> dimensions, String description = '', Iterable<String> goalIds = const []}) {
+  /// Меняет описание процесса (название, измерения, цели, обычная длительность). Статус — только через [setProcessStatus].
+  bool updateProcess(String id, {required String title, required Iterable<String> dimensions, String description = '', Iterable<String> goalIds = const [], int? defaultMinutes}) {
     final p = processById(id);
     if (p == null) return false;
     final dims = LifeEvent.normalizeDimensions(dimensions.where(LifeDimension.isValid));
@@ -1110,7 +1188,8 @@ class AppController extends ChangeNotifier {
         ..title = t
         ..description = desc
         ..dimensions = dims
-        ..goalIds = goals;
+        ..goalIds = goals
+        ..defaultMinutes = defaultMinutes;
     });
     return true;
   }

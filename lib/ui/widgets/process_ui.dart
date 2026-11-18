@@ -40,7 +40,15 @@ class ProcessDraft {
   final String description;
   final Set<String> goalIds;
   final DateTime startedAt;
-  const ProcessDraft({required this.title, required this.dimensions, required this.description, required this.goalIds, required this.startedAt});
+  final int? defaultMinutes;
+  const ProcessDraft({
+    required this.title,
+    required this.dimensions,
+    required this.description,
+    required this.goalIds,
+    required this.startedAt,
+    this.defaultMinutes,
+  });
 }
 
 /// Новый процесс или правка описания ([initial]). Дата начала задаётся только при создании.
@@ -61,13 +69,17 @@ class _ProcessDialog extends StatefulWidget {
 class _ProcessDialogState extends State<_ProcessDialog> {
   late final TextEditingController _title = TextEditingController(text: widget.initial?.title ?? '');
   late final TextEditingController _desc = TextEditingController(text: widget.initial?.description ?? '');
+  late final TextEditingController _minutes = TextEditingController(text: widget.initial?.defaultMinutes?.toString() ?? '');
   late final Set<String> _dims = widget.initial?.dimensions.toSet() ?? <String>{};
   late final Set<String> _goals = widget.initial?.goalIds.toSet() ?? <String>{};
   late DateTime _start = widget.initial?.startedAt ?? widget.now;
 
+  int? get _minutesValue => _minutes.text.trim().isEmpty ? null : parseInt(_minutes.text);
+
   @override
   void dispose() {
     _title.dispose();
+    _minutes.dispose();
     _desc.dispose();
     super.dispose();
   }
@@ -88,7 +100,8 @@ class _ProcessDialogState extends State<_ProcessDialog> {
   @override
   Widget build(BuildContext context) {
     final editing = widget.initial != null;
-    final valid = _title.text.trim().isNotEmpty && _dims.isNotEmpty;
+    final minutesOk = _minutes.text.trim().isEmpty || ((parseInt(_minutes.text) ?? 0) > 0 && parseInt(_minutes.text)! <= ResourceCost.maxMinutes);
+    final valid = _title.text.trim().isNotEmpty && _dims.isNotEmpty && minutesOk;
     return AlertDialog(
       backgroundColor: AppColors.card,
       title: Text(editing ? 'Процесс' : 'Новый процесс', style: const TextStyle(fontSize: 16)),
@@ -154,6 +167,14 @@ class _ProcessDialogState extends State<_ProcessDialog> {
               ],
               _label('ОПИСАНИЕ'),
               TextField(controller: _desc, maxLines: 3, maxLength: LifeProcess.maxDescription, decoration: _dec('Зачем, что считается результатом')),
+              const SizedBox(height: 4),
+              TextField(
+                key: const ValueKey('process_minutes'),
+                controller: _minutes,
+                keyboardType: TextInputType.number,
+                decoration: _dec('Обычная длительность события, мин (необязательно)'),
+                onChanged: (_) => setState(() {}),
+              ),
             ],
           ),
         ),
@@ -166,7 +187,14 @@ class _ProcessDialogState extends State<_ProcessDialog> {
           onPressed: valid
               ? () => Navigator.pop(
                     context,
-                    ProcessDraft(title: _title.text.trim(), dimensions: _dims, description: _desc.text.trim(), goalIds: _goals, startedAt: _start),
+                    ProcessDraft(
+                      title: _title.text.trim(),
+                      dimensions: _dims,
+                      description: _desc.text.trim(),
+                      goalIds: _goals,
+                      startedAt: _start,
+                      defaultMinutes: _minutesValue,
+                    ),
                   )
               : null,
           child: const Text('Сохранить', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
@@ -234,7 +262,8 @@ class ProcessHeader extends StatelessWidget {
   Future<void> _edit(BuildContext context) async {
     final d = await showProcessDialog(context, now: controller.now, goals: controller.goals, initial: process);
     if (d == null) return;
-    controller.updateProcess(process.id, title: d.title, dimensions: d.dimensions, description: d.description, goalIds: d.goalIds);
+    controller.updateProcess(process.id,
+        title: d.title, dimensions: d.dimensions, description: d.description, goalIds: d.goalIds, defaultMinutes: d.defaultMinutes);
   }
 
   Future<void> _status(BuildContext context, String status) async {
