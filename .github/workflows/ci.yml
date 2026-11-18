@@ -53,10 +53,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Java 21: lint плагинов на новом Android Gradle Plugin (file_selector_android) использует API Java 21
+      # (List.removeLast) и на JDK 17 падает в lintVitalAnalyzeRelease
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
 
       - uses: subosito/flutter-action@v2
         with:
