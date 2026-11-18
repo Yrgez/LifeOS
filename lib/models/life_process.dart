@@ -53,6 +53,40 @@ class ProcessStatusChange {
   }
 }
 
+/// Период ритма.
+class RhythmPeriod {
+  static const week = 'week';
+  static const month = 'month';
+  static const all = [week, month];
+  static const maxTimes = {week: 7, month: 31};
+  static const labels = {week: 'в неделю', month: 'в месяц'};
+}
+
+/// Запись журнала ритма: с момента [at] процесс задуман как [times] раз за [period].
+/// [times] == 0 — ритм снят. Смена ритма дописывается, а не затирает прежний: прошлые недели
+/// сверяются с тем ритмом, что действовал тогда.
+class ProcessRhythm {
+  final DateTime at;
+  final int times;
+  final String period;
+  const ProcessRhythm({required this.at, required this.times, this.period = RhythmPeriod.week});
+
+  bool get isSet => times > 0;
+  bool get isValid => RhythmPeriod.all.contains(period) && times >= 0 && times <= RhythmPeriod.maxTimes[period]!;
+
+  Map<String, dynamic> toJson() => {'t': at.millisecondsSinceEpoch, 'n': times, 'p': period};
+
+  static ProcessRhythm? tryFromJson(Object? raw) {
+    if (raw is! Map) return null;
+    final at = _time(raw['t']);
+    final n = raw['n'];
+    final p = raw['p'];
+    if (at == null || n is! num || n != n.roundToDouble() || p is! String) return null;
+    final r = ProcessRhythm(at: at, times: n.toInt(), period: p);
+    return r.isValid ? r : null;
+  }
+}
+
 class LifeProcess {
   static const maxTitle = 120;
   static const maxDescription = 4000;
@@ -66,6 +100,7 @@ class LifeProcess {
   int? defaultMinutes; // обычная длительность события процесса — подставляется при записи; null — не задана
   final DateTime createdAt;
   final List<ProcessStatusChange> statusLog; // по возрастанию времени, первая запись — начало процесса
+  final List<ProcessRhythm> rhythmLog; // по возрастанию времени; пусто — ритм не задавался
 
   LifeProcess({
     required this.id,
@@ -76,9 +111,49 @@ class LifeProcess {
     this.defaultMinutes,
     required this.createdAt,
     required List<ProcessStatusChange> statusLog,
+    List<ProcessRhythm> rhythmLog = const [],
   })  : _dimensions = LifeEvent.normalizeDimensions(dimensions),
         goalIds = goalIds.toSet().toList(),
-        statusLog = List.of(statusLog);
+        statusLog = List.of(statusLog),
+        rhythmLog = List.of(rhythmLog);
+
+  /// Текущий ритм; null — не задан или снят.
+  ProcessRhythm? get rhythm => rhythmLog.isEmpty || !rhythmLog.last.isSet ? null : rhythmLog.last;
+
+  /// Ритм, действовавший в момент [t]; null — не был задан.
+  ProcessRhythm? rhythmAt(DateTime t) {
+    ProcessRhythm? r;
+    for (final x in rhythmLog) {
+      if (x.at.isAfter(t)) break;
+      r = x;
+    }
+    return r != null && r.isSet ? r : null;
+  }
+
+  /// Статус процесса в момент [t]; null — процесс ещё не начат.
+  String? statusAt(DateTime t) {
+    String? s;
+    for (final c in statusLog) {
+      if (c.at.isAfter(t)) break;
+      s = c.status;
+    }
+    return s;
+  }
+
+  /// Шёл ли процесс в полуинтервале [from, to): на его конец статус «идёт» или «идёт» набралось
+  /// хотя бы на сутки. Пауза с утра понедельника — неделя на паузе, а не «0 из 3».
+  bool activeDuring(DateTime from, DateTime to) {
+    if (statusAt(to.subtract(const Duration(milliseconds: 1))) == ProcessStatus.active) return true;
+    var total = Duration.zero;
+    for (var i = 0; i < statusLog.length; i++) {
+      if (statusLog[i].status != ProcessStatus.active) continue;
+      final start = statusLog[i].at.isBefore(from) ? from : statusLog[i].at;
+      final rawEnd = i + 1 < statusLog.length ? statusLog[i + 1].at : to;
+      final end = rawEnd.isAfter(to) ? to : rawEnd;
+      if (end.isAfter(start)) total += end.difference(start);
+    }
+    return total >= const Duration(days: 1);
+  }
 
   List<String> get dimensions => List.unmodifiable(_dimensions);
   set dimensions(Iterable<String> ds) => _dimensions = LifeEvent.normalizeDimensions(ds);
@@ -104,7 +179,10 @@ class LifeProcess {
       statusLog.isNotEmpty &&
       statusLog.length <= maxLog &&
       statusLog.every((c) => c.isValid) &&
-      _sorted(statusLog);
+      _sorted(statusLog) &&
+      rhythmLog.length <= maxLog &&
+      rhythmLog.every((r) => r.isValid) &&
+      [for (var i = 1; i < rhythmLog.length; i++) !rhythmLog[i].at.isBefore(rhythmLog[i - 1].at)].every((x) => x);
 
   static bool _sorted(List<ProcessStatusChange> log) {
     for (var i = 1; i < log.length; i++) {
@@ -122,6 +200,7 @@ class LifeProcess {
         'ct': createdAt.millisecondsSinceEpoch,
         'log': statusLog.map((c) => c.toJson()).toList(),
         if (defaultMinutes != null) 'defMin': defaultMinutes,
+        if (rhythmLog.isNotEmpty) 'rh': rhythmLog.map((r) => r.toJson()).toList(),
       };
 
   factory LifeProcess.fromJson(Map<String, dynamic> j) =>
@@ -146,6 +225,14 @@ class LifeProcess {
       if (c == null) return null;
       log.add(c);
     }
+    final rhRaw = j['rh'] ?? const [];
+    if (rhRaw is! List) return null;
+    final rh = <ProcessRhythm>[];
+    for (final r in rhRaw) {
+      final x = ProcessRhythm.tryFromJson(r);
+      if (x == null) return null;
+      rh.add(x);
+    }
     final p = LifeProcess(
       id: id,
       title: title,
@@ -155,6 +242,7 @@ class LifeProcess {
       defaultMinutes: _defMin(j['defMin']),
       createdAt: ct,
       statusLog: log,
+      rhythmLog: rh,
     );
     return p.isValid ? p : null;
   }

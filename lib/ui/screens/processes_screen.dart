@@ -32,6 +32,7 @@ class _ProcessesScreenState extends State<ProcessesScreen> {
       goalIds: d.goalIds,
       startedAt: d.startedAt,
       defaultMinutes: d.defaultMinutes,
+      rhythm: d.rhythm,
     );
     if (id == null) showToast(context, 'Процесс не сохранён: проверьте данные');
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/rhythm.dart';
 import '../../core/theme.dart';
 import '../../core/currency.dart';
 import '../../core/life_events.dart';
@@ -423,7 +424,7 @@ class _ProcessesTile extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(p.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: _label),
-                          Text(_processLine(acts[p.id]!), style: _sub),
+                          Text(_processLine(p, acts[p.id]!, c), style: _sub),
                         ],
                       ),
                     ),
@@ -438,8 +439,8 @@ class _ProcessesTile extends StatelessWidget {
     );
   }
 
-  static String _processLine(ProcessActivity a) => [
-        'Идёт',
+  static String _processLine(LifeProcess p, ProcessActivity a, AppController c) => [
+        if (p.rhythm != null) rhythmNowLabel(p.rhythm!, c.rhythmOf(p.id, count: 1).first) else 'Идёт',
         'событий ${a.resources.events}',
         if (a.resources.minutesKnown > 0) fmtMinutes(a.resources.minutes),
       ].join(' · ');
