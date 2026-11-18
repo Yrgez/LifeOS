@@ -41,7 +41,14 @@ jobs:
           go-version: "1.26.x"
 
       - name: Install pinned OSV-Scanner
-        run: go install github.com/google/osv-scanner/v2/cmd/osv-scanner@v2.3.3
+        # сеть до proxy.golang.org иногда обрывается — повторяем, прежде чем считать проверку проваленной
+        run: |
+          for i in 1 2 3 4; do
+            go install github.com/google/osv-scanner/v2/cmd/osv-scanner@v2.3.3 && exit 0
+            echo "Попытка $i не удалась, повтор через $((i * 15)) с"
+            sleep $((i * 15))
+          done
+          exit 1
 
       - name: Scan resolved dependencies
         run: |
