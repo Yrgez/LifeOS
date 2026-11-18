@@ -11,6 +11,7 @@ import '../../data/file_selector_source.dart';
 import '../../data/file_source.dart';
 import '../../state/app_controller.dart';
 import '../widgets/confirm_dialog.dart';
+import '../widgets/form_dialog.dart';
 import '../widgets/toast.dart';
 
 /// Импорт банковской выписки (CSV): файл или текст из буфера → колонки → предпросмотр → импорт.
@@ -110,6 +111,29 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
       _header = const [];
       _mapping = const ColumnMapping();
     });
+  }
+
+  /// Правило из частого описания: «Пятёрочка» → выбранная категория. Применяется к этому и будущим импортам.
+  Future<void> _ruleFor(String pattern) async {
+    final r = await showFormDialog(
+      context,
+      title: 'Правило для «$pattern»',
+      actionLabel: 'Запомнить',
+      accent: AppColors.accent,
+      fields: [
+        FieldSpec('p', 'Если описание содержит', initial: pattern),
+        FieldSpec('c', 'Категория', initial: 'food', options: {
+          for (final x in pickableFinCategories()) x.id: '${x.isIncome ? 'Доход' : 'Расход'} • ${x.name}',
+        }),
+      ],
+      validate: (v) => v['p']!.trim().length >= 2,
+    );
+    if (r == null || !mounted) return;
+    if (c.addImportRule(r['p']!, r['c']!) == null) {
+      showToast(context, 'Правило не сохранено');
+      return;
+    }
+    setState(() {});
   }
 
   Future<void> _undo(String id, String name, int added) async {
@@ -229,8 +253,10 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
     final income = p.fresh.where((r) => r.signed > 0).fold<int>(0, (a, r) => a + r.signed);
     final expense = p.fresh.where((r) => r.signed < 0).fold<int>(0, (a, r) => a - r.signed);
     final fits = p.fresh.length <= c.transactionCapacityLeft;
-    final expCats = [for (final x in kFinCategories) if (!x.isIncome) x];
-    final incCats = [for (final x in kFinCategories) if (x.isIncome) x];
+    final expCats = pickableFinCategories(income: false);
+    final incCats = pickableFinCategories(income: true);
+    final ruleHits = c.statementRuleHits(p.fresh);
+    final unmatched = c.statementUnmatched(p.fresh);
     return [
       const SizedBox(height: 16),
       const Text('ПРЕДПРОСМОТР', style: _caption),
@@ -288,7 +314,28 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
             ),
           ),
         ]),
-        const Text('Категорию каждой операции можно поправить потом в журнале операций.', style: TextStyle(color: AppColors.muted, fontSize: 12)),
+        Text(
+          ruleHits > 0
+              ? 'По вашим правилам разберётся $ruleHits из ${p.fresh.length}; остальные — в выбранные выше категории.'
+              : 'Категорию каждой операции можно поправить потом в журнале операций.',
+          key: const ValueKey('import_rule_hits'),
+          style: const TextStyle(color: AppColors.muted, fontSize: 12),
+        ),
+        if (unmatched.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          const Text('ЧАСТЫЕ ОПИСАНИЯ БЕЗ ПРАВИЛА', style: _caption),
+          for (final (pattern, n) in unmatched)
+            Row(
+              children: [
+                Expanded(child: Text('«$pattern» · $n', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13))),
+                TextButton(
+                  key: ValueKey('rule_for_$pattern'),
+                  onPressed: () => _ruleFor(pattern),
+                  child: const Text('Категория…'),
+                ),
+              ],
+            ),
+        ],
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           value: _affectsNetWorth,
