@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/sections.dart';
 import '../../core/finance_stats.dart';
 import '../../core/currency.dart';
 import '../../core/theme.dart';
@@ -290,25 +291,32 @@ class _WealthScreenState extends State<WealthScreen> {
           ),
           const SizedBox(height: 12),
           _financeEntryCard(fact),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Flexible(child: Text('Рост зарплаты', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600))),
-              IconButton(tooltip: 'Добавить точку зарплаты', onPressed: _addSalaryStepDialog, icon: const Icon(Icons.add_circle_outline, color: AppColors.text, size: 24)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(16),
-            height: 200,
-            decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
-            child: CustomPaint(size: Size.infinite, painter: SalaryLineChartPainter(steps: c.salaryHistory)),
-          ),
-          const SizedBox(height: 8),
-          for (int i = 0; i < c.salaryHistory.length; i++) _salaryRow(i),
+          if (c.isShown(Sections.salary)) ..._salarySection(),
         ],
       ),
     );
   }
+
+  List<Widget> _salarySection() => [
+        const SizedBox(height: 24),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Flexible(child: Text('Рост зарплаты', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600))),
+            IconButton(
+                tooltip: 'Добавить точку зарплаты',
+                onPressed: _addSalaryStepDialog,
+                icon: const Icon(Icons.add_circle_outline, color: AppColors.text, size: 24)),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          height: 200,
+          decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
+          child: CustomPaint(size: Size.infinite, painter: SalaryLineChartPainter(steps: c.salaryHistory)),
+        ),
+        const SizedBox(height: 8),
+        for (int i = 0; i < c.salaryHistory.length; i++) _salaryRow(i),
+      ];
 }

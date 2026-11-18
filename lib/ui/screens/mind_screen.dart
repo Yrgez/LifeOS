@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/sections.dart';
 import '../../core/theme.dart';
 import '../../state/app_controller.dart';
 import '../widgets/form_dialog.dart';
@@ -50,15 +51,17 @@ class _MindScreenState extends State<MindScreen> {
           const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  key: const ValueKey('open_graph'),
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => GraphScreen(controller: c))),
-                  icon: const Icon(Icons.hub_outlined, size: 18),
-                  label: const Text('Граф связей'),
+              if (c.isShown(Sections.graph)) ...[
+                Expanded(
+                  child: OutlinedButton.icon(
+                    key: const ValueKey('open_graph'),
+                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => GraphScreen(controller: c))),
+                    icon: const Icon(Icons.hub_outlined, size: 18),
+                    label: const Text('Граф связей'),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
+                const SizedBox(width: 8),
+              ],
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProcessesScreen(controller: c))),
@@ -68,16 +71,18 @@ class _MindScreenState extends State<MindScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              key: const ValueKey('open_experiments'),
-              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ExperimentsScreen(controller: c))),
-              icon: const Icon(Icons.science_outlined, size: 18),
-              label: const Text('Эксперименты'),
+          if (c.isShown(Sections.experiments)) ...[
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                key: const ValueKey('open_experiments'),
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ExperimentsScreen(controller: c))),
+                icon: const Icon(Icons.science_outlined, size: 18),
+                label: const Text('Эксперименты'),
+              ),
             ),
-          ),
+          ],
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

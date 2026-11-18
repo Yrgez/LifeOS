@@ -3,6 +3,7 @@ import 'dart:collection';
 import '../core/app_log.dart';
 import '../core/currency.dart';
 import '../core/finance_categories.dart';
+import '../core/sections.dart';
 import '../core/utils.dart';
 import '../models/body.dart';
 import '../models/day_checkin.dart';
@@ -27,7 +28,8 @@ import 'default_data.dart';
 /// 15 — эксперименты (`experiments`), внимание в затратах события (`events[].cost.att`).
 /// 16 — вечерние отметки дня (`checkins`): оценка 1–5, метки, заметка; правка — новая версия (`sup`).
 /// 17 — ритм процесса с журналом изменений (`processes[].rh`).
-const int kSchemaVersion = 17;
+/// 18 — скрытые разделы (`hiddenSections`).
+const int kSchemaVersion = 18;
 
 /// Предел журналов в памяти (при превышении удаляются самые старые). Хранилище (SQLite) пишет только
 /// изменения, но весь журнал пока загружается в память целиком — поэтому предел сохранён.
@@ -74,6 +76,7 @@ class AppData {
   List<DayCheckIn> checkIns; // отметки дня — все версии
   int? heightCm; // рост, см; null — не указан
   String? bodyGoal; // цель по весу (BodyGoal); null — не выбрана
+  Set<String> hiddenSections; // скрытые разделы (Sections); данные не затрагиваются
   List<LifeEvent> events; // журнал событий жизни (все версии, включая отменённые), по возрастанию времени
   String userName; // как обращаться (пусто — без имени)
   int stepsGoal; // цель шагов в день
@@ -110,6 +113,7 @@ class AppData {
     List<DayCheckIn>? checkIns,
     this.heightCm,
     this.bodyGoal,
+    Set<String>? hiddenSections,
     this.userName = '',
     this.stepsGoal = 10000,
     this.proteinGoal = 140,
@@ -127,6 +131,7 @@ class AppData {
         weights = weights ?? <WeightEntry>[],
         accounts = accounts ?? <Account>[],
         experiments = experiments ?? <Experiment>[],
+        hiddenSections = hiddenSections ?? <String>{},
         checkIns = checkIns ?? <DayCheckIn>[];
 
   factory AppData.defaults({DateTime? now}) => AppData(
@@ -208,6 +213,7 @@ class AppData {
         'checkins': checkIns.map((x) => x.toJson()).toList(),
         'heightCm': heightCm,
         'bodyGoal': bodyGoal,
+        'hiddenSections': (hiddenSections.toList()..sort()),
         'userName': userName,
         'stepsGoal': stepsGoal,
         'proteinGoal': proteinGoal,
@@ -396,6 +402,12 @@ class AppData {
         if (h < 50 || h > 272 || v != h) throw FormatException('AppData: недопустимый рост $v');
         return h;
       }, null),
+      hiddenSections: pick<Set<String>>('hiddenSections', (v) {
+        final list = v as List;
+        // неизвестный раздел (из более новой версии) не ошибка: просто не применяется
+        if (list.any((x) => x is! String)) throw const FormatException('AppData: hiddenSections — не строки');
+        return {for (final x in list.cast<String>()) if (Sections.isValid(x)) x};
+      }, <String>{}),
       bodyGoal: pick<String?>('bodyGoal', (v) {
         if (v is! String || !BodyGoal.isValid(v)) throw FormatException('AppData: неизвестная цель по весу "$v"');
         return v;

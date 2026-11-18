@@ -27,6 +27,7 @@
 ## Правила кода
 - UI не меняет данные напрямую — только через методы `AppController` (`lib/state/app_controller.dart`).
   Доменные операции — расширения в `lib/state/ops/*.dart` (`part of` контроллера); новую область — туда же, не в класс.
+- Новый необязательный блок интерфейса — в реестр `Sections` (`lib/core/sections.dart`) и под `c.isShown(...)`.
 - Логика без Flutter → `lib/core/`, модели → `lib/models/`, экран → `lib/ui/screens/`, переиспользуемый блок → `lib/ui/widgets/`.
 - Плагины — только за интерфейсами (`AppRepository`, `HealthDataSource`, файлы `*_authenticator`, `secure_key_store`, `sqlcipher_opener`).
 - Смена формата JSON → поднять `kSchemaVersion` (`lib/data/app_data.dart`). Смена таблиц → поднять `kDbVersion` и добавить шаг

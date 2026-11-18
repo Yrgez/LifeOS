@@ -18,6 +18,7 @@ import '../core/memories.dart';
 import '../core/open_export.dart';
 import '../core/review.dart';
 import '../core/rhythm.dart';
+import '../core/sections.dart';
 import '../core/recovery_stats.dart';
 import '../core/resource_stats.dart';
 import '../core/utils.dart';
@@ -39,6 +40,7 @@ part 'ops/checkin_ops.dart';
 part 'ops/goal_ops.dart';
 part 'ops/event_ops.dart';
 part 'ops/process_ops.dart';
+part 'ops/section_ops.dart';
 part 'ops/finance_ops.dart';
 
 /// Вся бизнес-логика и состояние. UI только читает геттеры и вызывает методы.

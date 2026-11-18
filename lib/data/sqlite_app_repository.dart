@@ -49,6 +49,7 @@ class SqliteAppRepository implements AppRepository {
     'netWorth', 'monthlyIncome', 'monthlyExpense', 'dailySteps', 'activeCalories', 'proteinGrams', 'lastDay',
     'healthEnabled', 'lastHealthSyncMs',
     'userName', 'stepsGoal', 'proteinGoal', 'onboardingDone', 'currency', 'heightCm', 'bodyGoal',
+    'hiddenSections',
   ];
 
   static const _listCollections = ['goals', 'achievements', 'salaryHistory', 'graphNodes', 'graphEdges', 'recurring', 'processes', 'weights', 'accounts', 'experiments', 'checkins'];

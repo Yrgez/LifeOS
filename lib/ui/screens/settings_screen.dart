@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/sections.dart';
 import '../../core/app_log.dart';
 import '../../core/currency.dart';
 import '../../core/theme.dart';
@@ -284,6 +285,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
               security.encrypted ? 'Включено: данные на устройстве зашифрованы' : 'Выключено: данные хранятся в обычном виде',
               security.encrypted,
               security.busy ? null : _toggleEncryption,
+            ),
+        ]),
+        _section('РАЗДЕЛЫ', [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Text('Скройте то, чем не пользуетесь. Данные не удаляются: они остаются в Хронике, экспорте и копии.',
+                style: TextStyle(color: AppColors.muted, fontSize: 12)),
+          ),
+          for (final s in Sections.all)
+            SwitchListTile(
+              key: ValueKey('section_${s.id}'),
+              value: c.isShown(s.id),
+              onChanged: (v) => c.setSectionShown(s.id, v),
+              title: Text(s.title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              subtitle: Text(s.where, style: const TextStyle(color: AppColors.muted, fontSize: 11)),
             ),
         ]),
         _section('ОТКРЫТЫЙ ЭКСПОРТ', [
