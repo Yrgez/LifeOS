@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/review.dart';
+import '../../core/rhythm.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../models/day_checkin.dart';
@@ -118,7 +119,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   const SizedBox(height: 6),
                   Text(line.process.title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
                   Text(
-                    '${ProcessStatus.labels[line.process.status]} · ${line.week.events == 0 ? 'за неделю событий нет' : 'событий ${line.week.events}${line.week.minutesKnown > 0 ? ' · ${fmtMinutes(line.week.minutes)}' : ''}'}',
+                    '${ProcessStatus.labels[line.process.status]}'
+                    '${line.process.rhythm == null ? '' : ' · ${rhythmNowLabel(line.process.rhythm!, c.rhythmOf(line.process.id, count: 1).first)}'}'
+                    ' · ${line.week.events == 0 ? 'за неделю событий нет' : 'событий ${line.week.events}${line.week.minutesKnown > 0 ? ' · ${fmtMinutes(line.week.minutes)}' : ''}'}',
                     style: _sub,
                   ),
                   const SizedBox(height: 6),

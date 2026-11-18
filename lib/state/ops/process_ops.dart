@@ -32,6 +32,7 @@ extension ProcessOps on AppController {
     Iterable<String> goalIds = const [],
     DateTime? startedAt,
     int? defaultMinutes,
+    ProcessRhythm? rhythm, // at не важен: ритм действует с начала процесса
   }) {
     if (_d.processes.length >= kMaxProcesses) return null;
     final now = _clock();
@@ -46,10 +47,32 @@ extension ProcessOps on AppController {
       defaultMinutes: defaultMinutes,
       createdAt: now,
       statusLog: [ProcessStatusChange(at: start, status: ProcessStatus.active)],
+      rhythmLog: [if (rhythm != null && rhythm.isSet) ProcessRhythm(at: start, times: rhythm.times, period: rhythm.period)],
     );
     if (!p.isValid) return null;
     _commit(() => _d.processes.add(p));
     return p.id;
+  }
+
+  /// Задаёт ритм ([times] раз за [period]); 0 — снять. Запись дописывается в журнал ритма — прошлые периоды
+  /// продолжают сверяться с прежним ритмом. Тот же ритм повторно не записывается.
+  bool setProcessRhythm(String id, int times, {String period = RhythmPeriod.week}) {
+    final p = processById(id);
+    if (p == null) return false;
+    final r = ProcessRhythm(at: _clock(), times: times, period: period);
+    if (!r.isValid || p.rhythmLog.length >= LifeProcess.maxLog) return false;
+    final cur = p.rhythm;
+    if (cur == null ? !r.isSet : (cur.times == r.times && cur.period == r.period)) return true;
+    // при смене периода прошлые сверки по старому периоду не пересчитываются — журнал хранит оба
+    if (p.rhythmLog.isNotEmpty && r.at.isBefore(p.rhythmLog.last.at)) return false;
+    _commit(() => p.rhythmLog.add(r));
+    return true;
+  }
+
+  /// Ритм процесса за последние [count] периодов (текущий первым); пусто — процесса нет.
+  List<RhythmSpan> rhythmOf(String processId, {int count = 8}) {
+    final p = processById(processId);
+    return p == null ? const [] : rhythmHistory(p, events, _clock(), count: count);
   }
 
   /// Меняет описание процесса (название, измерения, цели, обычная длительность). Статус — только через [setProcessStatus].

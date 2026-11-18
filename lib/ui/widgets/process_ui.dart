@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/life_events.dart';
 import '../../core/currency.dart';
+import '../../core/rhythm.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../models/life_event.dart';
@@ -45,6 +46,8 @@ class ProcessDraft {
   final Set<String> goalIds;
   final DateTime startedAt;
   final int? defaultMinutes;
+  final int rhythmTimes; // 0 — ритм не задан
+  final String rhythmPeriod;
   const ProcessDraft({
     required this.title,
     required this.dimensions,
@@ -52,7 +55,11 @@ class ProcessDraft {
     required this.goalIds,
     required this.startedAt,
     this.defaultMinutes,
+    this.rhythmTimes = 0,
+    this.rhythmPeriod = RhythmPeriod.week,
   });
+
+  ProcessRhythm? get rhythm => rhythmTimes > 0 ? ProcessRhythm(at: startedAt, times: rhythmTimes, period: rhythmPeriod) : null;
 }
 
 /// Новый процесс или правка описания ([initial]). Дата начала задаётся только при создании.
@@ -77,6 +84,8 @@ class _ProcessDialogState extends State<_ProcessDialog> {
   late final Set<String> _dims = widget.initial?.dimensions.toSet() ?? <String>{};
   late final Set<String> _goals = widget.initial?.goalIds.toSet() ?? <String>{};
   late DateTime _start = widget.initial?.startedAt ?? widget.now;
+  late int _rhythmTimes = widget.initial?.rhythm?.times ?? 0;
+  late String _rhythmPeriod = widget.initial?.rhythm?.period ?? RhythmPeriod.week;
 
   int? get _minutesValue => _minutes.text.trim().isEmpty ? null : parseInt(_minutes.text);
 
@@ -179,6 +188,35 @@ class _ProcessDialogState extends State<_ProcessDialog> {
                 decoration: _dec('Обычная длительность события, мин (необязательно)'),
                 onChanged: (_) => setState(() {}),
               ),
+              _label('РИТМ (НЕОБЯЗАТЕЛЬНО)'),
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 6,
+                children: [
+                  DropdownButton<int>(
+                    key: const ValueKey('process_rhythm_times'),
+                    value: _rhythmTimes.clamp(0, RhythmPeriod.maxTimes[_rhythmPeriod]!),
+                    items: [
+                      const DropdownMenuItem(value: 0, child: Text('не задан')),
+                      for (var i = 1; i <= RhythmPeriod.maxTimes[_rhythmPeriod]!; i++) DropdownMenuItem(value: i, child: Text(timesLabel(i))),
+                    ],
+                    onChanged: (v) => setState(() => _rhythmTimes = v ?? 0),
+                  ),
+                  for (final per in RhythmPeriod.all)
+                    ChoiceChip(
+                      key: ValueKey('process_rhythm_$per'),
+                      visualDensity: VisualDensity.compact,
+                      label: Text(RhythmPeriod.labels[per]!),
+                      selected: _rhythmPeriod == per,
+                      onSelected: (_) => setState(() {
+                        _rhythmPeriod = per;
+                        _rhythmTimes = _rhythmTimes.clamp(0, RhythmPeriod.maxTimes[per]!);
+                      }),
+                    ),
+                ],
+              ),
+              const Text('Раз — день с событием процесса. Пропуск не обнуляет прошлое: каждая неделя считается сама по себе.',
+                  style: TextStyle(color: AppColors.muted, fontSize: 11)),
             ],
           ),
         ),
@@ -198,6 +236,8 @@ class _ProcessDialogState extends State<_ProcessDialog> {
                       goalIds: _goals,
                       startedAt: _start,
                       defaultMinutes: _minutesValue,
+                      rhythmTimes: _rhythmTimes,
+                      rhythmPeriod: _rhythmPeriod,
                     ),
                   )
               : null,
@@ -268,6 +308,7 @@ class ProcessHeader extends StatelessWidget {
     if (d == null) return;
     controller.updateProcess(process.id,
         title: d.title, dimensions: d.dimensions, description: d.description, goalIds: d.goalIds, defaultMinutes: d.defaultMinutes);
+    controller.setProcessRhythm(process.id, d.rhythmTimes, period: d.rhythmPeriod);
   }
 
   Future<void> _status(BuildContext context, String status) async {
@@ -349,6 +390,10 @@ class ProcessHeader extends StatelessWidget {
               padding: const EdgeInsets.only(top: 4),
               child: Text('→ ${p.goalIds.map((id) => goalTitles[id] ?? 'цель удалена').join(', ')}', style: const TextStyle(color: AppColors.violet, fontSize: 11)),
             ),
+          if (p.rhythm != null) ...[
+            const SizedBox(height: 10),
+            RhythmStrip(process: p, spans: controller.rhythmOf(p.id)),
+          ],
           const SizedBox(height: 8),
           Text('ВЛОЖЕНО ЗА ВСЁ ВРЕМЯ: событий ${a.resources.events}',
               style: const TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold)),
@@ -363,6 +408,76 @@ class ProcessHeader extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+// ---------------- ритм ----------------
+
+/// Ритм процесса: заголовок «3 раза в неделю · на этой неделе 2 из 3» и последние периоды —
+/// старые слева, текущий справа. Каждый период — сам по себе: без серий и без «сгорания».
+class RhythmStrip extends StatelessWidget {
+  final LifeProcess process;
+  final List<RhythmSpan> spans; // текущий первым
+  const RhythmStrip({super.key, required this.process, required this.spans});
+
+  static String _periodLabel(RhythmSpan s, String period) {
+    if (s.current) return period == RhythmPeriod.month ? 'этот' : 'эта';
+    return period == RhythmPeriod.month ? monthShortName(s.from.month) : '${s.from.day.toString().padLeft(2, '0')}.${s.from.month.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final r = process.rhythm;
+    if (r == null || spans.isEmpty) return const SizedBox.shrink();
+    final list = spans.reversed.toList();
+    return Column(
+      key: const ValueKey('rhythm_strip'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('РИТМ: ${rhythmLabel(r).toUpperCase()}', style: const TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 2),
+        Text(rhythmNowLabel(r, spans.first), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            for (final s in list)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: Column(
+                    children: [
+                      Container(
+                        height: 30,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: s.reached && s.active ? AppColors.raised : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: s.current ? AppColors.muted : AppColors.border),
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 3),
+                            child: Text(
+                              !s.active ? 'пауза' : (s.target == null ? '${s.done}' : '${s.done}/${s.target}'),
+                              style: TextStyle(fontSize: 12, color: s.active ? AppColors.text : AppColors.muted),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(_periodLabel(s, r.period), style: const TextStyle(color: AppColors.muted, fontSize: 10)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }
