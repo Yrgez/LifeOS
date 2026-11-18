@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/sections.dart';
+import 'bills_screen.dart';
 import '../../core/finance_stats.dart';
 import '../../core/currency.dart';
 import '../../core/theme.dart';
@@ -290,25 +292,76 @@ class _WealthScreenState extends State<WealthScreen> {
           ),
           const SizedBox(height: 12),
           _financeEntryCard(fact),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Flexible(child: Text('Рост зарплаты', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600))),
-              IconButton(tooltip: 'Добавить точку зарплаты', onPressed: _addSalaryStepDialog, icon: const Icon(Icons.add_circle_outline, color: AppColors.text, size: 24)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(16),
-            height: 200,
-            decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
-            child: CustomPaint(size: Size.infinite, painter: SalaryLineChartPainter(steps: c.salaryHistory)),
-          ),
-          const SizedBox(height: 8),
-          for (int i = 0; i < c.salaryHistory.length; i++) _salaryRow(i),
+          if (c.isShown(Sections.bills)) ...[const SizedBox(height: 12), _billsTile()],
+          if (c.isShown(Sections.salary)) ..._salarySection(),
         ],
       ),
     );
   }
+
+  /// Ближайшие платежи на 14 дней и просроченные; пусто — приглашение добавить.
+  Widget _billsTile() {
+    final up = c.upcomingBillsWithin(14);
+    final total = c.bills.where((b) => b.archivedAt == null).length;
+    return Material(
+      key: const ValueKey('bills_tile'),
+      color: AppColors.card,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.tile), side: const BorderSide(color: AppColors.border)),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => BillsScreen(controller: c))),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Expanded(child: Text('Счета к оплате', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500))),
+                  Text(total == 0 ? 'добавить' : 'всего $total', style: const TextStyle(color: AppColors.muted, fontSize: 13)),
+                  const Icon(Icons.chevron_right, color: AppColors.muted),
+                ],
+              ),
+              if (total == 0)
+                const Text('Интернет, аренда, страховка — срок и сумма перед глазами', style: TextStyle(color: AppColors.muted, fontSize: 13))
+              else if (up.isEmpty)
+                const Text('В ближайшие 14 дней платежей нет', style: TextStyle(color: AppColors.muted, fontSize: 13))
+              else
+                for (final (b, due) in up.take(3))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [Text(b.title, style: const TextStyle(fontSize: 14)), billDueLine(b, due, c.now)],
+                    ),
+                  ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _salarySection() => [
+        const SizedBox(height: 24),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Flexible(child: Text('Рост зарплаты', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600))),
+            IconButton(
+                tooltip: 'Добавить точку зарплаты',
+                onPressed: _addSalaryStepDialog,
+                icon: const Icon(Icons.add_circle_outline, color: AppColors.text, size: 24)),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(16),
+          height: 200,
+          decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
+          child: CustomPaint(size: Size.infinite, painter: SalaryLineChartPainter(steps: c.salaryHistory)),
+        ),
+        const SizedBox(height: 8),
+        for (int i = 0; i < c.salaryHistory.length; i++) _salaryRow(i),
+      ];
 }

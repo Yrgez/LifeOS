@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../core/rhythm.dart';
+import '../../core/sections.dart';
 import '../../core/theme.dart';
 import '../../core/currency.dart';
 import '../../core/life_events.dart';
 import '../../core/memories.dart';
 import '../../core/utils.dart';
 import '../../models/day_checkin.dart';
+import '../../models/experiment.dart';
 import '../../models/life_event.dart';
 import '../../models/life_process.dart';
 import '../../security/security_service.dart';
@@ -15,6 +17,7 @@ import '../widgets/health_card.dart';
 import '../widgets/event_dialog.dart';
 import '../widgets/process_ui.dart';
 import '../widgets/toast.dart';
+import 'bills_screen.dart';
 import 'checkin_screen.dart';
 import 'events_screen.dart';
 import 'experiments_screen.dart';
@@ -92,7 +95,7 @@ class HubScreen extends StatelessWidget {
               _RoundButton(key: const ValueKey('quick_event'), icon: Icons.add, tooltip: 'Записать событие', filled: true, onTap: () => _quickEvent(context)),
             ],
           ),
-          if (c.weekReviewDue) ...[
+          if (c.weekReviewDue && c.isShown(Sections.review)) ...[
             const SizedBox(height: 16),
             _Tile(
               key: const ValueKey('review_tile'),
@@ -116,19 +119,44 @@ class HubScreen extends StatelessWidget {
               ),
             ),
           ],
-          _CheckInTile(controller: c, push: (w) => _push(context, w)),
+          if (c.isShown(Sections.checkIn)) _CheckInTile(controller: c, push: (w) => _push(context, w)),
+          // платежи — только просроченные и на сегодня-завтра: остальное ждёт на «Материальном»
+          if (c.isShown(Sections.bills))
+            for (final (b, due) in c.upcomingBillsWithin(1).take(2))
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: _Tile(
+                  key: ValueKey('hub_bill_${b.id}'),
+                  onTap: () => _push(context, BillsScreen(controller: c)),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.receipt_long_outlined, color: AppColors.text),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [Text(b.title, style: _label), billDueLine(b, due, now)],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right, color: AppColors.muted),
+                    ],
+                  ),
+                ),
+              ),
           const SizedBox(height: 20),
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(child: _RecoveryTile(controller: c)),
-                const SizedBox(width: 12),
-                Expanded(child: _StepsTile(controller: c, onTap: () => _push(context, _HealthScreen(controller: c)))),
-              ],
+          if (c.isShown(Sections.workouts) || c.isShown(Sections.steps)) ...[
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (c.isShown(Sections.workouts)) Expanded(child: _RecoveryTile(controller: c)),
+                  if (c.isShown(Sections.workouts) && c.isShown(Sections.steps)) const SizedBox(width: 12),
+                  if (c.isShown(Sections.steps)) Expanded(child: _StepsTile(controller: c, onTap: () => _push(context, _HealthScreen(controller: c)))),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
+          ],
           _ProcessesTile(
               controller: c,
               active: active,
@@ -136,7 +164,7 @@ class HubScreen extends StatelessWidget {
               onAll: () => _push(context, ProcessesScreen(controller: c))),
           const SizedBox(height: 12),
           _ResourcesTile(controller: c, onTap: () => _push(context, ResourcesScreen(controller: c))),
-          for (final x in c.experiments.where((x) => !x.isFinished(now) && !now.isBefore(x.startedAt)).take(2)) ...[
+          for (final x in c.isShown(Sections.experiments) ? c.experiments.where((x) => !x.isFinished(now) && !now.isBefore(x.startedAt)).take(2) : const <Experiment>[]) ...[
             const SizedBox(height: 12),
             _Tile(
               key: ValueKey('hub_exp_${x.id}'),
@@ -160,7 +188,7 @@ class HubScreen extends StatelessWidget {
               ),
             ),
           ],
-          if (c.memory != null) ...[
+          if (c.memory != null && c.isShown(Sections.memory)) ...[
             const SizedBox(height: 12),
             _MemoryTile(memory: c.memory!),
           ],
@@ -260,6 +288,7 @@ class _RecoveryTile extends StatelessWidget {
     return Tooltip(
       message: 'Оценка по типовому времени восстановления групп мышц после последней тренировки',
       child: _Tile(
+        key: const ValueKey('recovery_tile'),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -272,7 +301,8 @@ class _RecoveryTile extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 28),
-            const Text('Восстановлено', style: _label),
+            // одним словом в строку: на узком экране шрифт чуть уменьшается, а не рвёт слово
+            const FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text('Восстановлено', style: _label)),
             const SizedBox(height: 2),
             Text('${r.recovered} из ${r.total} групп · оценка', style: _sub),
           ],

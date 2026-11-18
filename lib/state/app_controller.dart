@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 
 import '../core/app_log.dart';
 import '../core/currency.dart';
+import '../core/bills.dart';
 import '../core/body_stats.dart';
 import '../core/chronicle.dart';
 import '../core/finance_categories.dart';
@@ -18,6 +19,8 @@ import '../core/memories.dart';
 import '../core/open_export.dart';
 import '../core/review.dart';
 import '../core/rhythm.dart';
+import '../core/sections.dart';
+import '../core/statement_import.dart';
 import '../core/recovery_stats.dart';
 import '../core/resource_stats.dart';
 import '../core/utils.dart';
@@ -26,19 +29,23 @@ import '../data/app_data.dart';
 import '../data/app_repository.dart';
 import '../data/change_set.dart';
 import '../data/health_source.dart';
+import '../models/bill.dart';
 import '../models/body.dart';
 import '../models/day_checkin.dart';
 import '../models/day_snapshot.dart';
 import '../models/experiment.dart';
+import '../models/statement_import.dart';
 import '../models/life_event.dart';
 import '../models/life_process.dart';
 import '../models/models.dart';
 
+part 'ops/bill_ops.dart';
 part 'ops/body_ops.dart';
 part 'ops/checkin_ops.dart';
 part 'ops/goal_ops.dart';
 part 'ops/event_ops.dart';
 part 'ops/process_ops.dart';
+part 'ops/section_ops.dart';
 part 'ops/finance_ops.dart';
 
 /// Вся бизнес-логика и состояние. UI только читает геттеры и вызывает методы.

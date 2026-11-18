@@ -56,10 +56,10 @@ String eventsCsv(List<LifeEvent> all, {Map<String, String> goalTitles = const {}
     );
 
 String transactionsCsv(List<MoneyTx> txs) => _csv(
-      ['id', 'когда', 'тип', 'категория', 'сумма', 'в капитале', 'заметка', 'повтор'],
+      ['id', 'когда', 'тип', 'категория', 'сумма', 'в капитале', 'заметка', 'повтор', 'импорт'],
       [
         for (final t in txs)
-          [t.id, _dt(t.at), t.isIncome ? 'доход' : 'расход', finCategory(t.categoryId)?.name ?? t.categoryId, t.amount, t.affectsNetWorth ? 'да' : 'нет', t.note, t.recurringId == null ? '' : 'да'],
+          [t.id, _dt(t.at), t.isIncome ? 'доход' : 'расход', finCategory(t.categoryId)?.name ?? t.categoryId, t.amount, t.affectsNetWorth ? 'да' : 'нет', t.note, t.recurringId == null ? '' : 'да', t.importId],
       ],
     );
 

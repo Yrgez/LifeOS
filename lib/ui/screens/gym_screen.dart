@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/sections.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../core/workout_stats.dart';
@@ -125,18 +126,29 @@ class _GymScreenState extends State<GymScreen> {
           const SizedBox(height: 2),
           const Text('Вес, восстановление, тренировки', style: TextStyle(color: AppColors.muted, fontSize: 13)),
           const SizedBox(height: 20),
-          BodyMetrics(controller: c),
-          const SizedBox(height: 12),
-          BodyMapCard(controller: c, selection: selection),
-          const SizedBox(height: 12),
-          _journalEntryCard(),
-          if (c.unrecordedSets(c.now).isNotEmpty) ...[const SizedBox(height: 12), _workoutEventTile()],
-          const SizedBox(height: 16),
-          ComparisonCard(controller: c),
-          const SizedBox(height: 16),
-          const Text('Группы мышц', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-          const SizedBox(height: 10),
-          for (final muscle in visible)
+          if (!c.isShown(Sections.weight) && !c.isShown(Sections.workouts))
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Text(
+                'Разделы «Вес и ИМТ» и «Тренировки» скрыты. Включить — в настройках, «Разделы». '
+                'События и процессы тела по-прежнему в «Событиях» и Хронике.',
+                key: ValueKey('body_all_hidden'),
+                style: TextStyle(color: AppColors.muted, fontSize: 13),
+              ),
+            ),
+          if (c.isShown(Sections.weight)) ...[BodyMetrics(controller: c), const SizedBox(height: 12)],
+          if (c.isShown(Sections.workouts)) ...[
+            BodyMapCard(controller: c, selection: selection),
+            const SizedBox(height: 12),
+            _journalEntryCard(),
+            if (c.unrecordedSets(c.now).isNotEmpty) ...[const SizedBox(height: 12), _workoutEventTile()],
+            const SizedBox(height: 16),
+            ComparisonCard(controller: c),
+            const SizedBox(height: 16),
+            const Text('Группы мышц', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 10),
+          ],
+          for (final muscle in c.isShown(Sections.workouts) ? visible : const <MuscleGroup>[])
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Material(
