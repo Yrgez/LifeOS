@@ -5,6 +5,7 @@ import '../core/currency.dart';
 import '../core/finance_categories.dart';
 import '../core/sections.dart';
 import '../core/utils.dart';
+import '../models/bill.dart';
 import '../models/body.dart';
 import '../models/day_checkin.dart';
 import '../models/day_snapshot.dart';
@@ -31,7 +32,8 @@ import 'default_data.dart';
 /// 17 — ритм процесса с журналом изменений (`processes[].rh`).
 /// 18 — скрытые разделы (`hiddenSections`).
 /// 19 — импорт выписки: операции со ссылкой на импорт (`transactions[].imp`), журнал импортов (`imports`).
-const int kSchemaVersion = 19;
+/// 20 — счета со сроком оплаты и историей оплат (`bills`).
+const int kSchemaVersion = 20;
 
 /// Предел журналов в памяти (при превышении удаляются самые старые). Хранилище (SQLite) пишет только
 /// изменения, но весь журнал пока загружается в память целиком — поэтому предел сохранён.
@@ -77,6 +79,7 @@ class AppData {
   List<Experiment> experiments; // эксперименты: период до и после изменения
   List<DayCheckIn> checkIns; // отметки дня — все версии
   List<StatementImport> imports; // импорты выписок, включая отменённые
+  List<Bill> bills; // счета со сроком оплаты
   int? heightCm; // рост, см; null — не указан
   String? bodyGoal; // цель по весу (BodyGoal); null — не выбрана
   Set<String> hiddenSections; // скрытые разделы (Sections); данные не затрагиваются
@@ -115,6 +118,7 @@ class AppData {
     List<Experiment>? experiments,
     List<DayCheckIn>? checkIns,
     List<StatementImport>? imports,
+    List<Bill>? bills,
     this.heightCm,
     this.bodyGoal,
     Set<String>? hiddenSections,
@@ -137,7 +141,8 @@ class AppData {
         experiments = experiments ?? <Experiment>[],
         hiddenSections = hiddenSections ?? <String>{},
         checkIns = checkIns ?? <DayCheckIn>[],
-        imports = imports ?? <StatementImport>[];
+        imports = imports ?? <StatementImport>[],
+        bills = bills ?? <Bill>[];
 
   factory AppData.defaults({DateTime? now}) => AppData(
         netWorth: 2450000,
@@ -217,6 +222,7 @@ class AppData {
         'experiments': experiments.map((x) => x.toJson()).toList(),
         'checkins': checkIns.map((x) => x.toJson()).toList(),
         'imports': imports.map((x) => x.toJson()).toList(),
+        'bills': bills.map((x) => x.toJson()).toList(),
         'heightCm': heightCm,
         'bodyGoal': bodyGoal,
         'hiddenSections': (hiddenSections.toList()..sort()),
@@ -408,6 +414,11 @@ class AppData {
         if (strict && list.length > 5000) throw const FormatException('AppData: поле "imports" превышает допустимый размер (5000)');
         return list..sort((a, b) => a.at.compareTo(b.at));
       }, <StatementImport>[]),
+      bills: pick<List<Bill>>('bills', (v) {
+        final list = uniqueCollection(v, 'bills', Bill.fromJson, (entry) => entry.id);
+        if (strict && list.length > 300) throw const FormatException('AppData: поле "bills" превышает допустимый размер (300)');
+        return list;
+      }, <Bill>[]),
       heightCm: pick<int?>('heightCm', (v) {
         final h = (v as num).toInt();
         if (h < 50 || h > 272 || v != h) throw FormatException('AppData: недопустимый рост $v');

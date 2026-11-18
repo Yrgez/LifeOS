@@ -17,6 +17,7 @@ import '../widgets/health_card.dart';
 import '../widgets/event_dialog.dart';
 import '../widgets/process_ui.dart';
 import '../widgets/toast.dart';
+import 'bills_screen.dart';
 import 'checkin_screen.dart';
 import 'events_screen.dart';
 import 'experiments_screen.dart';
@@ -119,6 +120,29 @@ class HubScreen extends StatelessWidget {
             ),
           ],
           if (c.isShown(Sections.checkIn)) _CheckInTile(controller: c, push: (w) => _push(context, w)),
+          // платежи — только просроченные и на сегодня-завтра: остальное ждёт на «Материальном»
+          if (c.isShown(Sections.bills))
+            for (final (b, due) in c.upcomingBillsWithin(1).take(2))
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: _Tile(
+                  key: ValueKey('hub_bill_${b.id}'),
+                  onTap: () => _push(context, BillsScreen(controller: c)),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.receipt_long_outlined, color: AppColors.text),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [Text(b.title, style: _label), billDueLine(b, due, now)],
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right, color: AppColors.muted),
+                    ],
+                  ),
+                ),
+              ),
           const SizedBox(height: 20),
           if (c.isShown(Sections.workouts) || c.isShown(Sections.steps)) ...[
             IntrinsicHeight(
@@ -277,7 +301,8 @@ class _RecoveryTile extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 28),
-            const Text('Восстановлено', style: _label),
+            // одним словом в строку: на узком экране шрифт чуть уменьшается, а не рвёт слово
+            const FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text('Восстановлено', style: _label)),
             const SizedBox(height: 2),
             Text('${r.recovered} из ${r.total} групп · оценка', style: _sub),
           ],

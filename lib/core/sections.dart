@@ -21,6 +21,7 @@ class Sections {
   static const checkIn = 'checkin';
   static const memory = 'memory';
   static const review = 'review';
+  static const bills = 'bills';
 
   static const all = [
     AppSection(workouts, 'Тренировки', 'Тело: карта мышц, журнал подходов, сравнение метрик; «Сегодня»: восстановление'),
@@ -31,6 +32,7 @@ class Sections {
     AppSection(memory, '«В этот день»', '«Сегодня»: что было год или месяц назад'),
     AppSection(experiments, 'Эксперименты', 'Разум и «Сегодня»'),
     AppSection(graph, 'Граф связей', 'Разум'),
+    AppSection(bills, 'Счета к оплате', 'Материальное и «Сегодня»: ближайшие платежи'),
     AppSection(salary, 'Рост зарплаты', 'Материальное: график и точки зарплаты'),
   ];
 
