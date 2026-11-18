@@ -6,6 +6,7 @@ import '../core/finance_categories.dart';
 import '../core/utils.dart';
 import '../models/body.dart';
 import '../models/day_snapshot.dart';
+import '../models/experiment.dart';
 import '../models/life_event.dart';
 import '../models/life_process.dart';
 import '../models/models.dart';
@@ -22,7 +23,8 @@ import 'default_data.dart';
 /// 12 — обычная длительность события процесса (`processes[].defMin`).
 /// 13 — счета со снимками остатков (`accounts`), журнал изменений цели (`goals[].hist`, `ct`), точная дата достижения (`atMs`).
 /// 14 — сон в дневном снимке (`snapshots[].sleep`), источник замера веса (`weights[].src`).
-const int kSchemaVersion = 14;
+/// 15 — эксперименты (`experiments`), внимание в затратах события (`events[].cost.att`).
+const int kSchemaVersion = 15;
 
 /// Предел журналов в памяти (при превышении удаляются самые старые). Хранилище (SQLite) пишет только
 /// изменения, но весь журнал пока загружается в память целиком — поэтому предел сохранён.
@@ -63,6 +65,7 @@ class AppData {
   List<LifeProcess> processes; // процессы жизни (длительные направления усилий)
   List<WeightEntry> weights; // замеры веса, по возрастанию времени
   List<Account> accounts; // счета; пусто — капитал указан вручную (netWorth)
+  List<Experiment> experiments; // эксперименты: период до и после изменения
   int? heightCm; // рост, см; null — не указан
   String? bodyGoal; // цель по весу (BodyGoal); null — не выбрана
   List<LifeEvent> events; // журнал событий жизни (все версии, включая отменённые), по возрастанию времени
@@ -97,6 +100,7 @@ class AppData {
     List<LifeProcess>? processes,
     List<WeightEntry>? weights,
     List<Account>? accounts,
+    List<Experiment>? experiments,
     this.heightCm,
     this.bodyGoal,
     this.userName = '',
@@ -114,7 +118,8 @@ class AppData {
         events = events ?? <LifeEvent>[],
         processes = processes ?? <LifeProcess>[],
         weights = weights ?? <WeightEntry>[],
-        accounts = accounts ?? <Account>[];
+        accounts = accounts ?? <Account>[],
+        experiments = experiments ?? <Experiment>[];
 
   factory AppData.defaults({DateTime? now}) => AppData(
         netWorth: 2450000,
@@ -191,6 +196,7 @@ class AppData {
         'processes': processes.map((p) => p.toJson()).toList(),
         'weights': weights.map((w) => w.toJson()).toList(),
         'accounts': accounts.map((a) => a.toJson()).toList(),
+        'experiments': experiments.map((x) => x.toJson()).toList(),
         'heightCm': heightCm,
         'bodyGoal': bodyGoal,
         'userName': userName,
@@ -364,6 +370,11 @@ class AppData {
         if (strict && list.length > 200) throw const FormatException('AppData: поле "accounts" превышает допустимый размер (200)');
         return list;
       }, <Account>[]),
+      experiments: pick<List<Experiment>>('experiments', (v) {
+        final list = uniqueCollection(v, 'experiments', Experiment.fromJson, (entry) => entry.id);
+        if (strict && list.length > 500) throw const FormatException('AppData: поле "experiments" превышает допустимый размер (500)');
+        return list;
+      }, <Experiment>[]),
       heightCm: pick<int?>('heightCm', (v) {
         final h = (v as num).toInt();
         if (h < 50 || h > 272 || v != h) throw FormatException('AppData: недопустимый рост $v');

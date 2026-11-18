@@ -4,6 +4,7 @@ import '../../core/theme.dart';
 import '../../state/app_controller.dart';
 import '../widgets/form_dialog.dart';
 import '../widgets/goals_ui.dart';
+import 'experiments_screen.dart';
 import 'graph_screen.dart';
 import 'processes_screen.dart';
 
@@ -75,6 +76,16 @@ class _MindScreenState extends State<MindScreen> {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              key: const ValueKey('open_experiments'),
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ExperimentsScreen(controller: c))),
+              icon: const Icon(Icons.science_outlined, size: 18),
+              label: const Text('Эксперименты'),
+            ),
           ),
           const SizedBox(height: 16),
           Row(

@@ -14,6 +14,7 @@ import '../widgets/event_dialog.dart';
 import '../widgets/process_ui.dart';
 import '../widgets/toast.dart';
 import 'events_screen.dart';
+import 'experiments_screen.dart';
 import 'processes_screen.dart';
 import 'resources_screen.dart';
 import 'review_screen.dart';
@@ -131,6 +132,30 @@ class HubScreen extends StatelessWidget {
               onAll: () => _push(context, ProcessesScreen(controller: c))),
           const SizedBox(height: 12),
           _ResourcesTile(controller: c, onTap: () => _push(context, ResourcesScreen(controller: c))),
+          for (final x in c.experiments.where((x) => !x.isFinished(now) && !now.isBefore(x.startedAt)).take(2)) ...[
+            const SizedBox(height: 12),
+            _Tile(
+              key: ValueKey('hub_exp_${x.id}'),
+              onTap: () => _push(context, ExperimentScreen(controller: c, id: x.id)),
+              child: Row(
+                children: [
+                  const Icon(Icons.science_outlined, color: AppColors.text),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(x.title, style: _label, maxLines: 1, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 2),
+                        Text('Эксперимент · ${experimentStage(x, now)}', style: _sub),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right, color: AppColors.muted),
+                ],
+              ),
+            ),
+          ],
           if (c.memory != null) ...[
             const SizedBox(height: 12),
             _MemoryTile(memory: c.memory!),

@@ -30,7 +30,7 @@ String _dt(DateTime d) => '${dayKey(d)} ${d.hour.toString().padLeft(2, '0')}:${d
 
 /// Все события, включая версии и отменённые, — с колонками, по которым это видно.
 String eventsCsv(List<LifeEvent> all, {Map<String, String> goalTitles = const {}, Map<String, String> processTitles = const {}}) => _csv(
-      ['id', 'когда', 'записано', 'вид', 'измерения', 'название', 'минуты', 'деньги', 'энергия', 'цели', 'процессы', 'источник', 'заменяет', 'отменено', 'заметка'],
+      ['id', 'когда', 'записано', 'вид', 'измерения', 'название', 'минуты', 'внимание', 'деньги', 'энергия', 'цели', 'процессы', 'источник', 'заменяет', 'отменено', 'заметка'],
       [
         for (final e in all)
           [
@@ -41,6 +41,7 @@ String eventsCsv(List<LifeEvent> all, {Map<String, String> goalTitles = const {}
             e.dimensions.map((d) => LifeDimension.labels[d]).join(' + '),
             e.title,
             e.cost.minutes,
+            Attention.labels[e.cost.attention],
             e.cost.money,
             e.cost.energy,
             e.goalIds.map((g) => goalTitles[g] ?? g).join('; '),

@@ -43,6 +43,9 @@ class ResourceSummary {
   final int money;
   final int moneyKnown;
   final Map<int, int> energy; // оценка 1–5 → число событий
+  final int focusedMinutes; // минуты событий с отметкой «в фокусе»
+  final int scatteredMinutes; // минуты событий с отметкой «урывками»
+  final int attentionKnown; // событий со временем и отметкой внимания
   const ResourceSummary({
     required this.events,
     required this.minutes,
@@ -50,6 +53,9 @@ class ResourceSummary {
     required this.money,
     required this.moneyKnown,
     required this.energy,
+    this.focusedMinutes = 0,
+    this.scatteredMinutes = 0,
+    this.attentionKnown = 0,
   });
 
   int get energyKnown => energy.values.fold(0, (a, b) => a + b);
@@ -74,7 +80,7 @@ ResourceSummary summarizeResources(
 
 /// Сводка по уже отобранным событиям. Обзоры не учитываются: это осмысление, а не трата ресурсов.
 ResourceSummary summarizeEvents(Iterable<LifeEvent> events) {
-  var n = 0, min = 0, minK = 0, rub = 0, rubK = 0;
+  var n = 0, min = 0, minK = 0, rub = 0, rubK = 0, focus = 0, scatter = 0, attK = 0;
   final energy = <int, int>{};
   for (final e in events) {
     if (e.kind == LifeEventKind.review) continue;
@@ -82,6 +88,14 @@ ResourceSummary summarizeEvents(Iterable<LifeEvent> events) {
     if (e.cost.minutes != null) {
       min += e.cost.minutes!;
       minK++;
+      if (e.cost.attention != null) {
+        attK++;
+        if (e.cost.attention == Attention.focused) {
+          focus += e.cost.minutes!;
+        } else {
+          scatter += e.cost.minutes!;
+        }
+      }
     }
     if (e.cost.money != null) {
       rub += e.cost.money!;
@@ -89,7 +103,17 @@ ResourceSummary summarizeEvents(Iterable<LifeEvent> events) {
     }
     if (e.cost.energy != null) energy[e.cost.energy!] = (energy[e.cost.energy!] ?? 0) + 1;
   }
-  return ResourceSummary(events: n, minutes: min, minutesKnown: minK, money: rub, moneyKnown: rubK, energy: energy);
+  return ResourceSummary(
+    events: n,
+    minutes: min,
+    minutesKnown: minK,
+    money: rub,
+    moneyKnown: rubK,
+    energy: energy,
+    focusedMinutes: focus,
+    scatteredMinutes: scatter,
+    attentionKnown: attK,
+  );
 }
 
 /// Что вложено в процесс за всё время: ресурсы, первое и последнее событие.

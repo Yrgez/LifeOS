@@ -22,6 +22,10 @@ List<String> resourceLines(ResourceSummary s) {
     'Время: ${part(s.minutesKnown, fmtMinutes(s.minutes))}',
     'Деньги: ${part(s.moneyKnown, '${fmtCur(s.money)}')}',
     'Энергия: ${s.energyKnown == 0 ? 'не указано' : [for (var i = 1; i <= 5; i++) if (s.energy[i] != null) '$i×${s.energy[i]}'].join(', ')}',
+    // внимание показываем, только если его отмечали: пустая строка «не указано» здесь — шум
+    if (s.attentionKnown > 0)
+      'Внимание: в фокусе ${fmtMinutes(s.focusedMinutes)} · урывками ${fmtMinutes(s.scatteredMinutes)}'
+          '${s.attentionKnown == s.minutesKnown ? '' : ' (отмечено в ${s.attentionKnown} из ${s.minutesKnown} со временем)'}',
   ];
 }
 
