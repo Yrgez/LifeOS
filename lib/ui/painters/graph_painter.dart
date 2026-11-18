@@ -11,7 +11,7 @@ class LifeGraphPainter extends CustomPainter {
   final List<GraphEdge> edges;
   final String? selectedNodeId;
   final String? selectedEdgeKey;
-  final String activeCategoryFilter;
+  final Set<String>? visibleCategories; // фильтр по измерению; null — все сферы
   final Map<String, int> degree; // суммарная сила связей узла — «хабы» рисуются крупнее
   final Set<String> isolated; // узлы без связей — пунктирное кольцо
 
@@ -22,19 +22,20 @@ class LifeGraphPainter extends CustomPainter {
     required this.isolated,
     this.selectedNodeId,
     this.selectedEdgeKey,
-    required this.activeCategoryFilter,
+    this.visibleCategories,
   });
 
   static double radiusOf(int degree, bool selected) => 8.0 + min(6, degree).toDouble() + (selected ? 4 : 0);
 
+  /// Цвет связи со смыслом: помогает — зелёный, мешает — красный (и пунктир), просто связаны — нейтральный.
   static Color edgeColor(String kind) {
     switch (kind) {
       case EdgeKind.supports:
-        return AppColors.green;
+        return const Color(0xFF3FBF7F);
       case EdgeKind.conflicts:
-        return AppColors.red;
+        return const Color(0xFFE5575F);
       default:
-        return Colors.white;
+        return AppColors.text;
     }
   }
 
@@ -44,6 +45,7 @@ class LifeGraphPainter extends CustomPainter {
 
     Offset pos(GraphNode n) => Offset(n.position.dx * size.width, n.position.dy * size.height);
     final nodeMap = {for (final n in nodes) n.id: n};
+    bool hidden(GraphNode n) => visibleCategories != null && !visibleCategories!.contains(n.category);
 
     for (final edge in edges) {
       final from = nodeMap[edge.fromId];
@@ -54,13 +56,13 @@ class LifeGraphPainter extends CustomPainter {
       final selectedEdge = edge.key == selectedEdgeKey;
       final highlighted = selectedNode || selectedEdge;
       // ребро приглушается, если НИ один его конец не входит в фильтр
-      final filteredOut = activeCategoryFilter != 'all' && from.category != activeCategoryFilter && to.category != activeCategoryFilter;
+      final filteredOut = hidden(from) && hidden(to);
 
       final base = edgeColor(edge.kind);
-      final alpha = highlighted ? 0.95 : (filteredOut ? 0.05 : (edge.kind == EdgeKind.related ? 0.2 : 0.55));
+      final alpha = highlighted ? 0.95 : (filteredOut ? 0.05 : (edge.kind == EdgeKind.related ? 0.22 : 0.6));
       final paint = Paint()
-        ..color = (selectedEdge ? Colors.cyanAccent : base).withValues(alpha: alpha)
-        ..strokeWidth = 1.0 + edge.weight * 0.9 + (highlighted ? 1.0 : 0.0)
+        ..color = (selectedEdge ? AppColors.text : base).withValues(alpha: alpha)
+        ..strokeWidth = 0.8 + edge.weight * 0.8 + (highlighted ? 0.8 : 0.0)
         ..strokeCap = StrokeCap.round;
 
       final a = pos(from), b = pos(to);
@@ -88,29 +90,29 @@ class LifeGraphPainter extends CustomPainter {
       }
 
       if (!filteredOut) {
-        canvas.drawCircle((a + b) / 2, selectedEdge ? 5.0 : (highlighted ? 3.0 : 2.0), Paint()..color = selectedEdge ? Colors.cyanAccent : Colors.white30);
+        // середина связи — место, куда нажимать, чтобы выбрать её
+        canvas.drawCircle((a + b) / 2, selectedEdge ? 4.5 : 2.5, Paint()..color = selectedEdge ? AppColors.text : AppColors.muted.withValues(alpha: 0.5));
       }
     }
 
     for (final node in nodes) {
       final p = pos(node);
       final selected = node.id == selectedNodeId;
-      final filteredOut = activeCategoryFilter != 'all' && node.category != activeCategoryFilter;
+      final filteredOut = hidden(node);
       final opacity = filteredOut ? 0.20 : 1.0;
       final r = radiusOf(degree[node.id] ?? 0, selected);
 
-      canvas.drawCircle(
-        p,
-        r * 1.9,
-        Paint()
-          ..color = node.color.withValues(alpha: (selected ? 0.55 : 0.22) * opacity)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
-      );
-      canvas.drawCircle(p, r, Paint()..color = (selected ? Colors.white : node.color).withValues(alpha: opacity));
+      canvas.drawCircle(p, r, Paint()..color = node.color.withValues(alpha: opacity));
+      if (selected) {
+        canvas.drawCircle(p, r + 4, Paint()
+          ..color = AppColors.text
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2);
+      }
 
       if (isolated.contains(node.id)) {
         _dashedCircle(canvas, p, r + 6, Paint()
-          ..color = AppColors.amber.withValues(alpha: 0.8 * opacity)
+          ..color = AppColors.muted.withValues(alpha: 0.8 * opacity)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.4);
       }
@@ -119,9 +121,10 @@ class LifeGraphPainter extends CustomPainter {
         text: TextSpan(
           text: node.label,
           style: TextStyle(
-            color: (selected ? Colors.white : Colors.white70).withValues(alpha: opacity),
-            fontSize: 10,
-            fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+            fontFamily: 'Inter', // холст не наследует тему
+            color: (selected ? AppColors.text : AppColors.muted).withValues(alpha: opacity),
+            fontSize: 11,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
           ),
         ),
         textDirection: TextDirection.ltr,
@@ -134,7 +137,7 @@ class LifeGraphPainter extends CustomPainter {
       final ty = clampD(p.dy + r + 6, 2, max(2.0, size.height - tp.height - 6));
       canvas.drawRRect(
         RRect.fromRectAndRadius(Rect.fromLTWH(tx - 4, ty - 2, tp.width + 8, tp.height + 4), const Radius.circular(4)),
-        Paint()..color = AppColors.panel.withValues(alpha: 0.85 * opacity),
+        Paint()..color = AppColors.card.withValues(alpha: 0.9 * opacity),
       );
       tp.paint(canvas, Offset(tx, ty));
       tp.dispose();

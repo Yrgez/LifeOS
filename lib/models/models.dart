@@ -489,19 +489,17 @@ class SalaryStep {
   }
 }
 
-/// Цвет узла по сфере жизни.
-Color nodeColorFor(String category) {
-  switch (category) {
-    case 'wealth':
-      return AppColors.gold;
-    case 'gym':
-      return AppColors.green;
-    case 'health':
-      return const Color(0xFF18FFFF); // Colors.cyanAccent
-    default:
-      return AppColors.violet;
-  }
-}
+/// Цвет узла по измерению: тренировки и здоровье — «Тело», капитал — «Материальное», остальное — «Разум».
+/// Те же приглушённые тона, что у графиков измерений (проверены на тёмной поверхности).
+Color nodeColorFor(String category) => switch (category) {
+      'wealth' => const Color(0xFFB08A00),
+      'gym' || 'health' => const Color(0xFF00A653),
+      _ => const Color(0xFF8B63FF),
+    };
+
+/// Прежние цвета узлов по умолчанию (неоновая палитра): в старых данных они записаны в `color`,
+/// но выбором пользователя не были — читаются как «цвет по сфере».
+const _legacyNodeColors = {0xFFFFD700, 0xFF00E676, 0xFF18FFFF, 0xFF7C4DFF};
 
 /// Ссылка узла графа на сущность жизни: процесс или цель. Подпись такого узла берётся из сущности,
 /// а с экрана графа можно перейти к ней — граф перестаёт быть набором отдельных подписей.
@@ -548,7 +546,7 @@ class GraphNode {
     Color? color,
     this.ref,
   }) {
-    _override = (color == null || color == nodeColorFor(category)) ? null : color;
+    _override = (color == null || color == nodeColorFor(category) || _legacyNodeColors.contains(color.toARGB32())) ? null : color;
   }
 
   Color get color => _override ?? nodeColorFor(category);

@@ -197,4 +197,14 @@ void main() {
     c.addEdge(ids[0], ids[1]);
     expect(c.edgeEvidence(c.graphEdges.last), isNull);
   });
+
+  test('старые неоновые цвета по умолчанию читаются как «цвет по сфере», выбранный цвет сохраняется', () {
+    final old = GraphNode.fromJson({'id': 'a', 'label': 'A', 'category': 'wealth', 'fx': 0.5, 'fy': 0.5, 'color': 0xFFFFD700});
+    expect(old.color, nodeColorFor('wealth'));
+    old.category = 'mind';
+    expect(old.color, nodeColorFor('mind')); // цвет следует за сферой
+    final custom = GraphNode.fromJson({'id': 'b', 'label': 'B', 'category': 'mind', 'fx': 0.5, 'fy': 0.5, 'color': 0xFF123456});
+    expect(custom.color.toARGB32(), 0xFF123456);
+    expect(nodeColorFor('gym'), nodeColorFor('health')); // обе сферы — измерение «Тело»
+  });
 }

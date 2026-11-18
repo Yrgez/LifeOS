@@ -7,18 +7,29 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../models/models.dart';
 import '../../state/app_controller.dart';
-import '../painters/chart_painters.dart';
 import '../painters/graph_painter.dart';
 import '../widgets/form_dialog.dart';
 import '../widgets/toast.dart';
+import '../widgets/confirm_dialog.dart';
 import 'events_screen.dart';
 
+/// Сферы узлов (хранятся как есть) — показываются через измерения жизни.
 const _categoryNames = {
-  'mind': 'Смыслы / Цели',
-  'wealth': 'Капитал / Финансы',
-  'gym': 'Тело / Тренировки',
-  'health': 'Здоровье / Отдых',
+  'mind': 'Разум · смыслы, цели',
+  'wealth': 'Материальное · деньги, капитал',
+  'gym': 'Тело · тренировки',
+  'health': 'Тело · здоровье, отдых',
 };
+
+/// Фильтр по измерению → какие сферы узлов он показывает.
+const _filters = {'all': 'Все', 'body': 'Тело', 'mind': 'Разум', 'material': 'Материальное'};
+const _filterCategories = {
+  'body': {'gym', 'health'},
+  'mind': {'mind'},
+  'material': {'wealth'},
+};
+
+const _caption = TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 0.8);
 
 const _weightNames = {'1': 'Слабая', '2': 'Средняя', '3': 'Сильная'};
 
@@ -186,7 +197,8 @@ class _GraphScreenState extends State<GraphScreen> {
       context,
       title: 'Создать узел графа',
       actionLabel: 'Создать',
-      accent: AppColors.violet,
+      accent: AppColors.accent,
+      actionTextColor: Colors.black,
       fields: [
         if (refs.length > 1) FieldSpec('ref', 'Связать с процессом или целью', initial: '', options: refs),
         const FieldSpec('title', 'Название узла (для связанного — из процесса/цели)'),
@@ -209,7 +221,8 @@ class _GraphScreenState extends State<GraphScreen> {
       context,
       title: auto ? 'Узел: ${n.label}' : 'Изменить узел',
       actionLabel: 'Сохранить',
-      accent: AppColors.violet,
+      accent: AppColors.accent,
+      actionTextColor: Colors.black,
       fields: [
         // подписи «живых» и связанных узлов подставляются из данных — переименовать их нельзя
         if (!auto && n.ref == null) FieldSpec('title', 'Название узла', initial: n.label),
@@ -233,7 +246,8 @@ class _GraphScreenState extends State<GraphScreen> {
       context,
       title: 'Связать узлы графа',
       actionLabel: 'Соединить',
-      accent: Colors.cyanAccent,
+      accent: AppColors.accent,
+      actionTextColor: Colors.black,
       fields: [
         FieldSpec('from', 'Откуда', initial: from, options: options),
         FieldSpec('to', 'Куда', initial: to, options: options),
@@ -249,9 +263,7 @@ class _GraphScreenState extends State<GraphScreen> {
     if (r == null || !mounted) return;
     final ok = c.addEdge(r['from']!, r['to']!, kind: r['kind']!, weight: int.parse(r['w']!));
     if (!ok) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text('Эти узлы уже связаны — выберите связь на графе и измените её')));
+      showToast(context, 'Эти узлы уже связаны — выберите связь на графе и измените её');
     }
   }
 
@@ -259,7 +271,25 @@ class _GraphScreenState extends State<GraphScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(listenable: c, builder: (context, _) => _content());
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Граф связей'),
+        backgroundColor: AppColors.panel,
+        elevation: 0,
+        actions: [
+          IconButton(
+            key: const ValueKey('graph_from_entities'),
+            icon: const Icon(Icons.account_tree_outlined),
+            tooltip: 'Собрать из процессов и целей',
+            onPressed: _fromEntities,
+          ),
+          IconButton(key: const ValueKey('graph_add_node'), icon: const Icon(Icons.add), tooltip: 'Добавить узел', onPressed: _addNodeDialog),
+          IconButton(icon: const Icon(Icons.link), tooltip: 'Связать узлы', onPressed: () => _addEdgeDialog(_selectedNodeId)),
+          const SizedBox(width: 4),
+        ],
+      ),
+      body: ListenableBuilder(listenable: c, builder: (context, _) => _content()),
+    );
   }
 
   Widget _content() {
@@ -272,85 +302,67 @@ class _GraphScreenState extends State<GraphScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('SECOND BRAIN GRAPH', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  Text('Щипок — зум, перетаскивание фона — панорама', style: TextStyle(color: AppColors.muted, fontSize: 11)),
-                ],
-              ),
-              Row(
-                children: [
-                  IconButton(
-                    key: const ValueKey('graph_from_entities'),
-                    icon: const Icon(Icons.account_tree_outlined, size: 22),
-                    tooltip: 'Собрать из процессов и целей',
-                    onPressed: _fromEntities,
-                  ),
-                  IconButton(icon: const Icon(Icons.add_circle, color: AppColors.violet, size: 24), tooltip: 'Добавить узел', onPressed: _addNodeDialog),
-                  IconButton(icon: const Icon(Icons.alt_route, color: Colors.cyanAccent, size: 24), tooltip: 'Связать узлы', onPressed: () => _addEdgeDialog(_selectedNodeId)),
-                ],
-              ),
-            ],
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+          child: Text(
+            [
+              '${c.graphNodes.length} узлов · ${c.graphEdges.length} связей',
+              if (isolated.isNotEmpty) 'без связей: ${isolated.length}',
+            ].join(' · '),
+            key: const ValueKey('graph_counts'),
+            style: const TextStyle(color: AppColors.muted, fontSize: 13),
           ),
         ),
-        _statsCard(isolated.length),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: Row(
-            children: [
-              _pill('all', 'Все'),
-              _pill('mind', 'Смыслы'),
-              _pill('wealth', 'Капитал'),
-              _pill('health', 'Здоровье'),
-              _pill('gym', 'Тело'),
-            ],
+        if (c.graphNodes.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            // переключатель измерений — как выбор цели по весу на «Теле»
+            child: Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(color: AppColors.field, borderRadius: BorderRadius.circular(22), border: Border.all(color: AppColors.border)),
+              child: Row(
+                children: [
+                  for (final f in _filters.entries)
+                    Expanded(
+                      flex: f.key == 'material' ? 3 : 2,
+                      child: GestureDetector(
+                        key: ValueKey('graph_filter_${f.key}'),
+                        onTap: () => setState(() => _filter = f.key),
+                        child: Container(
+                          height: 36,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: _filter == f.key ? AppColors.accent : Colors.transparent,
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 6),
+                              child: Text(
+                                f.value,
+                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: _filter == f.key ? Colors.black : AppColors.muted),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
-        ),
         Expanded(child: _canvas(isolated)),
+        if (c.graphNodes.isNotEmpty && node == null && edge == null)
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 0, 20, 12),
+            child: Text(
+              'Зелёная стрелка — помогает, красный пунктир — мешает, серая линия — связаны; толщина — сила. Щипок — масштаб.',
+              style: TextStyle(color: AppColors.muted, fontSize: 11),
+            ),
+          ),
         if (node != null) _nodePanel(node),
         if (edge != null) _edgePanel(edge),
       ],
-    );
-  }
-
-  Widget _statsCard(int isolatedCount) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.white10)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('ИСТОРИЯ РОСТА ЗНАНИЙ (УЗЛЫ)', style: TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold)),
-              Text('${c.graphNodes.length} узлов • ${c.graphEdges.length} связей', style: const TextStyle(color: AppColors.violet, fontSize: 11, fontWeight: FontWeight.bold)),
-            ],
-          ),
-          const SizedBox(height: 6),
-          SizedBox(height: 36, width: double.infinity, child: CustomPaint(painter: MiniSparklinePainter(data: c.graphEvolutionHistory, color: AppColors.violet))),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '→ помогает   ┄ мешает   — связаны   толщина = сила',
-                  style: const TextStyle(color: AppColors.muted, fontSize: 9),
-                ),
-              ),
-              if (isolatedCount > 0)
-                Text('без связей: $isolatedCount', style: const TextStyle(color: AppColors.amber, fontSize: 10, fontWeight: FontWeight.bold)),
-            ],
-          ),
-        ],
-      ),
     );
   }
 
@@ -367,18 +379,23 @@ class _GraphScreenState extends State<GraphScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(color: AppColors.muted, fontSize: 13),
               ),
-              const SizedBox(height: 12),
-              OutlinedButton(onPressed: _fromEntities, child: const Text('Собрать из процессов и целей')),
+              const SizedBox(height: 16),
+              FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: Colors.black),
+                onPressed: _fromEntities,
+                child: const Text('Собрать из процессов и целей'),
+              ),
+              TextButton(onPressed: _addNodeDialog, child: const Text('Добавить узел вручную')),
             ],
           ),
         ),
       );
     }
     return Container(
-      margin: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: AppColors.panel, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white12)),
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      decoration: tileDecoration(),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadii.tile),
         child: LayoutBuilder(
           builder: (ctx, box) {
             final size = Size(box.maxWidth, box.maxHeight);
@@ -414,7 +431,7 @@ class _GraphScreenState extends State<GraphScreen> {
                               isolated: isolated,
                               selectedNodeId: _selectedNodeId,
                               selectedEdgeKey: _selectedEdgeKey,
-                              activeCategoryFilter: _filter,
+                              visibleCategories: _filterCategories[_filter],
                             ),
                           ),
                         ),
@@ -423,28 +440,16 @@ class _GraphScreenState extends State<GraphScreen> {
                   ),
                 ),
                 Positioned(
-                  top: 8,
-                  right: 8,
+                  top: 10,
+                  right: 10,
                   child: Column(
                     children: [
-                      FloatingActionButton.small(
-                        heroTag: 'graph_layout',
-                        backgroundColor: AppColors.field,
-                        tooltip: 'Организовать по кругу',
-                        onPressed: () {
-                          c.autoLayoutRadial();
-                          _tc.value = Matrix4.identity();
-                        },
-                        child: const Icon(Icons.refresh, color: Colors.cyanAccent, size: 20),
-                      ),
+                      _canvasButton(Icons.donut_large_outlined, 'Расставить по кругу', () {
+                        c.autoLayoutRadial();
+                        _tc.value = Matrix4.identity();
+                      }),
                       const SizedBox(height: 8),
-                      FloatingActionButton.small(
-                        heroTag: 'graph_reset_view',
-                        backgroundColor: AppColors.field,
-                        tooltip: 'Сбросить масштаб',
-                        onPressed: () => _tc.value = Matrix4.identity(),
-                        child: const Icon(Icons.center_focus_strong, color: Colors.white70, size: 20),
-                      ),
+                      _canvasButton(Icons.center_focus_strong_outlined, 'Сбросить масштаб', () => _tc.value = Matrix4.identity()),
                     ],
                   ),
                 ),
@@ -456,35 +461,57 @@ class _GraphScreenState extends State<GraphScreen> {
     );
   }
 
-  Widget _pill(String key, String label) {
-    final active = _filter == key;
-    return GestureDetector(
-      onTap: () => setState(() => _filter = key),
-      child: Container(
-        margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: active ? Colors.cyanAccent.withValues(alpha: 0.2) : AppColors.card,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: active ? Colors.cyanAccent : Colors.white12),
+  Widget _canvasButton(IconData icon, String tooltip, VoidCallback onTap) => Material(
+        color: AppColors.raised,
+        shape: const CircleBorder(side: BorderSide(color: AppColors.border)),
+        clipBehavior: Clip.antiAlias,
+        child: IconButton(
+          icon: Icon(icon, size: 18, color: AppColors.text),
+          tooltip: tooltip,
+          onPressed: onTap,
+          constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+          padding: EdgeInsets.zero,
         ),
-        child: Text(label, style: TextStyle(color: active ? Colors.cyanAccent : Colors.white60, fontSize: 11, fontWeight: active ? FontWeight.bold : FontWeight.normal)),
+      );
+
+  // ---------------- панели выбора ----------------
+
+  Widget _panel({required List<Widget> children}) {
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        padding: const EdgeInsets.fromLTRB(18, 14, 10, 14),
+        decoration: tileDecoration(),
+        child: SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: children)),
       ),
     );
   }
 
-  // ---------------- панели выбора ----------------
+  Widget _panelTitle(String text, {Color? dot}) => Row(
+        children: [
+          if (dot != null) ...[
+            Container(width: 10, height: 10, decoration: BoxDecoration(color: dot, shape: BoxShape.circle)),
+            const SizedBox(width: 10),
+          ],
+          Expanded(child: Text(text, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
+          IconButton(tooltip: 'Закрыть', icon: const Icon(Icons.close, color: AppColors.muted, size: 20), onPressed: _clearSelection),
+        ],
+      );
 
-  Widget _panel({required Color border, required List<Widget> children}) {
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.34),
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(16), border: Border.all(color: border.withValues(alpha: 0.5))),
-        child: SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: children)),
-      ),
-    );
+  Future<void> _deleteNode(GraphNode node) async {
+    final ok = await confirmDialog(context,
+        title: 'Удалить узел?', message: '«${node.label}» и его связи исчезнут с графа. Процессы, цели и журналы не затрагиваются.', confirmLabel: 'Удалить', danger: true);
+    if (!ok || !mounted) return;
+    c.deleteNode(node.id);
+    _clearSelection();
+  }
+
+  Future<void> _deleteEdge(GraphEdge edge) async {
+    final ok = await confirmDialog(context, title: 'Удалить связь?', message: 'Узлы останутся на графе.', confirmLabel: 'Удалить', danger: true);
+    if (!ok || !mounted) return;
+    c.removeEdge(edge.key);
+    _clearSelection();
   }
 
   Widget _nodePanel(GraphNode node) {
@@ -494,24 +521,16 @@ class _GraphScreenState extends State<GraphScreen> {
     final auto = AppController.autoNodeIds.contains(node.id);
 
     return _panel(
-      border: node.color,
       children: [
-        Row(
-          children: [
-            CircleAvatar(radius: 5, backgroundColor: node.color),
-            const SizedBox(width: 8),
-            Expanded(child: Text(node.label, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14))),
-            IconButton(icon: const Icon(Icons.close, color: AppColors.muted, size: 18), onPressed: _clearSelection, padding: EdgeInsets.zero, constraints: const BoxConstraints()),
-          ],
-        ),
+        _panelTitle(node.label, dot: node.color),
         Text(
-          '${_categoryNames[node.category] ?? node.category}${auto ? ' • значение обновляется автоматически' : ''}',
-          style: const TextStyle(color: AppColors.muted, fontSize: 10),
+          '${_categoryNames[node.category] ?? node.category}${auto ? ' · значение подставляется из данных' : ''}',
+          style: const TextStyle(color: AppColors.muted, fontSize: 12),
         ),
         if (node.ref != null) _refLine(node.ref!),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         if (links.isEmpty)
-          const Text('Связей нет — свяжите узел с другими, чтобы увидеть влияние', style: TextStyle(color: AppColors.amber, fontSize: 11))
+          const Text('Связей нет', style: TextStyle(color: AppColors.muted, fontSize: 13))
         else
           Wrap(
             spacing: 6,
@@ -520,11 +539,10 @@ class _GraphScreenState extends State<GraphScreen> {
               for (final l in links)
                 ActionChip(
                   visualDensity: VisualDensity.compact,
-                  backgroundColor: AppColors.field,
-                  side: BorderSide(color: LifeGraphPainter.edgeColor(l.edge.kind).withValues(alpha: 0.6)),
                   label: Text(
-                    '${EdgeKind.isDirected(l.edge.kind) ? (l.outgoing ? '→ ' : '← ') : '— '}${l.other.label}',
-                    style: const TextStyle(fontSize: 11),
+                    '${EdgeKind.isDirected(l.edge.kind) ? (l.outgoing ? '→ ' : '← ') : '— '}'
+                    '${l.edge.kind == EdgeKind.conflicts ? 'мешает: ' : ''}${l.other.label}',
+                    style: const TextStyle(fontSize: 12),
                   ),
                   onPressed: () => setState(() {
                     _selectedEdgeKey = l.edge.key;
@@ -536,37 +554,21 @@ class _GraphScreenState extends State<GraphScreen> {
         if (reachNames.isNotEmpty) ...[
           const SizedBox(height: 8),
           Text(
-            'Влияет по цепочке на ${reachNames.length}: ${reachNames.take(4).join(', ')}${reachNames.length > 4 ? '…' : ''}',
-            style: const TextStyle(color: AppColors.muted, fontSize: 11),
+            'По цепочке связей ведёт к ${reachNames.length}: ${reachNames.take(4).join(', ')}${reachNames.length > 4 ? '…' : ''}',
+            style: const TextStyle(color: AppColors.muted, fontSize: 12),
           ),
         ],
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         Row(
           children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(foregroundColor: Colors.cyanAccent, side: const BorderSide(color: Colors.cyanAccent), padding: const EdgeInsets.symmetric(vertical: 8)),
-                onPressed: () => _addEdgeDialog(node.id),
-                icon: const Icon(Icons.link, size: 16),
-                label: const Text('Связать', style: TextStyle(fontSize: 11)),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(foregroundColor: Colors.white70, side: const BorderSide(color: Colors.white24), padding: const EdgeInsets.symmetric(vertical: 8)),
-                onPressed: () => _editNodeDialog(node),
-                icon: const Icon(Icons.edit, size: 16),
-                label: const Text('Изменить', style: TextStyle(fontSize: 11)),
-              ),
-            ),
+            TextButton.icon(onPressed: () => _addEdgeDialog(node.id), icon: const Icon(Icons.link, size: 18), label: const Text('Связать')),
+            TextButton.icon(onPressed: () => _editNodeDialog(node), icon: const Icon(Icons.edit_outlined, size: 18), label: const Text('Изменить')),
+            const Spacer(),
             IconButton(
-              icon: const Icon(Icons.delete_outline, color: AppColors.red, size: 20),
+              key: const ValueKey('graph_delete_node'),
               tooltip: 'Удалить узел',
-              onPressed: () {
-                c.deleteNode(node.id);
-                _clearSelection();
-              },
+              onPressed: () => _deleteNode(node),
+              icon: const Icon(Icons.delete_outline, size: 20, color: AppColors.muted),
             ),
           ],
         ),
@@ -579,7 +581,7 @@ class _GraphScreenState extends State<GraphScreen> {
     final title = c.refTitle(ref);
     final kind = ref.type == NodeRef.process ? 'Процесс' : 'Цель';
     if (title == null) {
-      return Text('$kind удалён(а) — узел хранит последнее название', style: const TextStyle(color: AppColors.amber, fontSize: 11));
+      return Text('$kind удалён(а) — узел хранит последнее название', style: const TextStyle(color: AppColors.amber, fontSize: 12));
     }
     final open = ref.type == NodeRef.process
         ? EventsScreen(controller: c, processId: ref.id)
@@ -588,10 +590,10 @@ class _GraphScreenState extends State<GraphScreen> {
       alignment: Alignment.centerLeft,
       child: TextButton.icon(
         key: const ValueKey('node_ref_open'),
-        style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 30)),
+        style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 32)),
         onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => open)),
-        icon: Icon(ref.type == NodeRef.process ? Icons.autorenew : Icons.track_changes, size: 14),
-        label: Text('$kind: события и ресурсы', style: const TextStyle(fontSize: 11)),
+        icon: Icon(ref.type == NodeRef.process ? Icons.autorenew : Icons.flag_outlined, size: 16),
+        label: Text('$kind: события и ресурсы', style: const TextStyle(fontSize: 13)),
       ),
     );
   }
@@ -602,62 +604,47 @@ class _GraphScreenState extends State<GraphScreen> {
     final arrow = EdgeKind.isDirected(edge.kind) ? '→' : '—';
 
     return _panel(
-      border: Colors.cyanAccent,
       children: [
-        Row(
-          children: [
-            Expanded(child: Text('$from $arrow $to', overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14))),
-            IconButton(icon: const Icon(Icons.close, color: AppColors.muted, size: 18), onPressed: _clearSelection, padding: EdgeInsets.zero, constraints: const BoxConstraints()),
-          ],
-        ),
+        _panelTitle('$from $arrow $to'),
         if (c.edgeEvidence(edge) case final ev?)
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Text('По журналу: $ev', key: const ValueKey('edge_evidence'), style: const TextStyle(color: AppColors.muted, fontSize: 11)),
-          ),
-        const SizedBox(height: 8),
-        const Text('ТИП СВЯЗИ', style: TextStyle(color: AppColors.muted, fontSize: 9, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 4),
+          Text('По журналу: $ev', key: const ValueKey('edge_evidence'), style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+        const SizedBox(height: 12),
+        const Text('ТИП СВЯЗИ', style: _caption),
+        const SizedBox(height: 6),
         Wrap(
           spacing: 6,
+          runSpacing: 4,
           children: [
             for (final k in EdgeKind.labels.entries)
               ChoiceChip(
                 visualDensity: VisualDensity.compact,
-                label: Text(k.value, style: const TextStyle(fontSize: 11)),
+                label: Text(k.value),
                 selected: edge.kind == k.key,
-                selectedColor: LifeGraphPainter.edgeColor(k.key).withValues(alpha: 0.3),
                 onSelected: (_) => c.updateEdge(edge.key, kind: k.key),
               ),
           ],
         ),
-        const SizedBox(height: 8),
-        const Text('СИЛА СВЯЗИ', style: TextStyle(color: AppColors.muted, fontSize: 9, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 4),
+        const SizedBox(height: 12),
+        const Text('СИЛА СВЯЗИ', style: _caption),
+        const SizedBox(height: 6),
         Wrap(
           spacing: 6,
+          runSpacing: 4,
           children: [
             for (final w in _weightNames.entries)
               ChoiceChip(
                 visualDensity: VisualDensity.compact,
-                label: Text(w.value, style: const TextStyle(fontSize: 11)),
+                label: Text(w.value),
                 selected: edge.weight == int.parse(w.key),
-                selectedColor: Colors.cyanAccent.withValues(alpha: 0.25),
                 onSelected: (_) => c.updateEdge(edge.key, weight: int.parse(w.key)),
               ),
           ],
         ),
-        const SizedBox(height: 8),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton.icon(
-            onPressed: () {
-              c.removeEdge(edge.key);
-              _clearSelection();
-            },
-            icon: const Icon(Icons.link_off, size: 16, color: AppColors.red),
-            label: const Text('Удалить связь', style: TextStyle(color: AppColors.red, fontSize: 12)),
-          ),
+        const SizedBox(height: 4),
+        TextButton.icon(
+          onPressed: () => _deleteEdge(edge),
+          icon: const Icon(Icons.link_off, size: 18, color: AppColors.muted),
+          label: const Text('Удалить связь', style: TextStyle(color: AppColors.muted)),
         ),
       ],
     );
