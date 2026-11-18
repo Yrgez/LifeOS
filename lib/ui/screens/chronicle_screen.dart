@@ -144,6 +144,7 @@ class _MonthSection extends StatelessWidget {
     final (icon, color) = switch (e.kind) {
       ChronicleKind.event => (Icons.circle, e.dimensions.isEmpty ? AppColors.muted : dimensionColor(e.dimensions.first)),
       ChronicleKind.process => (Icons.autorenew, AppColors.amber),
+      ChronicleKind.goal => (Icons.flag_outlined, AppColors.text),
       _ => (Icons.emoji_events_outlined, AppColors.text),
     };
     final hasTarget = e.kind == ChronicleKind.process && controller.processById(e.refId ?? '') != null;

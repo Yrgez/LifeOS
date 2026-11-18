@@ -20,7 +20,8 @@ import 'default_data.dart';
 /// 10 — тело: замеры веса (`weights`), рост (`heightCm`), цель по весу (`bodyGoal`).
 /// 11 — вид события «обзор» (`review`): еженедельный обзор сохраняется как событие.
 /// 12 — обычная длительность события процесса (`processes[].defMin`).
-const int kSchemaVersion = 12;
+/// 13 — счета со снимками остатков (`accounts`), журнал изменений цели (`goals[].hist`, `ct`), точная дата достижения (`atMs`).
+const int kSchemaVersion = 13;
 
 /// Предел журналов в памяти (при превышении удаляются самые старые). Хранилище (SQLite) пишет только
 /// изменения, но весь журнал пока загружается в память целиком — поэтому предел сохранён.
@@ -60,6 +61,7 @@ class AppData {
   List<RecurringTx> recurring; // правила повторяющихся операций
   List<LifeProcess> processes; // процессы жизни (длительные направления усилий)
   List<WeightEntry> weights; // замеры веса, по возрастанию времени
+  List<Account> accounts; // счета; пусто — капитал указан вручную (netWorth)
   int? heightCm; // рост, см; null — не указан
   String? bodyGoal; // цель по весу (BodyGoal); null — не выбрана
   List<LifeEvent> events; // журнал событий жизни (все версии, включая отменённые), по возрастанию времени
@@ -93,6 +95,7 @@ class AppData {
     List<LifeEvent>? events,
     List<LifeProcess>? processes,
     List<WeightEntry>? weights,
+    List<Account>? accounts,
     this.heightCm,
     this.bodyGoal,
     this.userName = '',
@@ -109,7 +112,8 @@ class AppData {
         snapshots = SplayTreeMap.of(snapshots ?? const {}),
         events = events ?? <LifeEvent>[],
         processes = processes ?? <LifeProcess>[],
-        weights = weights ?? <WeightEntry>[];
+        weights = weights ?? <WeightEntry>[],
+        accounts = accounts ?? <Account>[];
 
   factory AppData.defaults({DateTime? now}) => AppData(
         netWorth: 2450000,
@@ -185,6 +189,7 @@ class AppData {
         'recurring': recurring.map((r) => r.toJson()).toList(),
         'processes': processes.map((p) => p.toJson()).toList(),
         'weights': weights.map((w) => w.toJson()).toList(),
+        'accounts': accounts.map((a) => a.toJson()).toList(),
         'heightCm': heightCm,
         'bodyGoal': bodyGoal,
         'userName': userName,
@@ -353,6 +358,11 @@ class AppData {
         }
         return list..sort((a, b) => a.at.compareTo(b.at));
       }, <WeightEntry>[]),
+      accounts: pick<List<Account>>('accounts', (v) {
+        final list = uniqueCollection(v, 'accounts', Account.fromJson, (entry) => entry.id);
+        if (strict && list.length > 200) throw const FormatException('AppData: поле "accounts" превышает допустимый размер (200)');
+        return list;
+      }, <Account>[]),
       heightCm: pick<int?>('heightCm', (v) {
         final h = (v as num).toInt();
         if (h < 50 || h > 272 || v != h) throw FormatException('AppData: недопустимый рост $v');

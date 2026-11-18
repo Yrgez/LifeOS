@@ -52,7 +52,7 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('tab_material')));
     await tester.pumpAndSettle();
-    expect(find.text('Чистый капитал'), findsOneWidget);
+    expect(find.byKey(const ValueKey('net_worth')), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('tab_chronicle')));
     await tester.pumpAndSettle();

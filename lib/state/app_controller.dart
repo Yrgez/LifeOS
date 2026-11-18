@@ -93,9 +93,23 @@ class AppController extends ChangeNotifier {
     _notify();
   }
 
-  int get netWorth => _d.netWorth;
+  /// Капитал: сумма последних остатков счетов; пока счетов нет — значение, указанное вручную.
+  int get netWorth => _d.accounts.isEmpty ? _d.netWorth : _d.accounts.fold(0, (a, x) => a + x.latest.amount);
+
+  /// true — капитал считается по счетам (у каждой цифры есть дата снимка).
+  bool get netWorthFromAccounts => _d.accounts.isNotEmpty;
+
+  /// Доход и расходы в месяц, указанные вручную, — это ПЛАН (ориентир), а не факт. Факт — журнал операций.
   int get monthlyIncome => _d.monthlyIncome;
   int get monthlyExpense => _d.monthlyExpense;
+
+  /// Доход для автоматических чекпоинтов: последний полный месяц по журналу операций, если доходы в журнале есть;
+  /// иначе — плановый (указанный вручную).
+  int get incomeEvidence {
+    if (!_d.transactions.any((t) => t.isIncome)) return _d.monthlyIncome;
+    final prev = addMonths(_clock(), -1);
+    return monthTotals(_d.transactions, prev.year, prev.month).income;
+  }
   int get dailySteps => _d.dailySteps;
   int get activeCalories => _d.activeCalories;
   int get proteinGrams => _d.proteinGrams;
@@ -112,7 +126,7 @@ class AppController extends ChangeNotifier {
   Map<String, DaySnapshot> get snapshotsByDay => Map.unmodifiable(_d.snapshots);
 
   /// Хроника: события, смены статусов процессов и достижения — новые сверху.
-  List<ChronicleEntry> get chronicle => chronicleEntries(currentEvents: events, processes: _d.processes, achievements: _d.achievements);
+  List<ChronicleEntry> get chronicle => chronicleEntries(currentEvents: events, processes: _d.processes, achievements: _d.achievements, goals: _d.goals);
 
   /// Снимки последних [n] дней, заканчивая сегодняшним; null — данных за день нет.
   List<DaySnapshot?> lastDaysSnapshots(int n) {
@@ -147,7 +161,7 @@ class AppController extends ChangeNotifier {
   bool get onboardingDone => _d.onboardingDone;
 
   /// Нет ни журнала, ни операций, ни целей, ни капитала — приложение «пустое».
-  bool get isBlank => _d.workoutSets.isEmpty && _d.transactions.isEmpty && _d.goals.isEmpty && _d.netWorth == 0;
+  bool get isBlank => _d.workoutSets.isEmpty && _d.transactions.isEmpty && _d.goals.isEmpty && netWorth == 0;
 
   /// Денежные операции (по возрастанию времени). Менять только через методы контроллера.
   List<MoneyTx> get transactions => List.unmodifiable(_d.transactions);
@@ -327,7 +341,7 @@ class AppController extends ChangeNotifier {
     }
 
     set('n_salary', 'ЗП: ${_d.monthlyIncome ~/ 1000}к');
-    set('n_capital', 'Капитал ${(_d.netWorth / 1000000).toStringAsFixed(2)}М');
+    set('n_capital', 'Капитал ${(netWorth / 1000000).toStringAsFixed(2)}М');
     set('n_protein', 'Белок: ${_d.proteinGrams} г');
     set('n_activity', 'Шаги: ${(_d.dailySteps / 1000).toStringAsFixed(1)}k');
     final chest = _d.muscles['chest'];
@@ -367,7 +381,7 @@ class AppController extends ChangeNotifier {
       ..steps = keep(_d.dailySteps, x.steps)
       ..activeCalories = keep(_d.activeCalories, x.activeCalories)
       ..protein = keep(_d.proteinGrams, x.protein)
-      ..netWorth = _d.netWorth
+      ..netWorth = netWorth
       ..graphNodes = _d.graphNodes.length;
     if (activitySource != null && (x.steps != null || x.activeCalories != null)) x.activitySource = activitySource;
     _putSnapshot(x, before);
@@ -406,14 +420,17 @@ class AppController extends ChangeNotifier {
               id: achId,
               title: 'Достигнута цель: ${g.title}',
               date: monthYear(_clock()),
+              at: _clock(),
               category: g.category,
               iconKey: 'verified',
             ),
           );
         }
+        _logGoal(g, 'Цель достигнута');
       } else if (!g.isComplete && g.celebrated) {
         g.celebrated = false;
         _d.achievements.removeWhere((a) => a.id == achId);
+        _logGoal(g, 'Цель снова не выполнена (изменились чекпоинты или метрика)');
       }
     }
   }
@@ -718,9 +735,9 @@ class AppController extends ChangeNotifier {
       case MetricLink.oneRM:
         return _d.muscles[link.muscleId]?.maxWeight;
       case MetricLink.netWorth:
-        return _d.netWorth.toDouble();
+        return netWorth.toDouble();
       case MetricLink.income:
-        return _d.monthlyIncome.toDouble();
+        return incomeEvidence.toDouble();
       default:
         return null;
     }
@@ -745,6 +762,8 @@ class AppController extends ChangeNotifier {
     _commit(() {
       _d.goals.add(GlobalGoal(
         id: 'goal_${_clock().microsecondsSinceEpoch}',
+        createdAt: _clock(),
+        history: [GoalChange(_clock(), 'Цель поставлена')],
         title: t,
         category: category.trim().isEmpty ? 'Стратегия' : category.trim(),
         deadline: deadline == null ? null : dateOnly(deadline),
@@ -761,19 +780,41 @@ class AppController extends ChangeNotifier {
     final g = _goal(goalId);
     final t = title.trim();
     if (g == null || t.isEmpty) return false;
+    final cat = category.trim().isEmpty ? 'Стратегия' : category.trim();
+    final dl = deadline == null ? null : dateOnly(deadline);
+    String d(DateTime? x) => x == null ? 'без срока' : fmtDate(x);
     _commit(() {
+      if (g.title != t) _logGoal(g, 'Формулировка: «${g.title}» → «$t»');
+      if (g.deadline != dl) _logGoal(g, 'Срок: ${d(g.deadline)} → ${d(dl)}');
+      if (g.category != cat) _logGoal(g, 'Категория: ${g.category} → $cat');
       g.title = t;
-      g.category = category.trim().isEmpty ? 'Стратегия' : category.trim();
-      g.deadline = deadline == null ? null : dateOnly(deadline);
+      g.category = cat;
+      g.deadline = dl;
     });
     return true;
   }
+
+  /// Запись в журнал изменений цели (время — по часам контроллера, порядок не нарушается).
+  void _logGoal(GlobalGoal g, String text) {
+    var at = _clock();
+    if (g.history.isNotEmpty && at.isBefore(g.history.last.at)) at = g.history.last.at;
+    final x = text.length > GoalChange.maxText ? '${text.substring(0, GoalChange.maxText - 1)}…' : text;
+    g.history.add(GoalChange(at, x));
+  }
+
+  static String _planText(GoalPlan? p) => p == null
+      ? 'не задан'
+      : [if (p.minutes != null) '${(p.minutes! / 60).round()} ч', if (p.money != null) fmtCur(p.money!)].join(', ');
 
   /// План ресурсов цели (минуты, рубли); null или пустой план снимает его. Значения должны быть > 0.
   bool setGoalPlan(String goalId, GoalPlan? plan) {
     final g = _goal(goalId);
     if (g == null || (plan != null && !plan.isValid)) return false;
-    _commit(() => g.plan = plan == null || plan.isEmpty ? null : plan);
+    final next = plan == null || plan.isEmpty ? null : plan;
+    _commit(() {
+      if (_planText(g.plan) != _planText(next)) _logGoal(g, 'План ресурсов: ${_planText(g.plan)} → ${_planText(next)}');
+      g.plan = next;
+    });
     return true;
   }
 
@@ -818,6 +859,7 @@ class AppController extends ChangeNotifier {
           id: 'ach_${_clock().microsecondsSinceEpoch}',
           title: t,
           date: monthYear(_clock()),
+          at: _clock(),
           category: category.trim().isEmpty ? 'Личный рекорд' : category.trim(),
         ),
       );
@@ -1002,6 +1044,49 @@ class AppController extends ChangeNotifier {
       ids.forEach(_pending.deleteEvent);
     });
     return ids.length;
+  }
+
+  // ---------------- счета ----------------
+
+  List<Account> get accounts => List.unmodifiable(_d.accounts);
+
+  /// Новый счёт с начальным остатком на дату [at] (по умолчанию — сейчас). Возвращает id или null.
+  String? addAccount(String name, int balance, {DateTime? at}) {
+    final n = name.trim();
+    final now = _clock();
+    final when = at ?? now;
+    if (n.isEmpty || n.length > Account.maxName || when.isAfter(now.add(const Duration(minutes: 5))) || _d.accounts.length >= 200) return null;
+    final a = Account(id: 'acc_${now.microsecondsSinceEpoch}_${_random.nextInt(1 << 20)}', name: n, history: [BalanceSnapshot(when, balance)]);
+    _commit(() => _d.accounts.add(a));
+    return a.id;
+  }
+
+  /// Новый снимок остатка (прежние сохраняются). Дата — не раньше последнего снимка и не в будущем.
+  bool setAccountBalance(String id, int balance, {DateTime? at}) {
+    final i = _d.accounts.indexWhere((a) => a.id == id);
+    final now = _clock();
+    final when = at ?? now;
+    if (i < 0 || when.isAfter(now.add(const Duration(minutes: 5)))) return false;
+    final a = _d.accounts[i];
+    if (when.isBefore(a.latest.at) || a.history.length >= Account.maxHistory) return false;
+    _commit(() => a.history.add(BalanceSnapshot(when, balance)));
+    return true;
+  }
+
+  bool renameAccount(String id, String name) {
+    final n = name.trim();
+    final i = _d.accounts.indexWhere((a) => a.id == id);
+    if (i < 0 || n.isEmpty || n.length > Account.maxName) return false;
+    _commit(() => _d.accounts[i].name = n);
+    return true;
+  }
+
+  /// Удаляет счёт вместе с историей (явное действие с подтверждением в интерфейсе).
+  bool removeAccount(String id) {
+    final i = _d.accounts.indexWhere((a) => a.id == id);
+    if (i < 0) return false;
+    _commit(() => _d.accounts.removeAt(i));
+    return true;
   }
 
   // ---------------- быстрая запись ----------------
@@ -1216,8 +1301,9 @@ class AppController extends ChangeNotifier {
 
   // ---------------- финансы ----------------
 
+  /// Капитал правится вручную, только пока счетов нет; доход и расходы здесь — плановые.
   void updateWealth({int? netWorth, int? income, int? expense}) => _commit(() {
-        if (netWorth != null) _d.netWorth = netWorth;
+        if (netWorth != null && _d.accounts.isEmpty) _d.netWorth = netWorth;
         if (income != null) _d.monthlyIncome = max(0, income);
         if (expense != null) _d.monthlyExpense = max(0, expense);
       });

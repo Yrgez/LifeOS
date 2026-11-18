@@ -51,7 +51,7 @@ class SqliteAppRepository implements AppRepository {
     'userName', 'stepsGoal', 'proteinGoal', 'onboardingDone', 'currency', 'heightCm', 'bodyGoal',
   ];
 
-  static const _listCollections = ['goals', 'achievements', 'salaryHistory', 'graphNodes', 'graphEdges', 'recurring', 'processes', 'weights'];
+  static const _listCollections = ['goals', 'achievements', 'salaryHistory', 'graphNodes', 'graphEdges', 'recurring', 'processes', 'weights', 'accounts'];
 
   // ---------------- открытие и схема ----------------
 
