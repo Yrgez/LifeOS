@@ -240,7 +240,9 @@ class _EventDialogState extends State<_EventDialog> {
               initialValue: _kind,
               decoration: _dec('Вид события'),
               items: [
-                for (final e in LifeEventKind.labels.entries) DropdownMenuItem(value: e.key, child: Text(e.value)),
+                // «обзор» создаётся только экраном обзора недели
+                  for (final e in LifeEventKind.labels.entries)
+                    if (e.key != LifeEventKind.review || _kind == LifeEventKind.review) DropdownMenuItem(value: e.key, child: Text(e.value)),
               ],
               onChanged: (v) => setState(() => _kind = v ?? _kind),
             ),

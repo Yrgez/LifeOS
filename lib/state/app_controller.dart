@@ -13,6 +13,8 @@ import '../core/finance_categories.dart';
 import '../core/finance_stats.dart';
 import '../core/goal_stats.dart';
 import '../core/life_events.dart';
+import '../core/memories.dart';
+import '../core/review.dart';
 import '../core/recovery_stats.dart';
 import '../core/resource_stats.dart';
 import '../core/utils.dart';
@@ -1001,6 +1003,49 @@ class AppController extends ChangeNotifier {
     });
     return ids.length;
   }
+
+  // ---------------- обзор недели и «в этот день» ----------------
+
+  /// Факты для обзора: 7 дней, открытые процессы, прошлый обзор.
+  ReviewFacts get weekReviewFacts => reviewFacts(breakdown: resourceBreakdownFor(7), current: events, processes: _d.processes);
+
+  /// Пора ли предложить обзор (прошлого нет или он старше недели).
+  bool get weekReviewDue => reviewDue(events, _clock());
+
+  /// Сохраняет обзор событием вида «обзор» и применяет решения по процессам (новый статус с пометкой).
+  /// Возвращает id события или null (ни одного ответа и ни одного решения — сохранять нечего).
+  String? saveWeekReview(List<String> answers, {Map<String, String> processDecisions = const {}}) {
+    final note = composeReviewNote(answers);
+    final changes = {
+      for (final e in processDecisions.entries)
+        if (processById(e.key) != null && ProcessStatus.isValid(e.value) && processById(e.key)!.status != e.value) e.key: e.value,
+    };
+    if (note.isEmpty && changes.isEmpty) return null;
+    final b = resourceBreakdownFor(7);
+    final last = b.to.subtract(const Duration(days: 1));
+    final id = addEvent(
+      title: 'Обзор недели ${b.from.day}.${b.from.month.toString().padLeft(2, '0')}–${last.day}.${last.month.toString().padLeft(2, '0')}',
+      dimensions: LifeDimension.all,
+      kind: LifeEventKind.review,
+      note: note,
+    );
+    if (id == null) return null;
+    for (final e in changes.entries) {
+      setProcessStatus(e.key, e.value, note: 'по итогам обзора недели');
+    }
+    return id;
+  }
+
+  /// «В этот день»: год (или месяц) назад → сейчас, только факты. null — сравнивать не с чем.
+  Memory? get memory => memoryFor(
+        now: _clock(),
+        weights: _d.weights,
+        sets: _d.workoutSets,
+        muscles: _d.muscles,
+        snapshots: _d.snapshots,
+        currentEvents: events,
+        processes: _d.processes,
+      );
 
   // ---------------- процессы ----------------
   //

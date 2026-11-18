@@ -37,6 +37,7 @@ class LifeEventKind {
   static const decision = 'decision'; // решение и его основания
   static const change = 'change'; // изменение положения: переезд, новая работа, травма
   static const observation = 'observation'; // наблюдение о состоянии
+  static const review = 'review'; // обзор периода: факты и выводы человека (см. core/review.dart)
 
   static const labels = {
     action: 'Действие',
@@ -44,6 +45,7 @@ class LifeEventKind {
     decision: 'Решение',
     change: 'Изменение',
     observation: 'Наблюдение',
+    review: 'Обзор',
   };
   static bool isValid(String k) => labels.containsKey(k);
 }

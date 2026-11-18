@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../../core/currency.dart';
 import '../../core/life_events.dart';
+import '../../core/memories.dart';
 import '../../core/utils.dart';
 import '../../models/life_event.dart';
 import '../../models/life_process.dart';
@@ -15,6 +16,7 @@ import '../widgets/toast.dart';
 import 'events_screen.dart';
 import 'processes_screen.dart';
 import 'resources_screen.dart';
+import 'review_screen.dart';
 import 'settings_screen.dart';
 
 /// Вкладка «Сегодня» (PRESENT): плитки состояния дня, идущие процессы, ресурсы недели. Отсюда же — запись события.
@@ -86,6 +88,30 @@ class HubScreen extends StatelessWidget {
               _RoundButton(key: const ValueKey('quick_event'), icon: Icons.add, tooltip: 'Записать событие', filled: true, onTap: () => _quickEvent(context)),
             ],
           ),
+          if (c.weekReviewDue) ...[
+            const SizedBox(height: 16),
+            _Tile(
+              key: const ValueKey('review_tile'),
+              onTap: () => _push(context, ReviewScreen(controller: c)),
+              child: const Row(
+                children: [
+                  Icon(Icons.event_note_outlined, color: AppColors.text),
+                  SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Обзор недели', style: _label),
+                        SizedBox(height: 2),
+                        Text('Факты за 7 дней и три вопроса — пара минут', style: _sub),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_right, color: AppColors.muted),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 20),
           IntrinsicHeight(
             child: Row(
@@ -105,6 +131,10 @@ class HubScreen extends StatelessWidget {
               onAll: () => _push(context, ProcessesScreen(controller: c))),
           const SizedBox(height: 12),
           _ResourcesTile(controller: c, onTap: () => _push(context, ResourcesScreen(controller: c))),
+          if (c.memory != null) ...[
+            const SizedBox(height: 12),
+            _MemoryTile(memory: c.memory!),
+          ],
           const SizedBox(height: 16),
           Row(
             children: [
@@ -509,6 +539,32 @@ class _HealthScreen extends StatelessWidget {
         body: ListenableBuilder(
           listenable: controller,
           builder: (context, _) => ListView(padding: const EdgeInsets.all(16), children: [HealthCard(controller: controller)]),
+        ),
+      );
+}
+
+/// «В этот день»: было → стало, только факты из журналов.
+class _MemoryTile extends StatelessWidget {
+  final Memory memory;
+  const _MemoryTile({required this.memory});
+
+  @override
+  Widget build(BuildContext context) => _Tile(
+        key: const ValueKey('memory_tile'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${memory.daysAgo >= 365 ? 'Год назад' : 'Месяц назад'} · ${memory.day.day} ${HubScreen._monthGen(memory.day)} ${memory.day.year}',
+              style: _label,
+            ),
+            const SizedBox(height: 6),
+            for (final l in memory.lines)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(l.text, style: const TextStyle(fontSize: 14, color: Color(0xFFC8C8CC))),
+              ),
+          ],
         ),
       );
 }

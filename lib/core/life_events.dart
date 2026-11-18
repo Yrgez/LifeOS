@@ -72,11 +72,12 @@ ResourceSummary summarizeResources(
         (dimension == null || e.touches(dimension)) &&
         (processId == null || e.processIds.contains(processId))));
 
-/// Сводка по уже отобранным событиям.
+/// Сводка по уже отобранным событиям. Обзоры не учитываются: это осмысление, а не трата ресурсов.
 ResourceSummary summarizeEvents(Iterable<LifeEvent> events) {
   var n = 0, min = 0, minK = 0, rub = 0, rubK = 0;
   final energy = <int, int>{};
   for (final e in events) {
+    if (e.kind == LifeEventKind.review) continue;
     n++;
     if (e.cost.minutes != null) {
       min += e.cost.minutes!;
