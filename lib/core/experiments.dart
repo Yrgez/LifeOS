@@ -1,4 +1,5 @@
 import '../models/body.dart';
+import '../models/day_checkin.dart';
 import '../models/day_snapshot.dart';
 import '../models/experiment.dart';
 import '../models/life_event.dart';
@@ -15,8 +16,11 @@ class ExperimentSide {
   final List<({String day, num value})> daily; // дни с данными — для дневных показателей
   final ResourceSummary? events; // для энергии и процесса
   final int daysWithEvents; // для процесса: в скольких днях были события
+  final Map<int, int>? ratings; // для оценки дня: оценка → число дней (распределение, без среднего)
 
-  const ExperimentSide({required this.from, required this.to, this.daily = const [], this.events, this.daysWithEvents = 0});
+  const ExperimentSide({required this.from, required this.to, this.daily = const [], this.events, this.daysWithEvents = 0, this.ratings});
+
+  int get ratedDays => ratings?.values.fold<int>(0, (a, b) => a + b) ?? 0;
 
   /// Календарных дней в периоде (переход на летнее время не сбивает счёт).
   int get days {
@@ -54,12 +58,21 @@ ExperimentResult experimentResult(
   required List<WeightEntry> weights,
   required List<LifeEvent> currentEvents,
   required DateTime now,
+  Map<String, DayCheckIn> checkIns = const {},
 }) {
   final tomorrow = DateTime(now.year, now.month, now.day + 1);
   DateTime cap(DateTime t) => t.isAfter(tomorrow) ? tomorrow : t;
   ExperimentSide side(DateTime from, DateTime to) {
     to = cap(to);
     bool inside(DateTime t) => !t.isBefore(from) && t.isBefore(to);
+    if (x.metric == ExperimentMetric.dayRating) {
+      final r = <int, int>{};
+      for (var d = from; d.isBefore(to); d = DateTime(d.year, d.month, d.day + 1)) {
+        final v = checkIns[dayKey(d)]?.rating;
+        if (v != null) r[v] = (r[v] ?? 0) + 1;
+      }
+      return ExperimentSide(from: from, to: to, ratings: r);
+    }
     if (x.metric == ExperimentMetric.weight) {
       final last = <String, double>{}; // последний замер дня
       for (final w in weights) {

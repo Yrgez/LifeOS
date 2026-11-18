@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/experiments.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
+import '../../models/day_checkin.dart';
 import '../../models/experiment.dart';
 import '../../models/life_process.dart';
 import '../../state/app_controller.dart';
@@ -335,7 +336,8 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
   Widget _comparison(Experiment x, ExperimentResult r) {
     final sides = [('ДО', r.before), if (r.after != null) ('ПОСЛЕ', r.after!)];
     final daily = ExperimentMetric.isDaily(x.metric);
-    final thin = daily && sides.any((s) => s.$2.values.length < kExperimentMinDays);
+    final thin = (daily && sides.any((s) => s.$2.values.length < kExperimentMinDays)) ||
+        (x.metric == ExperimentMetric.dayRating && sides.any((s) => s.$2.ratedDays < kExperimentMinDays));
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: tileDecoration(),
@@ -389,6 +391,18 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
           const Text('медиана по дням', style: muted),
           if (s.min != null && s.min != s.max) Text('от ${fmtExperimentValue(x.metric, s.min!)} до ${fmtExperimentValue(x.metric, s.max!)}', style: muted),
           Text('дней с данными: ${s.values.length} из ${s.days}', style: muted),
+        ],
+      );
+    }
+    if (x.metric == ExperimentMetric.dayRating) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: _caption),
+          Text(range, style: muted),
+          const SizedBox(height: 6),
+          Text(s.ratedDays == 0 ? '—' : ratingDistribution(s.ratings!), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+          Text('дней с оценкой: ${s.ratedDays} из ${s.days}', style: muted),
         ],
       );
     }

@@ -26,6 +26,7 @@ import '../data/app_repository.dart';
 import '../data/change_set.dart';
 import '../data/health_source.dart';
 import '../models/body.dart';
+import '../models/day_checkin.dart';
 import '../models/day_snapshot.dart';
 import '../models/experiment.dart';
 import '../models/life_event.dart';
@@ -33,6 +34,7 @@ import '../models/life_process.dart';
 import '../models/models.dart';
 
 part 'ops/body_ops.dart';
+part 'ops/checkin_ops.dart';
 part 'ops/goal_ops.dart';
 part 'ops/event_ops.dart';
 part 'ops/process_ops.dart';
@@ -790,6 +792,7 @@ class AppController extends ChangeNotifier {
         'days' => snapshotsCsv(_d.snapshots.values),
         'weights' => weightsCsv(_d.weights),
         'sets' => setsCsv(_d.workoutSets, _d.muscles),
+        'checkins' => checkInsCsv(_d.checkIns),
         _ => null,
       };
 
@@ -801,6 +804,7 @@ class AppController extends ChangeNotifier {
         snapshots: _d.snapshots,
         currentEvents: events,
         processes: _d.processes,
+        checkIns: checkInsByDay,
       );
 
   String exportBackup() => const JsonEncoder.withIndent('  ').convert(_d.toJson());

@@ -5,6 +5,7 @@ import '../../core/currency.dart';
 import '../../core/life_events.dart';
 import '../../core/memories.dart';
 import '../../core/utils.dart';
+import '../../models/day_checkin.dart';
 import '../../models/life_event.dart';
 import '../../models/life_process.dart';
 import '../../security/security_service.dart';
@@ -13,6 +14,7 @@ import '../widgets/health_card.dart';
 import '../widgets/event_dialog.dart';
 import '../widgets/process_ui.dart';
 import '../widgets/toast.dart';
+import 'checkin_screen.dart';
 import 'events_screen.dart';
 import 'experiments_screen.dart';
 import 'processes_screen.dart';
@@ -113,6 +115,7 @@ class HubScreen extends StatelessWidget {
               ),
             ),
           ],
+          _CheckInTile(controller: c, push: (w) => _push(context, w)),
           const SizedBox(height: 20),
           IntrinsicHeight(
             child: Row(
@@ -569,6 +572,81 @@ class _HealthScreen extends StatelessWidget {
 }
 
 /// «В этот день»: было → стало, только факты из журналов.
+/// Вечерняя отметка дня: вопрос с оценкой в одно нажатие, после — короткая строка с итогом.
+class _CheckInTile extends StatelessWidget {
+  final AppController controller;
+  final void Function(Widget) push;
+  const _CheckInTile({required this.controller, required this.push});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = controller;
+    final now = c.now;
+    final ask = c.checkInPromptDay;
+    if (ask != null) {
+      final today = DateTime(now.year, now.month, now.day) == ask;
+      return Padding(
+        padding: const EdgeInsets.only(top: 16),
+        child: _Tile(
+          key: const ValueKey('checkin_tile'),
+          onTap: () => push(CheckInScreen(controller: c, day: ask)),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(today ? 'Как прошёл день?' : 'Как прошёл вчерашний день?', style: _label),
+              const SizedBox(height: 2),
+              const Text(DayCheckIn.ratingHint, style: _sub),
+              const SizedBox(height: 12),
+              RatingPicker(
+                value: null,
+                keyPrefix: 'hub_rating',
+                onSelected: (r) {
+                  c.setCheckIn(ask, rating: r);
+                  ScaffoldMessenger.of(context)
+                    ..hideCurrentSnackBar()
+                    ..showSnackBar(SnackBar(
+                      content: Text('${checkInDayLabel(ask, now)}: $r из ${DayCheckIn.maxRating}'),
+                      action: SnackBarAction(label: 'Метки и заметка', onPressed: () => push(CheckInScreen(controller: c, day: ask))),
+                    ));
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    final done = c.checkInFor(now);
+    if (done == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: _Tile(
+        key: const ValueKey('checkin_done'),
+        onTap: () => push(CheckInScreen(controller: c, day: now)),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('День отмечен', style: _sub),
+                  const SizedBox(height: 2),
+                  Text(
+                    [if (done.rating != null) '${done.rating} из ${DayCheckIn.maxRating}', ...done.tags].join(' · '),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: _label,
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.muted),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _MemoryTile extends StatelessWidget {
   final Memory memory;
   const _MemoryTile({required this.memory});

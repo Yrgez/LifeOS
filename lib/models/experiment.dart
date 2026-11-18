@@ -13,8 +13,9 @@ class ExperimentMetric {
   static const weight = 'weight';
   static const energy = 'energy'; // оценки энергии в событиях
   static const process = 'process'; // события процесса
+  static const dayRating = 'day'; // вечерняя оценка дня 1–5
 
-  static const all = [sleep, steps, weight, protein, calories, energy, process];
+  static const all = [dayRating, sleep, steps, weight, protein, calories, energy, process];
   static const labels = {
     steps: 'Шаги за день',
     sleep: 'Сон за ночь',
@@ -23,6 +24,7 @@ class ExperimentMetric {
     weight: 'Вес',
     energy: 'Энергия в событиях (1–5)',
     process: 'События процесса',
+    dayRating: 'Оценка дня (1–5)',
   };
 
   /// Показатель — значение за день (можно смотреть распределение по дням).

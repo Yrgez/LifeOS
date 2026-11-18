@@ -113,7 +113,7 @@ extension ProcessOps on AppController {
   }
 
   ExperimentResult experimentResultOf(Experiment x) =>
-      experimentResult(x, snapshots: _d.snapshots, weights: _d.weights, currentEvents: events, now: _clock());
+      experimentResult(x, snapshots: _d.snapshots, weights: _d.weights, currentEvents: events, now: _clock(), checkIns: checkInsByDay);
 
   /// Новый эксперимент. Начало — не раньше чем [Experiment.maxDays] дней назад (период «до» должен быть
   /// уже в журнале, а не придуман задним числом) и не позже чем через 30 дней. Возвращает id или null.
