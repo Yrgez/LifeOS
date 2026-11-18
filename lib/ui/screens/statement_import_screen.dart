@@ -7,7 +7,7 @@ import '../../core/statement_import.dart';
 import '../../core/text_decoding.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
-import '../../data/file_picker_source.dart';
+import '../../data/file_selector_source.dart';
 import '../../data/file_source.dart';
 import '../../state/app_controller.dart';
 import '../widgets/confirm_dialog.dart';
@@ -21,7 +21,7 @@ class StatementImportScreen extends StatefulWidget {
 
   final AppController controller;
   final FileSource files;
-  const StatementImportScreen({super.key, required this.controller, this.files = const FilePickerSource()});
+  const StatementImportScreen({super.key, required this.controller, this.files = const FileSelectorSource(maxBytes: maxFileBytes)});
 
   @override
   State<StatementImportScreen> createState() => _StatementImportScreenState();
@@ -57,6 +57,9 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
     PickedFile? f;
     try {
       f = await widget.files.pickStatement();
+    } on FileTooLargeException {
+      if (mounted) showToast(context, 'Файл больше 5 МБ — выгрузите выписку за меньший период');
+      return;
     } catch (_) {
       if (mounted) showToast(context, 'Не удалось открыть файл. Попробуйте ещё раз или вставьте текст из буфера');
       return;

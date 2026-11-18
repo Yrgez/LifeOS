@@ -93,6 +93,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('больше 5 МБ'), findsOneWidget);
 
+      // реализация на плагине проверяет размер до чтения и сообщает об этом исключением
+      files.error = const FileTooLargeException();
+      await tester.tap(find.byKey(const ValueKey('import_file')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('больше 5 МБ'), findsOneWidget);
+
       files.error = StateError('нет доступа');
       await tester.tap(find.byKey(const ValueKey('import_file')));
       await tester.pumpAndSettle();

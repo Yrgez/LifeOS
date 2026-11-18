@@ -1,12 +1,17 @@
 import 'dart:typed_data';
 
-/// Выбор файла пользователем. Плагин — только в реализации (`file_picker_source.dart`): интерфейс позволяет
+/// Выбор файла пользователем. Плагин — только в реализации (`file_selector_source.dart`): интерфейс позволяет
 /// тестировать экраны без устройства и заменить плагин, не трогая логику.
 
 class PickedFile {
   final String name;
   final Uint8List bytes;
   const PickedFile(this.name, this.bytes);
+}
+
+/// Файл больше допустимого — не читается.
+class FileTooLargeException implements Exception {
+  const FileTooLargeException();
 }
 
 abstract class FileSource {
