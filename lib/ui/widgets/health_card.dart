@@ -6,6 +6,7 @@ import '../../state/app_controller.dart';
 import '../painters/chart_painters.dart';
 import 'form_dialog.dart';
 import 'health_actions.dart';
+import 'process_ui.dart';
 
 /// Карточка «Здоровье и активность»: шаги, калории, белок, 7-дневная динамика, Health Connect.
 class HealthCard extends StatefulWidget {
@@ -97,6 +98,14 @@ class _HealthCardState extends State<HealthCard> {
             ],
           ),
           const SizedBox(height: 14),
+          if (c.snapshotFor(c.now)?.sleepMinutes != null) ...[
+            Text(
+              'Сон прошлой ночью: ${fmtMinutes(c.snapshotFor(c.now)!.sleepMinutes!)} · Health Connect',
+              key: const ValueKey('sleep_line'),
+              style: const TextStyle(fontSize: 13),
+            ),
+            const SizedBox(height: 10),
+          ],
           const Text('ДИНАМИКА ШАГОВ ЗА НЕДЕЛЮ:', style: TextStyle(color: AppColors.muted, fontSize: 10, fontWeight: FontWeight.bold)),
           const SizedBox(height: 6),
           SizedBox(

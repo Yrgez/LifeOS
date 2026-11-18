@@ -21,12 +21,13 @@ class WeightEntry {
   final String id;
   final DateTime at;
   final double kg;
+  final String source; // 'manual' — введено вручную, 'health' — Health Connect
 
-  const WeightEntry({required this.id, required this.at, required this.kg});
+  const WeightEntry({required this.id, required this.at, required this.kg, this.source = 'manual'});
 
-  bool get isValid => id.trim().isNotEmpty && kg.isFinite && kg >= minKg && kg <= maxKg;
+  bool get isValid => id.trim().isNotEmpty && kg.isFinite && kg >= minKg && kg <= maxKg && (source == 'manual' || source == 'health');
 
-  Map<String, dynamic> toJson() => {'id': id, 't': at.millisecondsSinceEpoch, 'kg': kg};
+  Map<String, dynamic> toJson() => {'id': id, 't': at.millisecondsSinceEpoch, 'kg': kg, if (source != 'manual') 'src': source};
 
   factory WeightEntry.fromJson(Map<String, dynamic> j) => tryFromJson(j) ?? (throw const FormatException('WeightEntry'));
 
@@ -36,7 +37,9 @@ class WeightEntry {
     final t = j['t'];
     final kg = j['kg'];
     if (id is! String || t is! num || !t.isFinite || t != t.roundToDouble() || t.abs() > _maxMs || kg is! num) return null;
-    final e = WeightEntry(id: id, at: DateTime.fromMillisecondsSinceEpoch(t.toInt()), kg: kg.toDouble());
+    final src = j['src'] ?? 'manual';
+    if (src is! String) return null;
+    final e = WeightEntry(id: id, at: DateTime.fromMillisecondsSinceEpoch(t.toInt()), kg: kg.toDouble(), source: src);
     return e.isValid ? e : null;
   }
 }

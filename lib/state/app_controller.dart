@@ -14,6 +14,7 @@ import '../core/finance_stats.dart';
 import '../core/goal_stats.dart';
 import '../core/life_events.dart';
 import '../core/memories.dart';
+import '../core/open_export.dart';
 import '../core/review.dart';
 import '../core/recovery_stats.dart';
 import '../core/resource_stats.dart';
@@ -388,15 +389,16 @@ class AppController extends ChangeNotifier {
   }
 
   /// Данные источника за прошедший день (Health Connect): дополняют снимок того дня.
-  void _recordPastActivity(DateTime day, {int? steps, int? calories}) {
-    if (steps == null && calories == null) return;
+  void _recordPastActivity(DateTime day, {int? steps, int? calories, int? sleep}) {
+    if (steps == null && calories == null && sleep == null) return;
     final key = dayKey(day);
     final existing = _d.snapshots[key];
     final x = existing ?? DaySnapshot(day: key);
     final before = existing?.signature;
     if (steps != null) x.steps = steps;
     if (calories != null) x.activeCalories = calories;
-    x.activitySource = 'health';
+    if (sleep != null) x.sleepMinutes = sleep;
+    if (steps != null || calories != null) x.activitySource = 'health';
     _putSnapshot(x, before);
   }
 
@@ -548,6 +550,25 @@ class AppController extends ChangeNotifier {
 
   /// ИМТ по последнему замеру и росту; null — нет веса или роста.
   double? get bodyMassIndex => bmi(latestWeightEntry?.kg, _d.heightCm);
+
+  /// Вес из Health Connect за день: один замер с источником «health» на день (обновляется новым значением
+  /// источника). Ручные замеры не трогаются — видны оба.
+  void _recordHealthWeight(DateTime day, double kg) {
+    final key = dayKey(day);
+    final i = _d.weights.indexWhere((w) => w.source == 'health' && dayKey(w.at) == key);
+    final v = round1(kg);
+    if (i >= 0 && _d.weights[i].kg == v) return;
+    final at = i >= 0 ? _d.weights[i].at : DateTime(day.year, day.month, day.day, 8);
+    final e = WeightEntry(id: i >= 0 ? _d.weights[i].id : 'w_hc_$key', at: at, kg: v, source: 'health');
+    if (!e.isValid) return;
+    if (i >= 0) {
+      _d.weights[i] = e;
+    } else {
+      _d.weights
+        ..add(e)
+        ..sort((a, b) => a.at.compareTo(b.at));
+    }
+  }
 
   /// Записывает замер веса. [at] — когда взвешивались (не в будущем). Возвращает id или null.
   String? addWeight(double kg, {DateTime? at}) {
@@ -1595,14 +1616,16 @@ class AppController extends ChangeNotifier {
           final idx = 6 - (dayIndex(today) - dayIndex(d.day));
           if (idx < 0 || idx > 6) continue;
           if (idx < 6) {
-            _recordPastActivity(d.day, steps: d.steps, calories: d.activeCalories);
+            _recordPastActivity(d.day, steps: d.steps, calories: d.activeCalories, sleep: d.sleepMinutes);
           } else {
             if (d.steps != null) _d.dailySteps = d.steps!;
             if (d.activeCalories != null) _d.activeCalories = d.activeCalories!;
             final p = d.protein;
             if (p != null && p > 0) _d.proteinGrams = p;
             _touchToday(activitySource: 'health');
+            if (d.sleepMinutes != null) _recordPastActivity(d.day, sleep: d.sleepMinutes);
           }
+          if (d.weightKg != null) _recordHealthWeight(d.day, d.weightKg!);
         }
         _d.lastHealthSyncMs = now.millisecondsSinceEpoch;
       });
@@ -1701,6 +1724,27 @@ class AppController extends ChangeNotifier {
   }
 
   // ---------------- резервная копия ----------------
+
+  /// Открытый экспорт: CSV-таблица по [kind] (events, transactions, days, weights, sets) или null — нет такого набора.
+  String? exportCsv(String kind) => switch (kind) {
+        'events' => eventsCsv(_d.events,
+            goalTitles: {for (final g in _d.goals) g.id: g.title}, processTitles: {for (final p in _d.processes) p.id: p.title}),
+        'transactions' => transactionsCsv(_d.transactions),
+        'days' => snapshotsCsv(_d.snapshots.values),
+        'weights' => weightsCsv(_d.weights),
+        'sets' => setsCsv(_d.workoutSets, _d.muscles),
+        _ => null,
+      };
+
+  /// Хроника в Markdown — читается без приложения.
+  String exportChronicleMarkdown() => chronicleMarkdown(
+        userName: _d.userName,
+        now: _clock(),
+        entries: chronicle,
+        snapshots: _d.snapshots,
+        currentEvents: events,
+        processes: _d.processes,
+      );
 
   String exportBackup() => const JsonEncoder.withIndent('  ').convert(_d.toJson());
 

@@ -9,6 +9,7 @@ import '../../models/life_event.dart';
 import '../../models/models.dart';
 import '../../state/app_controller.dart';
 import '../widgets/event_dialog.dart';
+import '../widgets/process_ui.dart';
 import 'events_screen.dart';
 
 /// Хроника (PAST): лента жизни по месяцам и дням — события, процессы, достижения и состояние дня.
@@ -175,6 +176,7 @@ class _MonthSection extends StatelessWidget {
         if (s.steps != null) 'шаги ${fmtMoney(s.steps!)}',
         if (s.activeCalories != null) '${s.activeCalories} ккал',
         if (s.protein != null) 'белок ${s.protein} г',
+        if (s.sleepMinutes != null) 'сон ${fmtMinutes(s.sleepMinutes!)}',
         if (s.netWorth != null) 'капитал ${fmtCur(s.netWorth!)}',
       ].join(' · ');
 }
