@@ -1,4 +1,5 @@
 import '../models/body.dart';
+import '../models/day_checkin.dart';
 import '../models/day_snapshot.dart';
 import '../models/life_event.dart';
 import '../models/life_process.dart';
@@ -77,6 +78,12 @@ String setsCsv(List<WorkoutSet> sets, Map<String, MuscleGroup> muscles) => _csv(
       [for (final s in sets) [_dt(s.at), muscles[s.muscleId]?.name ?? s.muscleId, s.weight, s.reps, round1(oneRM(s.weight, s.reps))]],
     );
 
+/// Отметки дня — все версии: правка видна как новая строка, заменяющая прежнюю.
+String checkInsCsv(List<DayCheckIn> all) => _csv(
+      ['id', 'день', 'оценка', 'метки', 'заметка', 'записано', 'заменяет'],
+      [for (final c in all) [c.id, c.day, c.rating, c.tags.join('; '), c.note, _dt(c.recordedAt), c.supersedesId]],
+    );
+
 /// Хроника в Markdown: месяцы → дни → записи; заметки событий — цитатой. Новые сверху, как в приложении.
 String chronicleMarkdown({
   required String userName,
@@ -85,6 +92,7 @@ String chronicleMarkdown({
   required Map<String, DaySnapshot> snapshots,
   required List<LifeEvent> currentEvents,
   required List<LifeProcess> processes,
+  Map<String, DayCheckIn> checkIns = const {},
 }) {
   final notes = {for (final e in currentEvents) e.id: e.note};
   final b = StringBuffer()
@@ -92,7 +100,7 @@ String chronicleMarkdown({
     ..writeln()
     ..writeln('Выгружено из LIFE OS ${fmtDate(now)}. Только записанные факты; «нет данных» не означает ноль.')
     ..writeln();
-  for (final m in groupChronicle(entries, snapshots: snapshots)) {
+  for (final m in groupChronicle(entries, snapshots: snapshots, checkIns: checkIns)) {
     b.writeln('## ${monthYear(m.month)}');
     b.writeln();
     for (final e in m.monthOnly) {
@@ -110,6 +118,12 @@ String chronicleMarkdown({
           if (s.netWorth != null) 'капитал ${s.netWorth}',
         ];
         if (parts.isNotEmpty) b.writeln('_${parts.join(' · ')}_');
+      }
+      final ch = d.checkIn;
+      if (ch != null) {
+        final head = [if (ch.rating != null) 'день ${ch.rating} из ${DayCheckIn.maxRating}', ...ch.tags];
+        if (head.isNotEmpty) b.writeln('**${head.join(' · ')}**');
+        if (ch.note.isNotEmpty) b.writeln('> ${ch.note.replaceAll('\n', '\n> ')}');
       }
       b.writeln();
       for (final e in d.entries) {

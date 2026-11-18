@@ -114,7 +114,7 @@ void main() {
       await c2.load();
       expect(jsonEncode(c2.experimentById(id)!.toJson()), jsonEncode(c.experimentById(id)!.toJson()));
       final j = jsonDecode(c.exportBackup()) as Map<String, dynamic>;
-      expect(j['schemaVersion'], 15);
+      expect(j['schemaVersion'], greaterThanOrEqualTo(15));
       expect(() => AppData.fromJson({...j, 'experiments': [{'id': 'x'}]}, strict: true), throwsFormatException);
     });
   });

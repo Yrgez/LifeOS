@@ -291,6 +291,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _tile(Icons.article_outlined, 'Хроника (Markdown)', 'Текст: месяцы, дни, события и заметки', onTap: () => _copyExport('Хроника', c.exportChronicleMarkdown())),
           for (final e in const {
             'events': ('События (CSV)', 'Все версии и отменённые — с пометками'),
+            'checkins': ('Отметки дня (CSV)', 'Оценка, метки, заметка; все версии'),
             'transactions': ('Операции (CSV)', 'Доходы и расходы'),
             'days': ('Дни (CSV)', 'Шаги, сон, белок, капитал по дням'),
             'weights': ('Вес (CSV)', 'Замеры с источником'),

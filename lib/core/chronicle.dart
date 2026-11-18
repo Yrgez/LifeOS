@@ -1,3 +1,4 @@
+import '../models/day_checkin.dart';
 import '../models/day_snapshot.dart';
 import '../models/life_event.dart';
 import '../models/life_process.dart';
@@ -47,7 +48,8 @@ class ChronicleDay {
   final String day; // yyyy-MM-dd
   final List<ChronicleEntry> entries; // по убыванию времени
   final DaySnapshot? snapshot;
-  const ChronicleDay(this.day, this.entries, this.snapshot);
+  final DayCheckIn? checkIn; // вечерняя отметка дня
+  const ChronicleDay(this.day, this.entries, this.snapshot, [this.checkIn]);
 }
 
 /// «Октябрь 2026» → 1 октября 2026; null — не распознано.
@@ -121,11 +123,13 @@ String _statusPhrase(String s) => switch (s) {
     };
 
 /// Группировка по месяцам (новые сверху). [snapshots] — по ключу дня; день без записей
-/// попадает в ленту, только если [includeQuietDays] и за него есть снимок.
+/// попадает в ленту, только если [includeQuietDays] и за него есть снимок. День с отметкой ([checkIns])
+/// попадает всегда: это запись человека о дне.
 List<ChronicleMonth> groupChronicle(
   List<ChronicleEntry> entries, {
   required Map<String, DaySnapshot> snapshots,
   bool includeQuietDays = false,
+  Map<String, DayCheckIn> checkIns = const {},
 }) {
   final byMonth = <DateTime, ({List<ChronicleEntry> monthOnly, Map<String, List<ChronicleEntry>> days})>{};
   ({List<ChronicleEntry> monthOnly, Map<String, List<ChronicleEntry>> days}) bucket(DateTime t) =>
@@ -138,6 +142,9 @@ List<ChronicleMonth> groupChronicle(
     } else {
       (b.days[dayKey(e.at)] ??= []).add(e);
     }
+  }
+  for (final key in checkIns.keys) {
+    bucket(dayFromKey(key)).days.putIfAbsent(key, () => []);
   }
   if (includeQuietDays) {
     for (final key in snapshots.keys) {
@@ -152,7 +159,7 @@ List<ChronicleMonth> groupChronicle(
         byMonth[m]!.monthOnly,
         [
           for (final key in (byMonth[m]!.days.keys.toList()..sort((a, b) => b.compareTo(a))))
-            ChronicleDay(key, byMonth[m]!.days[key]!..sort((a, b) => b.at.compareTo(a.at)), snapshots[key]),
+            ChronicleDay(key, byMonth[m]!.days[key]!..sort((a, b) => b.at.compareTo(a.at)), snapshots[key], checkIns[key]),
         ],
       ),
   ];

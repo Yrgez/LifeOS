@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/review.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
+import '../../models/day_checkin.dart';
 import '../../models/life_event.dart';
 import '../../models/life_process.dart';
 import '../../state/app_controller.dart';
@@ -47,6 +48,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
   Widget build(BuildContext context) {
     final f = c.weekReviewFacts;
     final b = f.breakdown;
+    final checks = c.checkInSummary(7);
     final last = b.to.subtract(const Duration(days: 1));
     final prev = f.previous;
     final prevChange = prev == null ? '' : parseReviewNote(prev.note)[2];
@@ -95,6 +97,18 @@ class _ReviewScreenState extends State<ReviewScreen> {
               ),
             ],
           ),
+          if (checks.checked > 0) ...[
+            const SizedBox(height: 12),
+            _Tile(
+              key: const ValueKey('review_checkins'),
+              title: 'Отметки дня · ${checks.checked} из ${checks.days}',
+              children: [
+                if (checks.rated > 0) Text('Оценки: ${ratingDistribution(checks.ratings)}', style: const TextStyle(fontSize: 14)),
+                if (checks.tags.isNotEmpty)
+                  Text('Метки: ${[for (final t in checks.tags.take(6)) '${t.$1} (${t.$2})'].join(', ')}', style: const TextStyle(fontSize: 14)),
+              ],
+            ),
+          ],
           if (f.processes.isNotEmpty) ...[
             const SizedBox(height: 12),
             _Tile(
@@ -173,7 +187,7 @@ const _sub = TextStyle(color: AppColors.muted, fontSize: 13);
 class _Tile extends StatelessWidget {
   final String title;
   final List<Widget> children;
-  const _Tile({required this.title, required this.children});
+  const _Tile({super.key, required this.title, required this.children});
 
   @override
   Widget build(BuildContext context) => Container(

@@ -4,6 +4,7 @@ import '../../core/chronicle.dart';
 import '../../core/currency.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
+import '../../models/day_checkin.dart';
 import '../../models/day_snapshot.dart';
 import '../../models/life_event.dart';
 import '../../models/models.dart';
@@ -43,7 +44,8 @@ class _ChronicleScreenState extends State<ChronicleScreen> {
 
   Widget _content() {
     final entries = [for (final e in c.chronicle) if (_dimension == null || e.dimensions.contains(_dimension)) e];
-    final months = groupChronicle(entries, snapshots: c.snapshotsByDay, includeQuietDays: _quietDays && _dimension == null);
+    final months = groupChronicle(entries,
+        snapshots: c.snapshotsByDay, includeQuietDays: _quietDays && _dimension == null, checkIns: _dimension == null ? c.checkInsByDay : const {});
     final undated = _dimension == null ? undatedAchievements(c.achievements) : <AchievementItem>[];
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
@@ -133,6 +135,7 @@ class _MonthSection extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 2),
                     child: Text(_snapshotLine(d.snapshot!), style: const TextStyle(color: AppColors.muted, fontSize: 11)),
                   ),
+                if (d.checkIn != null) _checkInLines(d.checkIn!),
                 for (final e in d.entries) _entry(context, e),
               ],
             ),
@@ -165,6 +168,22 @@ class _MonthSection extends StatelessWidget {
       ),
     );
   }
+
+  /// Отметка дня: оценка и метки одной строкой, заметка — отдельной.
+  static Widget _checkInLines(DayCheckIn ch) => Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (ch.rating != null || ch.tags.isNotEmpty)
+              Text(
+                [if (ch.rating != null) 'день ${ch.rating} из ${DayCheckIn.maxRating}', ...ch.tags].join(' · '),
+                style: const TextStyle(fontSize: 12),
+              ),
+            if (ch.note.isNotEmpty) Text('«${ch.note}»', style: const TextStyle(color: AppColors.muted, fontSize: 12, fontStyle: FontStyle.italic)),
+          ],
+        ),
+      );
 
   static String _dayTitle(String key) {
     final d = dayFromKey(key);
