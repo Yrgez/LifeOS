@@ -10,6 +10,7 @@ import 'core/app_log.dart';
 import 'data/app_data.dart';
 import 'data/app_repository.dart';
 import 'data/folder_backup_storage.dart';
+import 'data/local_reminder_scheduler.dart';
 import 'data/health_connect_source.dart';
 import 'data/sqlcipher_opener.dart';
 import 'data/sqlite_app_repository.dart';
@@ -23,6 +24,7 @@ import 'security/secure_key_store.dart';
 import 'security/security_service.dart';
 import 'security/security_settings.dart';
 import 'state/app_controller.dart';
+import 'state/reminders.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -78,6 +80,9 @@ Future<void> main() async {
   // автокопия в папку, выбранную человеком (Android); настройки и пароль — на устройстве
   final backup = AutoBackup(controller: controller, storage: FolderBackupStorage.forPlatform(), keys: keys);
   await backup.init();
+  // локальные напоминания (отметка дня, сроки счетов, обзор) — выключены, пока человек не включит
+  final reminders = Reminders(controller: controller, scheduler: LocalReminderScheduler.forPlatform());
+  await reminders.init();
 
   final security = SecurityService(
     lock: lock,
@@ -87,9 +92,11 @@ Future<void> main() async {
     onStorageReset: controller.onStorageReset, // явный сброс снимает блокировку и создаёт новое хранилище
     backupCipher: const BackupCipher(useIsolate: true),
     backup: backup,
+    reminders: reminders,
   );
   await security.init();
 
   runApp(LifeOSApp(controller: controller, security: security));
-  unawaited(backup.maybeRun()); // не ждём: копия пишется в фоне, ошибка запоминается и видна на «Сегодня»
+  unawaited(backup.maybeRun());
+  unawaited(reminders.resync()); // не ждём: копия пишется в фоне, ошибка запоминается и видна на «Сегодня»
 }

@@ -21,6 +21,8 @@ dependencies:
   file_selector: ^1.1.0 # выбор файла выписки (CSV), официальный плагин Flutter; только за интерфейсом FileSource
   backup_folder: # папка для резервных копий (Android SAF); локальный плагин, только за интерфейсом BackupStorage
     path: packages/backup_folder
+  local_reminders: # локальные напоминания (Android, без сети); локальный плагин, только за интерфейсом ReminderScheduler
+    path: packages/local_reminders
 dev_dependencies:
   flutter_test:
     sdk: flutter

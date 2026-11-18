@@ -52,8 +52,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
     if (state == AppLifecycleState.resumed) {
       c.onResume();
       unawaited(widget.security.backup?.maybeRun());
+      unawaited(widget.security.reminders?.resync());
     } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive || state == AppLifecycleState.detached) {
       c.flush();
+      // уход из приложения: расписание по свежим данным (день отмечен — вечером не спросим)
+      if (state == AppLifecycleState.paused) unawaited(widget.security.reminders?.resync());
     }
   }
 

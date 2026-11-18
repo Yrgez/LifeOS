@@ -8,6 +8,7 @@ import 'backup_cipher.dart';
 import 'biometric_authenticator.dart';
 import 'db_encryption.dart';
 import 'security_settings.dart';
+import '../state/reminders.dart';
 import 'auto_backup.dart';
 
 /// Запускает действие при закрытой базе и остановленной очереди сохранений (`SqliteAppRepository.exclusive`).
@@ -30,6 +31,7 @@ class SecurityService extends ChangeNotifier {
     this.onStorageReset,
     this.backupCipher = const BackupCipher(),
     this.backup,
+    this.reminders,
   });
 
   /// Заглушка для тестов интерфейса и превью: блокировка выключена, шифрование базы недоступно.
@@ -52,6 +54,9 @@ class SecurityService extends ChangeNotifier {
 
   /// Автоматическая резервная копия в выбранную папку; null — недоступна (тесты, превью).
   final AutoBackup? backup;
+
+  /// Локальные напоминания; null — недоступны (тесты, превью).
+  final Reminders? reminders;
 
   bool _encrypted = false;
   bool _busy = false;
