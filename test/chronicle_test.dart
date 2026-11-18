@@ -177,7 +177,7 @@ void main() {
       final before = await total();
       c.updateHealth(steps: 3000);
       await c.flush();
-      expect(await total() - before, 3); // снимок дня, скаляр шагов, подпись узла «Шаги»
+      expect(await total() - before, 2); // снимок дня и скаляр шагов (в чистом графе нет узла «Шаги»)
       final c2 = make(SqliteAppRepository(opener: () async => db));
       await c2.load();
       expect(c2.snapshotFor(now)!.steps, 3000);

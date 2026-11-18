@@ -63,6 +63,7 @@ class LifeProcess {
   String description;
   List<String> _dimensions;
   List<String> goalIds; // цели, которым служит процесс
+  int? defaultMinutes; // обычная длительность события процесса — подставляется при записи; null — не задана
   final DateTime createdAt;
   final List<ProcessStatusChange> statusLog; // по возрастанию времени, первая запись — начало процесса
 
@@ -72,6 +73,7 @@ class LifeProcess {
     this.description = '',
     required Iterable<String> dimensions,
     Iterable<String> goalIds = const [],
+    this.defaultMinutes,
     required this.createdAt,
     required List<ProcessStatusChange> statusLog,
   })  : _dimensions = LifeEvent.normalizeDimensions(dimensions),
@@ -98,6 +100,7 @@ class LifeProcess {
       _dimensions.isNotEmpty &&
       goalIds.length <= LifeEvent.maxLinks &&
       goalIds.every((g) => _str(g) != null) &&
+      (defaultMinutes == null || (defaultMinutes! > 0 && defaultMinutes! <= ResourceCost.maxMinutes)) &&
       statusLog.isNotEmpty &&
       statusLog.length <= maxLog &&
       statusLog.every((c) => c.isValid) &&
@@ -118,6 +121,7 @@ class LifeProcess {
         if (goalIds.isNotEmpty) 'goals': goalIds,
         'ct': createdAt.millisecondsSinceEpoch,
         'log': statusLog.map((c) => c.toJson()).toList(),
+        if (defaultMinutes != null) 'defMin': defaultMinutes,
       };
 
   factory LifeProcess.fromJson(Map<String, dynamic> j) =>
@@ -148,9 +152,13 @@ class LifeProcess {
       description: desc,
       dimensions: dims.cast<String>(),
       goalIds: goals.cast<String>(),
+      defaultMinutes: _defMin(j['defMin']),
       createdAt: ct,
       statusLog: log,
     );
     return p.isValid ? p : null;
   }
 }
+
+/// Обычная длительность из JSON: отсутствует — null; неверное значение — -1 (запись не пройдёт проверку, а не «починится»).
+int? _defMin(Object? v) => v == null ? null : (v is num && v.isFinite && v == v.roundToDouble() ? v.toInt() : -1);

@@ -4,8 +4,10 @@ import '../../core/finance_stats.dart';
 import '../../core/currency.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
+import '../../models/models.dart';
 import '../../state/app_controller.dart';
 import '../painters/chart_painters.dart';
+import '../widgets/confirm_dialog.dart';
 import '../widgets/form_dialog.dart';
 import 'finance_screen.dart';
 
@@ -65,17 +67,118 @@ class _WealthScreenState extends State<WealthScreen> {
   Future<void> _editWealthDialog() async {
     final r = await showFormDialog(
       context,
-      title: 'Параметры капитала',
+      title: 'План и капитал',
       actionLabel: 'Сохранить',
       accent: AppColors.accent,
       fields: [
-        FieldSpec('w', 'Чистый капитал ($cur)', initial: '${c.netWorth}', numeric: true),
-        FieldSpec('i', 'Доход в месяц ($cur)', initial: '${c.monthlyIncome}', numeric: true),
-        FieldSpec('e', 'Расходы в месяц ($cur)', initial: '${c.monthlyExpense}', numeric: true),
+        // при счетах капитал считается по остаткам — вручную не задаётся
+        if (!c.netWorthFromAccounts) FieldSpec('w', 'Чистый капитал, если счетов нет ($cur)', initial: '${c.netWorth}', numeric: true),
+        FieldSpec('i', 'Плановый доход в месяц ($cur)', initial: '${c.monthlyIncome}', numeric: true),
+        FieldSpec('e', 'Плановые расходы в месяц ($cur)', initial: '${c.monthlyExpense}', numeric: true),
       ],
     );
     if (r == null || !mounted) return;
-    c.updateWealth(netWorth: parseInt(r['w']!), income: parseInt(r['i']!), expense: parseInt(r['e']!));
+    c.updateWealth(netWorth: r['w'] == null ? null : parseInt(r['w']!), income: parseInt(r['i']!), expense: parseInt(r['e']!));
+  }
+
+  Future<void> _addAccountDialog() async {
+    final r = await showFormDialog(
+      context,
+      title: 'Новый счёт',
+      actionLabel: 'Добавить',
+      accent: AppColors.accent,
+      fields: [
+        const FieldSpec('n', 'Название (вклад, брокер, карта, наличные)'),
+        FieldSpec('b', 'Остаток сейчас ($cur, долг — со знаком минус)', numeric: true),
+      ],
+      validate: (v) => v['n']!.trim().isNotEmpty && parseInt(v['b']!.replaceAll('−', '-')) != null,
+    );
+    if (r == null || !mounted) return;
+    c.addAccount(r['n']!, parseInt(r['b']!.replaceAll('−', '-'))!);
+  }
+
+  Future<void> _balanceDialog(Account a) async {
+    final r = await showFormDialog(
+      context,
+      title: a.name,
+      actionLabel: 'Записать остаток',
+      accent: AppColors.accent,
+      fields: [
+        FieldSpec('b', 'Остаток сейчас ($cur)', numeric: true, initial: '${a.latest.amount}'),
+        FieldSpec('n', 'Название', initial: a.name),
+      ],
+      validate: (v) => v['n']!.trim().isNotEmpty && parseInt(v['b']!.replaceAll('−', '-')) != null,
+    );
+    if (r == null || !mounted) return;
+    final b = parseInt(r['b']!.replaceAll('−', '-'))!;
+    if (b != a.latest.amount) c.setAccountBalance(a.id, b); // новый снимок, прежние остаются в истории
+    if (r['n']!.trim() != a.name) c.renameAccount(a.id, r['n']!);
+  }
+
+  Future<void> _removeAccount(Account a) async {
+    final ok = await confirmDialog(
+      context,
+      title: 'Удалить счёт?',
+      message: 'Счёт «${a.name}» и история его остатков (${a.history.length}) будут удалены навсегда.',
+      confirmLabel: 'Удалить',
+      danger: true,
+    );
+    if (ok && mounted) c.removeAccount(a.id);
+  }
+
+  /// Капитал: по счетам (у каждой цифры — дата снимка) или указанный вручную.
+  Widget _capitalTile(bool isFact, int savingsRate) {
+    final accounts = c.accounts;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      width: double.infinity,
+      decoration: tileDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(accounts.isEmpty ? 'Чистый капитал · указан вручную' : 'Чистый капитал · по счетам', style: const TextStyle(color: AppColors.muted, fontSize: 13)),
+          const SizedBox(height: 6),
+          Text(fmtCur(c.netWorth), key: const ValueKey('net_worth'), style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8)),
+          const SizedBox(height: 4),
+          Text(
+            'Норма сбережений ${isFact ? 'за месяц (по операциям)' : '(по плану)'}: $savingsRate%',
+            style: TextStyle(color: savingsRate >= 0 ? AppColors.green : AppColors.red, fontSize: 12, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
+          for (final a in accounts)
+            InkWell(
+              onTap: () => _balanceDialog(a),
+              onLongPress: () => _removeAccount(a),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Row(
+                  children: [
+                    Expanded(child: Text(a.name, style: const TextStyle(fontSize: 14))),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(fmtCur(a.latest.amount), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                        Text('снимок ${fmtDate(a.latest.at)}', style: const TextStyle(color: AppColors.muted, fontSize: 11)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (accounts.isEmpty)
+            const Text('Добавьте счета — капитал будет считаться по их остаткам, с датой каждого.', style: TextStyle(color: AppColors.muted, fontSize: 12)),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              key: const ValueKey('add_account'),
+              onPressed: _addAccountDialog,
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Счёт'),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Добавить точку графика зарплаты или изменить существующую ([index]).
@@ -131,20 +234,20 @@ class _WealthScreenState extends State<WealthScreen> {
     );
   }
 
-  Widget _moneyTile(String title, int value, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: tileDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: const TextStyle(color: AppColors.muted, fontSize: 13)),
-          const SizedBox(height: 4),
-          Text(fmtCur(value), style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: color)),
-        ],
-      ),
-    );
-  }
+  /// Поток месяца: факт по журналу операций; план — подписью ниже. Операций нет — так и сказано.
+  Widget _flowTile(String title, int fact, int plan, bool noTx, Color color) => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: tileDecoration(radius: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('$title · ${monthNames[c.now.month - 1].toLowerCase()}', style: const TextStyle(color: AppColors.muted, fontSize: 13)),
+            const SizedBox(height: 6),
+            Text(noTx ? 'нет операций' : fmtCur(fact), style: TextStyle(fontSize: noTx ? 15 : 18, fontWeight: FontWeight.w600, color: noTx ? AppColors.muted : color)),
+            if (plan > 0) Text('план ${fmtCur(plan)}', style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+          ],
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -175,30 +278,14 @@ class _WealthScreenState extends State<WealthScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(20),
-            width: double.infinity,
-            decoration: tileDecoration(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Чистый капитал', style: TextStyle(color: AppColors.muted, fontSize: 13)),
-                const SizedBox(height: 6),
-                Text(fmtCur(c.netWorth), style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8)),
-                const SizedBox(height: 4),
-                Text(
-                  'Норма сбережений ${isFact ? 'за месяц (факт)' : '(план)'}: $savingsRate%',
-                  style: TextStyle(color: savingsRate >= 0 ? AppColors.green : AppColors.red, fontSize: 12, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
+          _capitalTile(isFact, savingsRate),
           const SizedBox(height: 16),
+          // факт — из журнала операций; ручные цифры — план и подписаны так
           Row(
             children: [
-              Expanded(child: _moneyTile('Доход в месяц', c.monthlyIncome, AppColors.text)),
+              Expanded(child: _flowTile('Доход', fact.income, c.monthlyIncome, fact.isEmpty, AppColors.text)),
               const SizedBox(width: 12),
-              Expanded(child: _moneyTile('Траты в месяц', c.monthlyExpense, AppColors.red)),
+              Expanded(child: _flowTile('Траты', fact.expense, c.monthlyExpense, fact.isEmpty, AppColors.red)),
             ],
           ),
           const SizedBox(height: 12),

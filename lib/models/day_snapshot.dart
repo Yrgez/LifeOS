@@ -30,6 +30,7 @@ class DaySnapshot {
   int? protein; // г
   int? netWorth; // ₽, может быть отрицательным
   int? graphNodes; // число узлов графа
+  int? sleepMinutes; // сон, завершившийся в этот день (Health Connect), минуты
 
   /// Откуда шаги и калории: 'health' — Health Connect, 'manual' — введено вручную.
   String? activitySource;
@@ -41,10 +42,11 @@ class DaySnapshot {
     this.protein,
     this.netWorth,
     this.graphNodes,
+    this.sleepMinutes,
     this.activitySource,
   });
 
-  bool get isEmpty => steps == null && activeCalories == null && protein == null && netWorth == null && graphNodes == null;
+  bool get isEmpty => steps == null && activeCalories == null && protein == null && netWorth == null && graphNodes == null && sleepMinutes == null;
 
   DaySnapshot copy() => DaySnapshot(
         day: day,
@@ -53,6 +55,7 @@ class DaySnapshot {
         protein: protein,
         netWorth: netWorth,
         graphNodes: graphNodes,
+        sleepMinutes: sleepMinutes,
         activitySource: activitySource,
       );
 
@@ -63,6 +66,7 @@ class DaySnapshot {
         if (protein != null) 'protein': protein,
         if (netWorth != null) 'nw': netWorth,
         if (graphNodes != null) 'nodes': graphNodes,
+        if (sleepMinutes != null) 'sleep': sleepMinutes,
         if (activitySource != null) 'src': activitySource,
       };
 
@@ -89,6 +93,7 @@ class DaySnapshot {
         protein: field('protein', _nonNeg),
         netWorth: field('nw', _int),
         graphNodes: field('nodes', _nonNeg),
+        sleepMinutes: field('sleep', _nonNeg),
         activitySource: src as String?,
       );
     } on FormatException {

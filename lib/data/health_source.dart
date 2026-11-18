@@ -4,7 +4,9 @@ class HealthDay {
   final int? steps;
   final int? activeCalories;
   final int? protein; // граммы белка за день из записей питания (Samsung Health и др.)
-  const HealthDay(this.day, {this.steps, this.activeCalories, this.protein});
+  final int? sleepMinutes; // сон, завершившийся в этот день (день пробуждения), минуты
+  final double? weightKg; // последний замер веса за день
+  const HealthDay(this.day, {this.steps, this.activeCalories, this.protein, this.sleepMinutes, this.weightKg});
 }
 
 /// Интервал запроса итога шагов за день: ПОЛНЫЕ сутки [полночь, следующая полночь), даже для сегодняшнего дня.

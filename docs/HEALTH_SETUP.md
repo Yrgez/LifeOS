@@ -33,6 +33,9 @@ class MainActivity : FlutterFragmentActivity()
 <uses-permission android:name="android.permission.health.READ_STEPS"/>
 <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED"/>
 <uses-permission android:name="android.permission.health.READ_NUTRITION"/>
+<!-- сон и вес (необязательно: без них шаги и калории работают) -->
+<uses-permission android:name="android.permission.health.READ_SLEEP"/>
+<uses-permission android:name="android.permission.health.READ_WEIGHT"/>
 ```
 Проверка наличия Health Connect (внутри `<manifest>`):
 ```xml

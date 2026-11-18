@@ -326,6 +326,23 @@ class GoalPlan {
   }
 }
 
+/// Запись в журнале изменений цели: когда и что изменилось (формулировка, срок, план, достижение).
+class GoalChange {
+  static const maxText = 400;
+  final DateTime at;
+  final String text;
+  const GoalChange(this.at, this.text);
+
+  Map<String, dynamic> toJson() => {'t': at.millisecondsSinceEpoch, 'x': text};
+
+  static GoalChange? tryFromJson(Map<String, dynamic> j) {
+    final at = _dt(j['t']);
+    final x = j['x'];
+    if (at == null || x is! String || x.trim().isEmpty || x.length > maxText) return null;
+    return GoalChange(at, x);
+  }
+}
+
 class GlobalGoal {
   final String id;
   String title;
@@ -334,6 +351,8 @@ class GlobalGoal {
   bool celebrated; // достижение за цель уже выдано (чтобы не создавать повторно / после ручного удаления)
   List<GoalCheckpoint> checkpoints;
   GoalPlan? plan; // план ресурсов; null — не задан
+  final DateTime? createdAt; // когда цель поставлена; null — старые данные
+  final List<GoalChange> history; // журнал изменений, по возрастанию времени: формулировку и срок не затираем бесследно
 
   GlobalGoal({
     required this.id,
@@ -343,7 +362,9 @@ class GlobalGoal {
     this.deadline,
     this.celebrated = false,
     this.plan,
-  });
+    this.createdAt,
+    List<GoalChange>? history,
+  }) : history = history ?? [];
 
   double get progress {
     if (checkpoints.isEmpty) return 0;
@@ -360,6 +381,8 @@ class GlobalGoal {
         'celebrated': celebrated,
         'checkpoints': checkpoints.map((c) => c.toJson()).toList(),
         if (plan != null) 'plan': plan!.toJson(),
+        if (createdAt != null) 'ct': createdAt!.millisecondsSinceEpoch,
+        if (history.isNotEmpty) 'hist': history.map((h) => h.toJson()).toList(),
       };
 
   factory GlobalGoal.fromJson(Map<String, dynamic> json) =>
@@ -382,6 +405,8 @@ class GlobalGoal {
       category: json['category'] as String? ?? 'Стратегия',
       deadline: _dt(json['deadlineMs']),
       checkpoints: parseList(json['checkpoints'], GoalCheckpoint.tryFromJson, 'checkpoint', onSkip: onSkip),
+      createdAt: _dt(json['ct']),
+      history: parseList(json['hist'], GoalChange.tryFromJson, 'goalChange', onSkip: onSkip),
     );
     // старые сохранения: уже выполненная цель считается отпразднованной (достижение уже есть или удалено вручную)
     g.celebrated = json['celebrated'] as bool? ?? g.isComplete;
@@ -392,7 +417,8 @@ class GlobalGoal {
 class AchievementItem {
   final String id;
   final String title;
-  final String date;
+  final String date; // подпись месяца («Октябрь 2026») — у старых записей единственная дата
+  final DateTime? at; // точный момент (новые записи); null — известен только месяц
   final String category;
   final String iconKey;
 
@@ -400,6 +426,7 @@ class AchievementItem {
     required this.id,
     required this.title,
     required this.date,
+    this.at,
     required this.category,
     this.iconKey = 'star',
   });
@@ -419,7 +446,8 @@ class AchievementItem {
     }
   }
 
-  Map<String, dynamic> toJson() => {'id': id, 'title': title, 'date': date, 'category': category, 'iconKey': iconKey};
+  Map<String, dynamic> toJson() =>
+      {'id': id, 'title': title, 'date': date, if (at != null) 'atMs': at!.millisecondsSinceEpoch, 'category': category, 'iconKey': iconKey};
 
   factory AchievementItem.fromJson(Map<String, dynamic> json) =>
       tryFromJson(json) ?? (throw const FormatException('AchievementItem'));
@@ -433,6 +461,7 @@ class AchievementItem {
       id: id,
       title: title,
       date: json['date']?.toString() ?? '',
+      at: _dt(json['atMs']),
       category: json['category'] as String? ?? '',
       iconKey: json['iconKey'] as String? ?? 'star',
     );
@@ -737,5 +766,59 @@ class RecurringTx {
       start: start,
       lastMonth: lm,
     );
+  }
+}
+
+/// Счёт (вклад, брокер, карта, наличные): остаток фиксируется снимками — история не перезаписывается.
+/// Капитал = сумма последних остатков счетов. Каждая цифра видна вместе с датой своего снимка.
+class BalanceSnapshot {
+  final DateTime at;
+  final int amount; // ₽ (в основной валюте), может быть отрицательным (долг, кредитная карта)
+  const BalanceSnapshot(this.at, this.amount);
+
+  Map<String, dynamic> toJson() => {'t': at.millisecondsSinceEpoch, 'a': amount};
+
+  static BalanceSnapshot? tryFromJson(Map<String, dynamic> j) {
+    final at = _dt(j['t']);
+    final a = _i(j['a']);
+    if (at == null || a == null || j['a'] is! int) return null;
+    return BalanceSnapshot(at, a);
+  }
+}
+
+class Account {
+  static const maxName = 60;
+  static const maxHistory = 5000;
+
+  final String id;
+  String name;
+  final List<BalanceSnapshot> history; // по возрастанию времени, не пустая
+
+  Account({required this.id, required this.name, required List<BalanceSnapshot> history}) : history = List.of(history);
+
+  BalanceSnapshot get latest => history.last;
+
+  bool get isValid =>
+      _id(id) != null && name.trim().isNotEmpty && name.length <= maxName && history.isNotEmpty && history.length <= maxHistory &&
+      [for (var i = 1; i < history.length; i++) !history[i].at.isBefore(history[i - 1].at)].every((x) => x);
+
+  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'hist': history.map((h) => h.toJson()).toList()};
+
+  factory Account.fromJson(Map<String, dynamic> j) => tryFromJson(j) ?? (throw const FormatException('Account'));
+
+  /// null — запись битая (любой битый снимок отвергает счёт: молча терять остатки нельзя).
+  static Account? tryFromJson(Map<String, dynamic> j) {
+    final id = _id(j['id']);
+    final name = j['name'];
+    final raw = j['hist'];
+    if (id == null || name is! String || raw is! List) return null;
+    final hist = <BalanceSnapshot>[];
+    for (final r in raw) {
+      final b = r is Map ? BalanceSnapshot.tryFromJson(Map<String, dynamic>.from(r)) : null;
+      if (b == null) return null;
+      hist.add(b);
+    }
+    final a = Account(id: id, name: name, history: hist);
+    return a.isValid ? a : null;
   }
 }

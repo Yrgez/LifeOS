@@ -246,7 +246,7 @@ class _WeightHistoryScreen extends StatelessWidget {
                 child: Row(
                   children: [
                     Expanded(child: Text(fmtKg(w.kg), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
-                    Text(fmtDate(w.at), style: _sub),
+                    Text('${fmtDate(w.at)}${w.source == 'health' ? ' · Health Connect' : ''}', style: _sub),
                     IconButton(
                       tooltip: 'Удалить замер',
                       icon: const Icon(Icons.close, size: 18, color: AppColors.muted),

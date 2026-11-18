@@ -37,6 +37,7 @@ class LifeEventKind {
   static const decision = 'decision'; // решение и его основания
   static const change = 'change'; // изменение положения: переезд, новая работа, травма
   static const observation = 'observation'; // наблюдение о состоянии
+  static const review = 'review'; // обзор периода: факты и выводы человека (см. core/review.dart)
 
   static const labels = {
     action: 'Действие',
@@ -44,6 +45,7 @@ class LifeEventKind {
     decision: 'Решение',
     change: 'Изменение',
     observation: 'Наблюдение',
+    review: 'Обзор',
   };
   static bool isValid(String k) => labels.containsKey(k);
 }
@@ -58,6 +60,14 @@ class EventSource {
 }
 
 /// Затраты ресурсов. null — «не указано», это НЕ ноль: статистика считает такие события отдельно.
+/// Внимание: как прошло время события — целиком на деле или урывками. Отметка человека, не измерение.
+class Attention {
+  static const focused = 'focus';
+  static const scattered = 'scatter';
+  static const all = [focused, scattered];
+  static const labels = {focused: 'В фокусе', scattered: 'Урывками'};
+}
+
 class ResourceCost {
   static const maxMinutes = 7 * 24 * 60; // одно событие — не больше недели
   static const minEnergy = 1;
@@ -66,22 +76,25 @@ class ResourceCost {
   final int? minutes; // время
   final int? money; // деньги, ₽ (затрачено)
   final int? energy; // энергия, субъективная шкала 1–5 (не мера, а оценка)
+  final String? attention; // [Attention]; имеет смысл только вместе со временем
 
-  const ResourceCost({this.minutes, this.money, this.energy});
+  const ResourceCost({this.minutes, this.money, this.energy, this.attention});
 
   static const none = ResourceCost();
 
-  bool get isEmpty => minutes == null && money == null && energy == null;
+  bool get isEmpty => minutes == null && money == null && energy == null && attention == null;
 
   bool get isValid =>
       (minutes == null || (minutes! >= 0 && minutes! <= maxMinutes)) &&
       (money == null || money! >= 0) &&
-      (energy == null || (energy! >= minEnergy && energy! <= maxEnergy));
+      (energy == null || (energy! >= minEnergy && energy! <= maxEnergy)) &&
+      (attention == null || (minutes != null && Attention.all.contains(attention)));
 
   Map<String, dynamic> toJson() => {
         if (minutes != null) 'min': minutes,
         if (money != null) 'rub': money,
         if (energy != null) 'en': energy,
+        if (attention != null) 'att': attention,
       };
 
   /// null — поле есть, но значение недопустимо (молча терять затраты нельзя).
@@ -92,16 +105,17 @@ class ResourceCost {
       minutes: raw['min'] == null ? null : _int(raw['min']) ?? -1,
       money: raw['rub'] == null ? null : _int(raw['rub']) ?? -1,
       energy: raw['en'] == null ? null : _int(raw['en']) ?? -1,
+      attention: raw['att'] == null ? null : (raw['att'] is String ? raw['att'] as String : '?'),
     );
     return c.isValid ? c : null;
   }
 
   @override
   bool operator ==(Object other) =>
-      other is ResourceCost && other.minutes == minutes && other.money == money && other.energy == energy;
+      other is ResourceCost && other.minutes == minutes && other.money == money && other.energy == energy && other.attention == attention;
 
   @override
-  int get hashCode => Object.hash(minutes, money, energy);
+  int get hashCode => Object.hash(minutes, money, energy, attention);
 }
 
 /// Ссылка на запись другого журнала — доказательство события.

@@ -60,6 +60,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showToast(context, 'Обозначение сменилось на $cur. Суммы не пересчитываются — курс приложению неизвестен.');
   }
 
+  Future<void> _copyExport(String what, String text) async {
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) return;
+    showToast(context, '$what — в буфере обмена. Вставьте в файл или таблицу');
+  }
+
   Future<void> _editStepsGoal() async {
     final r = await showFormDialog(
       context,
@@ -279,6 +285,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               security.encrypted,
               security.busy ? null : _toggleEncryption,
             ),
+        ]),
+        _section('ОТКРЫТЫЙ ЭКСПОРТ', [
+          // читается без LIFE OS: Excel, LibreOffice, любой текстовый редактор; это не резервная копия
+          _tile(Icons.article_outlined, 'Хроника (Markdown)', 'Текст: месяцы, дни, события и заметки', onTap: () => _copyExport('Хроника', c.exportChronicleMarkdown())),
+          for (final e in const {
+            'events': ('События (CSV)', 'Все версии и отменённые — с пометками'),
+            'transactions': ('Операции (CSV)', 'Доходы и расходы'),
+            'days': ('Дни (CSV)', 'Шаги, сон, белок, капитал по дням'),
+            'weights': ('Вес (CSV)', 'Замеры с источником'),
+            'sets': ('Подходы (CSV)', 'Журнал тренировок с расчётным 1RM'),
+          }.entries)
+            _tile(Icons.table_chart_outlined, e.value.$1, e.value.$2, onTap: () => _copyExport(e.value.$1, c.exportCsv(e.key)!)),
         ]),
         _section('ДАННЫЕ', [
           _tile(Icons.upload_file, 'Экспорт резервной копии', 'В буфер обмена: с шифрованием паролем или без', onTap: () => exportBackup(context, c, cipher: security.backupCipher)),

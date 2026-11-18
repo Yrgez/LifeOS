@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/core/graph_stats.dart';
 import 'package:life_os/data/app_data.dart';
 import 'package:life_os/data/app_repository.dart';
 import 'package:life_os/state/app_controller.dart';
@@ -51,18 +50,18 @@ void main() {
       expect(c.logWorkout('abs', 20, 10).isRecord, isTrue); // первый результат — всегда рекорд
     });
 
-    test('стартовый граф: только «живые» узлы, без изолированных; списки изменяемы', () async {
+    test('стартовый граф пуст — без демонстрационных узлов; списки изменяемы', () async {
       final c = await make(blank: true);
-      expect(c.graphNodes.map((n) => n.id).toSet(), AppController.autoNodeIds.union({'n_sleep'}));
-      expect(isolatedNodeIds(c.graphNodes, c.graphEdges), isEmpty);
+      expect(c.graphNodes, isEmpty);
+      expect(c.graphEdges, isEmpty);
       expect(() => c.addNode('Идея', 'mind'), returnsNormally);
       expect(() => c.updateHealth(steps: 5000), returnsNormally); // недельные истории не фиксированной длины
       c.refresh();
       expect(c.stepsWeekHistory.length, 7);
     });
 
-    test('подписи «живых» узлов подстраиваются под данные', () async {
-      final c = await make(blank: true);
+    test('подписи «живых» узлов (старые установки) подстраиваются под данные', () async {
+      final c = await make();
       c.updateWealth(netWorth: 1500000, income: 200000);
       expect(c.nodeById('n_capital')!.label, 'Капитал 1.50М');
       expect(c.nodeById('n_salary')!.label, 'ЗП: 200к');
@@ -256,7 +255,7 @@ void main() {
     final back = AppData.fromJson(d.toJson());
     expect(back.onboardingDone, isFalse);
     expect(back.muscles.length, 12);
-    expect(back.graphNodes.length, 6);
+    expect(back.graphNodes, isEmpty);
     expect(back.userName, '');
     expect(back.lastDay, '2026-10-24');
   });

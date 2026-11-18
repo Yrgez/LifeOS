@@ -454,6 +454,13 @@ class _FinanceScreenState extends State<FinanceScreen> {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () => showTransactionDialog(context, c, existing: t),
+          // долгое нажатие — отметить операцию событием жизни (со ссылкой на неё)
+          onLongPress: () {
+            final id = c.eventFromTransaction(t.id);
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(SnackBar(content: Text(id == null ? 'Не удалось записать событие' : 'Операция отмечена событием — оно в журнале событий')));
+          },
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
             child: Row(

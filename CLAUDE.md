@@ -26,6 +26,7 @@
 
 ## Правила кода
 - UI не меняет данные напрямую — только через методы `AppController` (`lib/state/app_controller.dart`).
+  Доменные операции — расширения в `lib/state/ops/*.dart` (`part of` контроллера); новую область — туда же, не в класс.
 - Логика без Flutter → `lib/core/`, модели → `lib/models/`, экран → `lib/ui/screens/`, переиспользуемый блок → `lib/ui/widgets/`.
 - Плагины — только за интерфейсами (`AppRepository`, `HealthDataSource`, файлы `*_authenticator`, `secure_key_store`, `sqlcipher_opener`).
 - Смена формата JSON → поднять `kSchemaVersion` (`lib/data/app_data.dart`). Смена таблиц → поднять `kDbVersion` и добавить шаг
@@ -56,3 +57,5 @@ flutter pub get && flutter analyze --no-fatal-infos && flutter test
 6. ✅ Против ложной точности: `systemReadiness` → «восстановлено N из M», без r по 7 точкам, цели «2 из 5»;
    узлы графа связаны с процессами и целями (`NodeRef`).
 7. ✅ Навигация: Сегодня / Тело / Разум / Материальное / Хроника; узкий экран (360 px) проверяется тестом.
+8. ✅ Осмысление: обзор недели, «В этот день»; быстрая запись; одна правда о деньгах (счета), история целей;
+   сон и вес из Health Connect; открытый экспорт (CSV, Markdown); эксперименты «до/после» и ресурс «внимание».

@@ -102,6 +102,7 @@ class _EventDialogState extends State<_EventDialog> {
   late String _kind;
   late DateTime _at;
   int? _energy;
+  String? _attention;
   late Set<String> _goals;
   late Set<String> _procs;
 
@@ -111,12 +112,17 @@ class _EventDialogState extends State<_EventDialog> {
     final e = widget.initial;
     _title = TextEditingController(text: e?.title ?? '');
     _note = TextEditingController(text: e?.note ?? '');
-    _minutes = TextEditingController(text: e?.cost.minutes?.toString() ?? '');
+    int? presetMinutes;
+    for (final p in widget.processes) {
+      if (p.id == widget.presetProcessId) presetMinutes = p.defaultMinutes;
+    }
+    _minutes = TextEditingController(text: (e?.cost.minutes ?? (e == null ? presetMinutes : null))?.toString() ?? '');
     _money = TextEditingController(text: e?.cost.money?.toString() ?? '');
     _dims = e != null ? e.dimensions.toSet() : {if (widget.presetDimension != null) widget.presetDimension!};
     _kind = e?.kind ?? LifeEventKind.action;
     _at = e?.at ?? widget.now;
     _energy = e?.cost.energy;
+    _attention = e?.cost.attention;
     _goals = e?.goalIds.toSet() ?? {if (widget.presetGoalId != null) widget.presetGoalId!};
     _procs = e?.processIds.toSet() ?? {if (widget.presetProcessId != null) widget.presetProcessId!};
     // событие в процессе по умолчанию относится к его измерениям
@@ -240,7 +246,9 @@ class _EventDialogState extends State<_EventDialog> {
               initialValue: _kind,
               decoration: _dec('Вид события'),
               items: [
-                for (final e in LifeEventKind.labels.entries) DropdownMenuItem(value: e.key, child: Text(e.value)),
+                // «обзор» создаётся только экраном обзора недели
+                  for (final e in LifeEventKind.labels.entries)
+                    if (e.key != LifeEventKind.review || _kind == LifeEventKind.review) DropdownMenuItem(value: e.key, child: Text(e.value)),
               ],
               onChanged: (v) => setState(() => _kind = v ?? _kind),
             ),
@@ -272,6 +280,21 @@ class _EventDialogState extends State<_EventDialog> {
                 ),
               ],
             ),
+            if (_opt(_minutes) != null) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                children: [
+                  for (final a in Attention.all)
+                    ChoiceChip(
+                      key: ValueKey('attention_$a'),
+                      label: Text(Attention.labels[a]!),
+                      selected: _attention == a,
+                      onSelected: (v) => setState(() => _attention = v ? a : null),
+                    ),
+                ],
+              ),
+            ],
             const SizedBox(height: 8),
             const Text('Энергия — ваша оценка, сколько сил ушло (1 — почти не ушло, 5 — всё)', style: TextStyle(color: AppColors.muted, fontSize: 11)),
             const SizedBox(height: 4),
@@ -332,7 +355,11 @@ class _EventDialogState extends State<_EventDialog> {
                           kind: _kind,
                           at: _at,
                           note: _note.text.trim(),
-                          cost: ResourceCost(minutes: _opt(_minutes), money: _opt(_money), energy: _energy),
+                          cost: ResourceCost(
+                            minutes: _opt(_minutes),
+                            money: _opt(_money),
+                            energy: _energy,
+                            attention: _opt(_minutes) == null ? null : _attention),
                           // цели, удалённые после записи события, сохраняются в его истории
                           goalIds: _goals,
                           processIds: _procs,

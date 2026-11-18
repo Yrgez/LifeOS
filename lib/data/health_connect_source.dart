@@ -21,6 +21,10 @@ class HealthConnectSource implements HealthDataSource {
   static const _nutrition = [HealthDataType.NUTRITION];
   static const _nutritionAccess = [HealthDataAccess.READ];
 
+  // Сон и вес — тоже отдельно и необязательно (нужны READ_SLEEP и READ_WEIGHT в манифесте, см. docs/HEALTH_SETUP.md).
+  static const _body = [HealthDataType.SLEEP_SESSION, HealthDataType.WEIGHT];
+  static const _bodyAccess = [HealthDataAccess.READ, HealthDataAccess.READ];
+
   // Только Android: на iOS чтение разрешений скрыто системой, там нужна отдельная логика.
   @override
   bool get isSupported => !kIsWeb && Platform.isAndroid;
@@ -47,6 +51,11 @@ class HealthConnectSource implements HealthDataSource {
         await _health.requestAuthorization(_nutrition, permissions: _nutritionAccess);
       } catch (e, st) {
         AppLog.e('Health Connect: не удалось запросить доступ к питанию', e, st);
+      }
+      try {
+        await _health.requestAuthorization(_body, permissions: _bodyAccess);
+      } catch (e, st) {
+        AppLog.e('Health Connect: не удалось запросить доступ ко сну и весу', e, st);
       }
     }
     return ok;
@@ -115,6 +124,41 @@ class HealthConnectSource implements HealthDataSource {
       AppLog.e('Health Connect: не удалось прочитать питание (белок)', e, st);
     }
 
+    // Сон — сеансы, отнесённые к дню пробуждения; вес — последний замер дня. Читаем, только если доступ выдан.
+    final sleepByDay = <DateTime, double>{};
+    final weightByDay = <DateTime, ({DateTime at, double kg})>{};
+    try {
+      final granted = await _health.hasPermissions(_body, permissions: _bodyAccess) ?? false;
+      if (granted) {
+        var sleeps = await _health.getHealthDataFromTypes(
+          types: const [HealthDataType.SLEEP_SESSION],
+          startTime: days.first.subtract(const Duration(days: 1)), // ночь накануне первого дня
+          endTime: now,
+        );
+        sleeps = _health.removeDuplicates(sleeps);
+        for (final p in sleeps) {
+          final v = p.value;
+          if (v is NumericHealthValue) {
+            final key = DateTime(p.dateTo.year, p.dateTo.month, p.dateTo.day);
+            if (!key.isBefore(days.first)) sleepByDay[key] = (sleepByDay[key] ?? 0) + v.numericValue.toDouble();
+          }
+        }
+        var ws = await _health.getHealthDataFromTypes(types: const [HealthDataType.WEIGHT], startTime: days.first, endTime: now);
+        ws = _health.removeDuplicates(ws);
+        for (final p in ws) {
+          final v = p.value;
+          if (v is NumericHealthValue) {
+            final key = DateTime(p.dateFrom.year, p.dateFrom.month, p.dateFrom.day);
+            final prev = weightByDay[key];
+            if (prev == null || p.dateFrom.isAfter(prev.at)) weightByDay[key] = (at: p.dateFrom, kg: v.numericValue.toDouble());
+          }
+        }
+        AppLog.d('Health Connect: сон — сеансов ${sleeps.length}, вес — замеров ${ws.length}');
+      }
+    } catch (e, st) {
+      AppLog.e('Health Connect: не удалось прочитать сон и вес', e, st);
+    }
+
     // Шаги — агрегат платформы (корректно объединяет источники) отдельно на каждый день.
     final out = <HealthDay>[];
     for (final d in days) {
@@ -128,7 +172,12 @@ class HealthConnectSource implements HealthDataSource {
       if (d == days.last) await _logStepsDiagnostics(d, now, steps);
       final kcal = kcalByDay[d];
       final protein = proteinByDay[d];
-      out.add(HealthDay(d, steps: steps, activeCalories: kcal?.round(), protein: protein?.round()));
+      out.add(HealthDay(d,
+          steps: steps,
+          activeCalories: kcal?.round(),
+          protein: protein?.round(),
+          sleepMinutes: sleepByDay[d]?.round(),
+          weightKg: weightByDay[d]?.kg));
     }
     return out;
   }

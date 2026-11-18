@@ -11,6 +11,7 @@ class ChronicleKind {
   static const event = 'event';
   static const process = 'process'; // смена статуса процесса (включая начало)
   static const achievement = 'achievement';
+  static const goal = 'goal'; // постановка цели и её изменения
 }
 
 class ChronicleEntry {
@@ -64,6 +65,7 @@ List<ChronicleEntry> chronicleEntries({
   required List<LifeEvent> currentEvents,
   required List<LifeProcess> processes,
   required List<AchievementItem> achievements,
+  List<GlobalGoal> goals = const [],
 }) {
   final out = <ChronicleEntry>[
     for (final e in currentEvents)
@@ -91,16 +93,25 @@ List<ChronicleEntry> chronicleEntries({
     }
   }
   for (final a in achievements) {
+    if (a.at != null) {
+      out.add(ChronicleEntry(kind: ChronicleKind.achievement, at: a.at!, title: a.title, detail: a.category));
+      continue;
+    }
     final m = parseMonthYear(a.date);
     if (m == null) continue;
     out.add(ChronicleEntry(kind: ChronicleKind.achievement, at: m, monthOnly: true, title: a.title, detail: a.category));
+  }
+  for (final g in goals) {
+    for (final h in g.history) {
+      out.add(ChronicleEntry(kind: ChronicleKind.goal, at: h.at, title: 'Цель «${g.title}»', detail: h.text, refId: g.id));
+    }
   }
   out.sort((a, b) => b.at.compareTo(a.at));
   return out;
 }
 
 List<AchievementItem> undatedAchievements(List<AchievementItem> achievements) =>
-    [for (final a in achievements) if (parseMonthYear(a.date) == null) a];
+    [for (final a in achievements) if (a.at == null && parseMonthYear(a.date) == null) a];
 
 String _statusPhrase(String s) => switch (s) {
       ProcessStatus.active => 'возобновлён',

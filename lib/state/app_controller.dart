@@ -13,6 +13,10 @@ import '../core/finance_categories.dart';
 import '../core/finance_stats.dart';
 import '../core/goal_stats.dart';
 import '../core/life_events.dart';
+import '../core/experiments.dart';
+import '../core/memories.dart';
+import '../core/open_export.dart';
+import '../core/review.dart';
 import '../core/recovery_stats.dart';
 import '../core/resource_stats.dart';
 import '../core/utils.dart';
@@ -23,9 +27,16 @@ import '../data/change_set.dart';
 import '../data/health_source.dart';
 import '../models/body.dart';
 import '../models/day_snapshot.dart';
+import '../models/experiment.dart';
 import '../models/life_event.dart';
 import '../models/life_process.dart';
 import '../models/models.dart';
+
+part 'ops/body_ops.dart';
+part 'ops/goal_ops.dart';
+part 'ops/event_ops.dart';
+part 'ops/process_ops.dart';
+part 'ops/finance_ops.dart';
 
 /// Вся бизнес-логика и состояние. UI только читает геттеры и вызывает методы.
 /// Не зависит от виджетов → полностью тестируется без устройства.
@@ -91,9 +102,23 @@ class AppController extends ChangeNotifier {
     _notify();
   }
 
-  int get netWorth => _d.netWorth;
+  /// Капитал: сумма последних остатков счетов; пока счетов нет — значение, указанное вручную.
+  int get netWorth => _d.accounts.isEmpty ? _d.netWorth : _d.accounts.fold(0, (a, x) => a + x.latest.amount);
+
+  /// true — капитал считается по счетам (у каждой цифры есть дата снимка).
+  bool get netWorthFromAccounts => _d.accounts.isNotEmpty;
+
+  /// Доход и расходы в месяц, указанные вручную, — это ПЛАН (ориентир), а не факт. Факт — журнал операций.
   int get monthlyIncome => _d.monthlyIncome;
   int get monthlyExpense => _d.monthlyExpense;
+
+  /// Доход для автоматических чекпоинтов: последний полный месяц по журналу операций, если доходы в журнале есть;
+  /// иначе — плановый (указанный вручную).
+  int get incomeEvidence {
+    if (!_d.transactions.any((t) => t.isIncome)) return _d.monthlyIncome;
+    final prev = addMonths(_clock(), -1);
+    return monthTotals(_d.transactions, prev.year, prev.month).income;
+  }
   int get dailySteps => _d.dailySteps;
   int get activeCalories => _d.activeCalories;
   int get proteinGrams => _d.proteinGrams;
@@ -110,7 +135,7 @@ class AppController extends ChangeNotifier {
   Map<String, DaySnapshot> get snapshotsByDay => Map.unmodifiable(_d.snapshots);
 
   /// Хроника: события, смены статусов процессов и достижения — новые сверху.
-  List<ChronicleEntry> get chronicle => chronicleEntries(currentEvents: events, processes: _d.processes, achievements: _d.achievements);
+  List<ChronicleEntry> get chronicle => chronicleEntries(currentEvents: events, processes: _d.processes, achievements: _d.achievements, goals: _d.goals);
 
   /// Снимки последних [n] дней, заканчивая сегодняшним; null — данных за день нет.
   List<DaySnapshot?> lastDaysSnapshots(int n) {
@@ -145,7 +170,7 @@ class AppController extends ChangeNotifier {
   bool get onboardingDone => _d.onboardingDone;
 
   /// Нет ни журнала, ни операций, ни целей, ни капитала — приложение «пустое».
-  bool get isBlank => _d.workoutSets.isEmpty && _d.transactions.isEmpty && _d.goals.isEmpty && _d.netWorth == 0;
+  bool get isBlank => _d.workoutSets.isEmpty && _d.transactions.isEmpty && _d.goals.isEmpty && netWorth == 0;
 
   /// Денежные операции (по возрастанию времени). Менять только через методы контроллера.
   List<MoneyTx> get transactions => List.unmodifiable(_d.transactions);
@@ -325,7 +350,7 @@ class AppController extends ChangeNotifier {
     }
 
     set('n_salary', 'ЗП: ${_d.monthlyIncome ~/ 1000}к');
-    set('n_capital', 'Капитал ${(_d.netWorth / 1000000).toStringAsFixed(2)}М');
+    set('n_capital', 'Капитал ${(netWorth / 1000000).toStringAsFixed(2)}М');
     set('n_protein', 'Белок: ${_d.proteinGrams} г');
     set('n_activity', 'Шаги: ${(_d.dailySteps / 1000).toStringAsFixed(1)}k');
     final chest = _d.muscles['chest'];
@@ -365,22 +390,23 @@ class AppController extends ChangeNotifier {
       ..steps = keep(_d.dailySteps, x.steps)
       ..activeCalories = keep(_d.activeCalories, x.activeCalories)
       ..protein = keep(_d.proteinGrams, x.protein)
-      ..netWorth = _d.netWorth
+      ..netWorth = netWorth
       ..graphNodes = _d.graphNodes.length;
     if (activitySource != null && (x.steps != null || x.activeCalories != null)) x.activitySource = activitySource;
     _putSnapshot(x, before);
   }
 
   /// Данные источника за прошедший день (Health Connect): дополняют снимок того дня.
-  void _recordPastActivity(DateTime day, {int? steps, int? calories}) {
-    if (steps == null && calories == null) return;
+  void _recordPastActivity(DateTime day, {int? steps, int? calories, int? sleep}) {
+    if (steps == null && calories == null && sleep == null) return;
     final key = dayKey(day);
     final existing = _d.snapshots[key];
     final x = existing ?? DaySnapshot(day: key);
     final before = existing?.signature;
     if (steps != null) x.steps = steps;
     if (calories != null) x.activeCalories = calories;
-    x.activitySource = 'health';
+    if (sleep != null) x.sleepMinutes = sleep;
+    if (steps != null || calories != null) x.activitySource = 'health';
     _putSnapshot(x, before);
   }
 
@@ -404,173 +430,19 @@ class AppController extends ChangeNotifier {
               id: achId,
               title: 'Достигнута цель: ${g.title}',
               date: monthYear(_clock()),
+              at: _clock(),
               category: g.category,
               iconKey: 'verified',
             ),
           );
         }
+        _logGoal(g, 'Цель достигнута');
       } else if (!g.isComplete && g.celebrated) {
         g.celebrated = false;
         _d.achievements.removeWhere((a) => a.id == achId);
+        _logGoal(g, 'Цель снова не выполнена (изменились чекпоинты или метрика)');
       }
     }
-  }
-
-  // ---------------- тело ----------------
-
-  /// Прогрессия 1RM по мышце: базовая история (до журнала) + лучший результат за каждый тренировочный день.
-  /// Последние 8 точек.
-  List<double> progression(String muscleId) {
-    final m = _d.muscles[muscleId];
-    final fromJournal = progressionFromSets(_d.workoutSets.where((s) => s.muscleId == muscleId));
-    final all = [...?m?.history1RM.where((v) => v > 0), ...fromJournal];
-    if (all.isEmpty) return [0];
-    return all.length > 8 ? all.sublist(all.length - 8) : all;
-  }
-
-  /// Последний записанный подход по мышце (для подстановки веса/повторов в форму).
-  WorkoutSet? lastSetFor(String muscleId) {
-    for (int i = _d.workoutSets.length - 1; i >= 0; i--) {
-      if (_d.workoutSets[i].muscleId == muscleId) return _d.workoutSets[i];
-    }
-    return null;
-  }
-
-  /// Записывает подход в журнал. [daysAgo] — задним числом (0 = сейчас).
-  LogResult logWorkout(String muscleId, double weight, int reps, {int daysAgo = 0}) {
-    final m = _d.muscles[muscleId];
-    if (m == null || weight <= 0 || reps <= 0 || daysAgo < 0) return LogResult.rejected;
-
-    final at = _clock().subtract(Duration(days: daysAgo));
-    final set = WorkoutSet(
-      id: 'set_${_clock().microsecondsSinceEpoch}_${_random.nextInt(1 << 20)}',
-      muscleId: muscleId,
-      at: at,
-      weight: weight,
-      reps: reps,
-    );
-    final isRecord = set.estimated1RM > m.maxWeight + 1e-9;
-    _commit(() => _insertSet(set));
-    return LogResult(ok: true, isRecord: isRecord, oneRm: set.estimated1RM);
-  }
-
-  /// Удаляет подход. Возвращает удалённую запись (для «Отменить») или null.
-  WorkoutSet? deleteSet(String id) {
-    final i = _d.workoutSets.indexWhere((s) => s.id == id);
-    if (i < 0) return null;
-    late WorkoutSet removed;
-    _commit(() {
-      removed = _d.workoutSets.removeAt(i);
-      _pending.deleteSet(removed.id);
-      _recomputeMuscle(removed.muscleId);
-    });
-    return removed;
-  }
-
-  /// Возвращает ранее удалённый подход (кнопка «Отменить»).
-  void restoreSet(WorkoutSet s) {
-    if (_d.muscles[s.muscleId] == null || _d.workoutSets.any((x) => x.id == s.id)) return;
-    _commit(() => _insertSet(s));
-  }
-
-  void _insertSet(WorkoutSet s) {
-    _d.workoutSets.add(s);
-    _d.workoutSets.sort((a, b) => a.at.compareTo(b.at));
-    _pending.upsertSet(s);
-    if (_d.workoutSets.length > _maxSets) {
-      final drop = _d.workoutSets.length - _maxSets;
-      final dropped = _d.workoutSets.take(drop).toList();
-      final affected = dropped.map((x) => x.muscleId).toSet();
-      _d.workoutSets.removeRange(0, drop);
-      for (final x in dropped) {
-        _pending.deleteSet(x.id);
-      }
-      AppLog.e('Журнал превысил $_maxSets записей — удалено старейших: $drop');
-      for (final id in affected) {
-        _recomputeMuscle(id);
-      }
-    }
-    _recomputeMuscle(s.muscleId);
-  }
-
-  /// Производные поля мышцы = базовое состояние + журнал. Одна функция для добавления и удаления —
-  /// поэтому состояние всегда согласовано.
-  void _recomputeMuscle(String id) {
-    final m = _d.muscles[id];
-    if (m == null) return;
-    final own = _d.workoutSets.where((s) => s.muscleId == id).toList(); // по возрастанию времени
-    double best = m.baseMax;
-    for (final s in own) {
-      best = max(best, s.estimated1RM);
-    }
-    m.maxWeight = best;
-
-    final base = m.baseTrainedAt;
-    final last = own.isEmpty ? null : own.last.at;
-    m.lastTrainedAt = (base != null && last != null) ? (base.isAfter(last) ? base : last) : (last ?? base);
-
-    m.lastSets = [...own.reversed.take(6).map((s) => s.label), ...m.baseSets].take(6).toList();
-  }
-
-  void updateHealth({int? steps, int? calories, int? protein}) => _commit(() {
-        if (steps != null) _d.dailySteps = max(0, steps);
-        if (calories != null) _d.activeCalories = max(0, calories);
-        if (protein != null) _d.proteinGrams = max(0, protein);
-        if (steps != null || calories != null) _touchToday(activitySource: 'manual');
-      });
-
-  // ---------------- тело: вес, рост, цель ----------------
-
-  /// Замеры веса по возрастанию времени.
-  List<WeightEntry> get weights => List.unmodifiable(_d.weights);
-  WeightEntry? get latestWeightEntry => latestWeight(_d.weights);
-  int? get heightCm => _d.heightCm;
-  String? get bodyGoal => _d.bodyGoal;
-
-  /// ИМТ по последнему замеру и росту; null — нет веса или роста.
-  double? get bodyMassIndex => bmi(latestWeightEntry?.kg, _d.heightCm);
-
-  /// Записывает замер веса. [at] — когда взвешивались (не в будущем). Возвращает id или null.
-  String? addWeight(double kg, {DateTime? at}) {
-    final now = _clock();
-    final when = at ?? now;
-    if (when.isAfter(now.add(const Duration(minutes: 5))) || _d.weights.length >= kMaxSnapshots) return null;
-    final e = WeightEntry(id: 'w_${now.microsecondsSinceEpoch}_${_random.nextInt(1 << 20)}', at: when, kg: round1(kg));
-    if (!e.isValid) return null;
-    _commit(() => _d.weights
-      ..add(e)
-      ..sort((a, b) => a.at.compareTo(b.at)));
-    return e.id;
-  }
-
-  /// Удаляет ошибочный замер (явное действие). Возвращает удалённый — для «Отменить».
-  WeightEntry? removeWeight(String id) {
-    final i = _d.weights.indexWhere((w) => w.id == id);
-    if (i < 0) return null;
-    late WeightEntry removed;
-    _commit(() => removed = _d.weights.removeAt(i));
-    return removed;
-  }
-
-  void restoreWeight(WeightEntry e) {
-    if (_d.weights.any((w) => w.id == e.id) || !e.isValid) return;
-    _commit(() => _d.weights
-      ..add(e)
-      ..sort((a, b) => a.at.compareTo(b.at)));
-  }
-
-  /// Рост в см (50–272); null снимает.
-  bool setHeight(int? cm) {
-    if (cm != null && (cm < 50 || cm > 272)) return false;
-    _commit(() => _d.heightCm = cm);
-    return true;
-  }
-
-  /// Цель по весу; null снимает.
-  bool setBodyGoal(String? goal) {
-    if (goal != null && !BodyGoal.isValid(goal)) return false;
-    _commit(() => _d.bodyGoal = goal);
-    return true;
   }
 
   // ---------------- граф ----------------
@@ -682,6 +554,43 @@ class AppController extends ChangeNotifier {
     return n.id;
   }
 
+  /// Собирает граф из того, что уже есть в жизни: узел на каждый процесс (кроме прекращённых) и цель,
+  /// связь «процесс → цель», если процесс указан для цели. Уже нарисованное не трогает, дубликатов не создаёт.
+  ({int nodes, int edges}) graphFromEntities() {
+    final before = _d.graphNodes.length;
+    for (final p in _d.processes) {
+      if (p.status != ProcessStatus.stopped) addNodeFor(NodeRef(NodeRef.process, p.id));
+    }
+    for (final g in _d.goals) {
+      addNodeFor(NodeRef(NodeRef.goal, g.id));
+    }
+    var edges = 0;
+    for (final p in _d.processes) {
+      final from = nodeForRef(NodeRef(NodeRef.process, p.id));
+      if (from == null) continue;
+      for (final gid in p.goalIds) {
+        final to = nodeForRef(NodeRef(NodeRef.goal, gid));
+        if (to != null && addEdge(from.id, to.id, kind: EdgeKind.supports)) edges++;
+      }
+    }
+    return (nodes: _d.graphNodes.length - before, edges: edges);
+  }
+
+  /// Чем подтверждается связь в журналах — для связей между процессами и целями. null — узлы не связаны
+  /// с сущностями (связь нарисована человеком, данных о ней нет).
+  String? edgeEvidence(GraphEdge e) {
+    final a = nodeById(e.fromId)?.ref, b = nodeById(e.toId)?.ref;
+    if (a == null || b == null) return null;
+    bool touches(LifeEvent ev, NodeRef r) => r.type == NodeRef.process ? ev.processIds.contains(r.id) : ev.goalIds.contains(r.id);
+    final both = events.where((ev) => ev.kind != LifeEventKind.review && touches(ev, a) && touches(ev, b)).length;
+    final parts = <String>[];
+    final p = a.type == NodeRef.process ? a : (b.type == NodeRef.process ? b : null);
+    final g = a.type == NodeRef.goal ? a : (b.type == NodeRef.goal ? b : null);
+    if (p != null && g != null && (processById(p.id)?.goalIds.contains(g.id) ?? false)) parts.add('процесс указан для этой цели');
+    parts.add(both == 0 ? 'событий, связанных с обоими, нет' : 'событий, связанных с обоими: $both');
+    return parts.join(' · ');
+  }
+
   void deleteNode(String id) => _commit(() {
         _d.graphNodes.removeWhere((n) => n.id == id);
         _d.graphEdges.removeWhere((e) => e.fromId == id || e.toId == id);
@@ -706,627 +615,6 @@ class AppController extends ChangeNotifier {
         _d.graphNodes[i].position = Offset(0.5 + cos(angle) * 0.36, 0.5 + sin(angle) * 0.36);
       }
     });
-  }
-
-  // ---------------- цели и достижения ----------------
-
-  /// Текущее значение метрики для привязанных чекпоинтов; null — метрика недоступна (мышцы нет).
-  double? metricValue(MetricLink link) {
-    switch (link.kind) {
-      case MetricLink.oneRM:
-        return _d.muscles[link.muscleId]?.maxWeight;
-      case MetricLink.netWorth:
-        return _d.netWorth.toDouble();
-      case MetricLink.income:
-        return _d.monthlyIncome.toDouble();
-      default:
-        return null;
-    }
-  }
-
-  String _linkTitle(MetricLink l) {
-    switch (l.kind) {
-      case MetricLink.oneRM:
-        return '1RM «${_d.muscles[l.muscleId]?.name ?? l.muscleId}» ≥ ${trimNum(l.target)} кг';
-      case MetricLink.netWorth:
-        return 'Капитал ≥ ${fmtCur(l.target.round())}';
-      default:
-        return 'Доход ≥ ${fmtCur(l.target.round())} / мес';
-    }
-  }
-
-  GlobalGoal? _goal(String id) => _d.goals.where((g) => g.id == id).firstOrNull;
-
-  void addGoal(String title, String category, List<String> checkpoints, {DateTime? deadline}) {
-    final t = title.trim();
-    if (t.isEmpty) return;
-    _commit(() {
-      _d.goals.add(GlobalGoal(
-        id: 'goal_${_clock().microsecondsSinceEpoch}',
-        title: t,
-        category: category.trim().isEmpty ? 'Стратегия' : category.trim(),
-        deadline: deadline == null ? null : dateOnly(deadline),
-        checkpoints: [
-          for (final c in checkpoints)
-            if (c.trim().isNotEmpty) GoalCheckpoint(title: c.trim()),
-        ],
-      ));
-    });
-  }
-
-  /// Изменить цель. [deadline] = null снимает срок.
-  bool updateGoal(String goalId, {required String title, required String category, DateTime? deadline}) {
-    final g = _goal(goalId);
-    final t = title.trim();
-    if (g == null || t.isEmpty) return false;
-    _commit(() {
-      g.title = t;
-      g.category = category.trim().isEmpty ? 'Стратегия' : category.trim();
-      g.deadline = deadline == null ? null : dateOnly(deadline);
-    });
-    return true;
-  }
-
-  /// План ресурсов цели (минуты, рубли); null или пустой план снимает его. Значения должны быть > 0.
-  bool setGoalPlan(String goalId, GoalPlan? plan) {
-    final g = _goal(goalId);
-    if (g == null || (plan != null && !plan.isValid)) return false;
-    _commit(() => g.plan = plan == null || plan.isEmpty ? null : plan);
-    return true;
-  }
-
-  void removeGoal(String goalId) => _commit(() => _d.goals.removeWhere((g) => g.id == goalId));
-
-  /// Добавить чекпоинт. С [link] он будет выполняться автоматически; пустое название генерируется из метрики.
-  bool addCheckpoint(String goalId, String title, {MetricLink? link}) {
-    final g = _goal(goalId);
-    if (g == null) return false;
-    if (link != null) {
-      if (link.target <= 0) return false;
-      if (link.kind == MetricLink.oneRM && _d.muscles[link.muscleId] == null) return false;
-    }
-    final t = title.trim().isNotEmpty ? title.trim() : (link != null ? _linkTitle(link) : '');
-    if (t.isEmpty) return false;
-    _commit(() => g.checkpoints.add(GoalCheckpoint(title: t, link: link)));
-    return true;
-  }
-
-  void removeCheckpoint(String goalId, int index) {
-    final g = _goal(goalId);
-    if (g == null || index < 0 || index >= g.checkpoints.length) return;
-    _commit(() => g.checkpoints.removeAt(index));
-  }
-
-  /// Ручное переключение. Привязанные к метрике чекпоинты вручную не переключаются.
-  void toggleCheckpoint(String goalId, int index, bool value) {
-    final g = _goal(goalId);
-    if (g == null || index < 0 || index >= g.checkpoints.length) return;
-    final cp = g.checkpoints[index];
-    if (cp.link != null) return;
-    _commit(() => cp.isCompleted = value);
-  }
-
-  void addAchievement(String title, String category) {
-    final t = title.trim();
-    if (t.isEmpty) return;
-    _commit(() {
-      _d.achievements.insert(
-        0,
-        AchievementItem(
-          id: 'ach_${_clock().microsecondsSinceEpoch}',
-          title: t,
-          date: monthYear(_clock()),
-          category: category.trim().isEmpty ? 'Личный рекорд' : category.trim(),
-        ),
-      );
-    });
-  }
-
-  void removeAchievement(String id) => _commit(() => _d.achievements.removeWhere((a) => a.id == id));
-
-  // ---------------- события жизни ----------------
-  //
-  // Журнал событий — ядро модели: факты BODY / MIND / MATERIAL с затратами ресурсов и связями с целями.
-  // История не переписывается: правка = новая версия, отмена = пометка, удаление — только явное.
-
-  /// Весь журнал: все версии, включая отменённые (для истории и проверки происхождения).
-  List<LifeEvent> get allEvents => List.unmodifiable(_d.events);
-
-  /// Актуальные события (последние версии, не отменённые), по возрастанию времени.
-  List<LifeEvent> get events => currentEvents(_d.events);
-
-  bool get eventsFull => _d.events.length >= _maxEvents;
-
-  LifeEvent? eventById(String id) {
-    for (final e in _d.events) {
-      if (e.id == id) return e;
-    }
-    return null;
-  }
-
-  /// Версии события от первой к последней.
-  List<LifeEvent> eventRevisions(String id) => revisionChain(_d.events, id);
-
-  /// Актуальные события цели: связанные с ней напрямую или через процесс, который ей служит.
-  List<LifeEvent> eventsForGoal(String goalId) => goalEvents(goalId, events, _d.processes);
-
-  /// Что уже вложено в цель: ресурсы, число событий (напрямую / через процессы), затронутые измерения.
-  GoalFact goalFactOf(String goalId) => goalFact(goalId, events, _d.processes);
-
-  /// Сводка ресурсов за период [from, to) по актуальным событиям.
-  ResourceSummary resourceSummary({required DateTime from, required DateTime to, String? dimension}) =>
-      summarizeResources(events, from: from, to: to, dimension: dimension);
-
-  /// Распределение ресурсов за [days] дней, заканчивающихся сегодня: по измерениям, процессам, с прошлым периодом.
-  ResourceBreakdown resourceBreakdownFor(int days) =>
-      resourceBreakdown(current: events, transactions: _d.transactions, now: _clock(), days: days);
-
-  /// Фиксирует событие. Возвращает id или null (неверные данные, событие в будущем, журнал полон).
-  String? addEvent({
-    required String title,
-    required Iterable<String> dimensions,
-    String kind = LifeEventKind.action,
-    DateTime? at,
-    String note = '',
-    ResourceCost cost = ResourceCost.none,
-    Iterable<String> goalIds = const [],
-    Iterable<String> processIds = const [],
-    Iterable<EventRef> refs = const [],
-    String source = EventSource.manual,
-  }) =>
-      _appendEvent(
-        title: title,
-        dimensions: dimensions,
-        kind: kind,
-        at: at,
-        note: note,
-        cost: cost,
-        goalIds: goalIds,
-        processIds: processIds,
-        refs: refs,
-        source: source,
-      );
-
-  /// Новая версия события (прежняя остаётся в истории). Править можно только последнюю версию
-  /// неотменённого события. Возвращает id новой версии или null.
-  String? reviseEvent(
-    String id, {
-    required String title,
-    required Iterable<String> dimensions,
-    required String kind,
-    required DateTime at,
-    String note = '',
-    ResourceCost cost = ResourceCost.none,
-    Iterable<String> goalIds = const [],
-    Iterable<String> processIds = const [],
-    Iterable<EventRef>? refs,
-  }) {
-    final old = eventById(id);
-    if (old == null || old.isVoided || latestRevision(_d.events, id)?.id != id) return null;
-    return _appendEvent(
-      title: title,
-      dimensions: dimensions,
-      kind: kind,
-      at: at,
-      note: note,
-      cost: cost,
-      goalIds: goalIds,
-      processIds: processIds,
-      refs: refs ?? old.refs,
-      source: old.source,
-      supersedesId: old.id,
-    );
-  }
-
-  String? _appendEvent({
-    required String title,
-    required Iterable<String> dimensions,
-    required String kind,
-    DateTime? at,
-    required String note,
-    required ResourceCost cost,
-    required Iterable<String> goalIds,
-    required Iterable<String> processIds,
-    required Iterable<EventRef> refs,
-    required String source,
-    String? supersedesId,
-  }) {
-    if (_d.events.length >= _maxEvents) {
-      AppLog.e('Журнал событий достиг предела $_maxEvents — новое событие не принято');
-      return null;
-    }
-    final now = _clock();
-    final when = at ?? now;
-    // событие — факт: будущее планируется целями, а не событиями (небольшой допуск на расхождение часов)
-    if (when.isAfter(now.add(const Duration(minutes: 5)))) return null;
-    final e = LifeEvent(
-      id: 'ev_${now.microsecondsSinceEpoch}_${_random.nextInt(1 << 20)}',
-      at: when,
-      recordedAt: now,
-      dimensions: dimensions.where(LifeDimension.isValid),
-      kind: kind,
-      title: title.trim(),
-      note: note.trim(),
-      cost: cost,
-      goalIds: goalIds,
-      processIds: processIds,
-      refs: refs,
-      source: source,
-      supersedesId: supersedesId,
-    );
-    if (!e.isValid) return null;
-    _commit(() {
-      _d.events
-        ..add(e)
-        ..sort(compareEvents);
-      _pending.upsertEvent(e);
-    });
-    return e.id;
-  }
-
-  /// Отменяет событие (оно остаётся в истории с отметкой). Отменяется последняя версия цепочки.
-  bool voidEvent(String id) {
-    final latest = latestRevision(_d.events, id);
-    if (latest == null || latest.isVoided) return false;
-    _replaceEvent(latest.copyWith(voidedAt: _clock()));
-    return true;
-  }
-
-  /// Снимает отметку отмены (кнопка «Вернуть»).
-  bool unvoidEvent(String id) {
-    final latest = latestRevision(_d.events, id);
-    if (latest == null || !latest.isVoided) return false;
-    _replaceEvent(latest.copyWith(clearVoided: true));
-    return true;
-  }
-
-  void _replaceEvent(LifeEvent e) {
-    final i = _d.events.indexWhere((x) => x.id == e.id);
-    if (i < 0) return;
-    _commit(() {
-      _d.events[i] = e;
-      _pending.upsertEvent(e);
-    });
-  }
-
-  /// Удаляет событие НАВСЕГДА вместе со всеми его версиями. Только по явному решению пользователя.
-  /// Возвращает число удалённых записей.
-  int purgeEvent(String id) {
-    final chain = eventRevisions(id);
-    if (chain.isEmpty) return 0;
-    final ids = {for (final e in chain) e.id};
-    _commit(() {
-      _d.events.removeWhere((e) => ids.contains(e.id));
-      ids.forEach(_pending.deleteEvent);
-    });
-    return ids.length;
-  }
-
-  // ---------------- процессы ----------------
-  //
-  // Процесс — рамка для событий: всё вложенное в него считается по событиям с его id.
-  // Смена статуса дописывается в журнал статусов процесса, прежние статусы сохраняются.
-
-  List<LifeProcess> get processes => List.unmodifiable(_d.processes);
-
-  LifeProcess? processById(String id) {
-    for (final p in _d.processes) {
-      if (p.id == id) return p;
-    }
-    return null;
-  }
-
-  /// Актуальные события процесса, по возрастанию времени.
-  List<LifeEvent> eventsForProcess(String processId) => [for (final e in events) if (e.processIds.contains(processId)) e];
-
-  /// Ресурсы, вложенные в процесс за всё время, первое и последнее событие.
-  ProcessActivity processActivityOf(String processId) => processActivity(events, processId);
-
-  /// Начинает процесс. [startedAt] — когда он фактически начался (можно задним числом, не в будущем).
-  /// Возвращает id или null.
-  String? addProcess({
-    required String title,
-    required Iterable<String> dimensions,
-    String description = '',
-    Iterable<String> goalIds = const [],
-    DateTime? startedAt,
-  }) {
-    if (_d.processes.length >= kMaxProcesses) return null;
-    final now = _clock();
-    final start = startedAt ?? now;
-    if (start.isAfter(now.add(const Duration(minutes: 5)))) return null;
-    final p = LifeProcess(
-      id: 'proc_${now.microsecondsSinceEpoch}_${_random.nextInt(1 << 20)}',
-      title: title.trim(),
-      description: description.trim(),
-      dimensions: dimensions.where(LifeDimension.isValid),
-      goalIds: goalIds,
-      createdAt: now,
-      statusLog: [ProcessStatusChange(at: start, status: ProcessStatus.active)],
-    );
-    if (!p.isValid) return null;
-    _commit(() => _d.processes.add(p));
-    return p.id;
-  }
-
-  /// Меняет описание процесса (название, измерения, цели). Статус меняется только через [setProcessStatus].
-  bool updateProcess(String id, {required String title, required Iterable<String> dimensions, String description = '', Iterable<String> goalIds = const []}) {
-    final p = processById(id);
-    if (p == null) return false;
-    final dims = LifeEvent.normalizeDimensions(dimensions.where(LifeDimension.isValid));
-    final t = title.trim();
-    final desc = description.trim();
-    final goals = goalIds.toSet().toList();
-    if (t.isEmpty || t.length > LifeProcess.maxTitle || desc.length > LifeProcess.maxDescription || dims.isEmpty || goals.length > LifeEvent.maxLinks) {
-      return false;
-    }
-    _commit(() {
-      p
-        ..title = t
-        ..description = desc
-        ..dimensions = dims
-        ..goalIds = goals;
-    });
-    return true;
-  }
-
-  /// Новая запись в журнале статусов. Тот же статус повторно не пишется.
-  bool setProcessStatus(String id, String status, {String note = ''}) {
-    final p = processById(id);
-    if (p == null || !ProcessStatus.isValid(status) || p.status == status) return false;
-    if (p.statusLog.length >= LifeProcess.maxLog || note.length > ProcessStatusChange.maxNote) return false;
-    final now = _clock();
-    // часы могли уйти назад — журнал статусов всё равно остаётся упорядоченным
-    final at = now.isBefore(p.statusLog.last.at) ? p.statusLog.last.at : now;
-    _commit(() => p.statusLog.add(ProcessStatusChange(at: at, status: status, note: note.trim())));
-    return true;
-  }
-
-  /// Удаляет процесс НАВСЕГДА (только явно). События остаются: в них сохраняется ссылка на удалённый процесс.
-  bool removeProcess(String id) {
-    final i = _d.processes.indexWhere((p) => p.id == id);
-    if (i < 0) return false;
-    _commit(() => _d.processes.removeAt(i));
-    return true;
-  }
-
-  // ---------------- финансы ----------------
-
-  void updateWealth({int? netWorth, int? income, int? expense}) => _commit(() {
-        if (netWorth != null) _d.netWorth = netWorth;
-        if (income != null) _d.monthlyIncome = max(0, income);
-        if (expense != null) _d.monthlyExpense = max(0, expense);
-      });
-
-  bool addSalaryStep(String year, String role, int salary) {
-    if (year.trim().isEmpty || salary <= 0) return false;
-    _commit(() => _d.salaryHistory.add(SalaryStep(year: year.trim(), role: role.trim(), salary: salary)));
-    return true;
-  }
-
-  bool updateSalaryStep(int index, String year, String role, int salary) {
-    if (index < 0 || index >= _d.salaryHistory.length || year.trim().isEmpty || salary <= 0) return false;
-    _commit(() => _d.salaryHistory[index] = SalaryStep(year: year.trim(), role: role.trim(), salary: salary));
-    return true;
-  }
-
-  /// Удаляет точку и возвращает её (для «Отменить»).
-  SalaryStep? removeSalaryStep(int index) {
-    if (index < 0 || index >= _d.salaryHistory.length) return null;
-    late SalaryStep removed;
-    _commit(() => removed = _d.salaryHistory.removeAt(index));
-    return removed;
-  }
-
-  /// Возвращает точку на прежнее место.
-  void insertSalaryStep(int index, SalaryStep step) {
-    _commit(() => _d.salaryHistory.insert(clampI(index, 0, _d.salaryHistory.length), step));
-  }
-
-  // ---------------- финансы: операции ----------------
-
-  /// Добавляет операцию. Тип (доход/расход) определяет категория. При [affectsNetWorth] чистый капитал
-  /// меняется на сумму операции; удаление операции откатит ровно это изменение.
-  bool addTransaction({
-    required String categoryId,
-    required int amount,
-    DateTime? at,
-    String note = '',
-    bool affectsNetWorth = true,
-  }) {
-    final cat = finCategory(categoryId);
-    if (cat == null || amount <= 0) return false;
-    final tx = MoneyTx(
-      id: 'tx_${_clock().microsecondsSinceEpoch}_${_random.nextInt(1 << 20)}',
-      at: at ?? _clock(),
-      isIncome: cat.isIncome,
-      amount: amount,
-      categoryId: categoryId,
-      note: note.trim(),
-      affectsNetWorth: affectsNetWorth,
-    );
-    _commit(() => _insertTx(tx, applyNetWorth: true));
-    return true;
-  }
-
-  /// Удаляет операцию и откатывает её влияние на капитал. Возвращает удалённую запись (для «Отменить»).
-  MoneyTx? deleteTransaction(String id) {
-    final i = _d.transactions.indexWhere((t) => t.id == id);
-    if (i < 0) return null;
-    late MoneyTx removed;
-    _commit(() {
-      removed = _d.transactions.removeAt(i);
-      _pending.deleteTx(removed.id);
-      if (removed.affectsNetWorth) _d.netWorth -= removed.signed;
-    });
-    return removed;
-  }
-
-  void restoreTransaction(MoneyTx tx) {
-    if (_d.transactions.any((t) => t.id == tx.id)) return;
-    _commit(() => _insertTx(tx, applyNetWorth: true));
-  }
-
-  /// Изменяет операцию. Влияние на капитал пересчитывается: старое откатывается, новое применяется.
-  bool updateTransaction(
-    String id, {
-    required String categoryId,
-    required int amount,
-    required DateTime at,
-    String note = '',
-    required bool affectsNetWorth,
-  }) {
-    final i = _d.transactions.indexWhere((t) => t.id == id);
-    final cat = finCategory(categoryId);
-    if (i < 0 || cat == null || amount <= 0) return false;
-    final old = _d.transactions[i];
-    final updated = MoneyTx(
-      id: old.id,
-      at: at,
-      isIncome: cat.isIncome,
-      amount: amount,
-      categoryId: categoryId,
-      note: note.trim(),
-      affectsNetWorth: affectsNetWorth,
-      recurringId: old.recurringId,
-    );
-    _commit(() {
-      if (old.affectsNetWorth) _d.netWorth -= old.signed;
-      if (updated.affectsNetWorth) _d.netWorth += updated.signed;
-      _d.transactions[i] = updated;
-      _d.transactions.sort((a, b) => a.at.compareTo(b.at));
-      _pending.upsertTx(updated);
-    });
-    return true;
-  }
-
-  // ---------------- бюджеты ----------------
-
-  Map<String, int> get budgets => Map.unmodifiable(_d.budgets);
-
-  /// Лимит расходов на месяц по категории; [limit] ≤ 0 снимает лимит. Только для категорий расходов.
-  bool setBudget(String categoryId, int limit) {
-    final cat = finCategory(categoryId);
-    if (cat == null || cat.isIncome) return false;
-    _commit(() {
-      if (limit > 0) {
-        _d.budgets[categoryId] = limit;
-      } else {
-        _d.budgets.remove(categoryId);
-      }
-    });
-    return true;
-  }
-
-  // ---------------- повторяющиеся операции ----------------
-
-  List<RecurringTx> get recurring => List.unmodifiable(_d.recurring);
-
-  /// Создаёт правило. Операции создаются автоматически, начиная с ближайшей даты не раньше сегодняшнего дня.
-  bool addRecurring({
-    required String categoryId,
-    required int amount,
-    required int dayOfMonth,
-    String note = '',
-    bool affectsNetWorth = true,
-  }) {
-    if (finCategory(categoryId) == null || amount <= 0 || dayOfMonth < 1 || dayOfMonth > 31) return false;
-    _commit(() {
-      _d.recurring.add(RecurringTx(
-        id: 'rec_${_clock().microsecondsSinceEpoch}_${_random.nextInt(1 << 20)}',
-        categoryId: categoryId,
-        amount: amount,
-        dayOfMonth: dayOfMonth,
-        note: note.trim(),
-        affectsNetWorth: affectsNetWorth,
-        start: dateOnly(_clock()),
-      ));
-      _generateRecurring();
-    });
-    return true;
-  }
-
-  /// Изменяет правило. Новые значения действуют на ещё не созданные операции; уже созданные не меняются,
-  /// обработанные месяцы повторно не создаются. Дата начала правила сохраняется.
-  bool updateRecurring(
-    String id, {
-    required String categoryId,
-    required int amount,
-    required int dayOfMonth,
-    String note = '',
-    required bool affectsNetWorth,
-  }) {
-    final i = _d.recurring.indexWhere((r) => r.id == id);
-    if (i < 0 || finCategory(categoryId) == null || amount <= 0 || dayOfMonth < 1 || dayOfMonth > 31) return false;
-    final old = _d.recurring[i];
-    _commit(() {
-      _d.recurring[i] = RecurringTx(
-        id: old.id,
-        categoryId: categoryId,
-        amount: amount,
-        dayOfMonth: dayOfMonth,
-        note: note.trim(),
-        affectsNetWorth: affectsNetWorth,
-        start: old.start,
-        lastMonth: old.lastMonth,
-      );
-      _generateRecurring(); // новое число могло «наступить» уже сегодня
-    });
-    return true;
-  }
-
-  /// Удаляет правило; уже созданные им операции остаются.
-  void removeRecurring(String id) => _commit(() => _d.recurring.removeWhere((r) => r.id == id));
-
-  /// Создаёт наступившие операции по правилам. Идемпотентно: месяц, уже обработанный правилом
-  /// (`lastMonth`), повторно не создаётся — даже если операцию потом удалили вручную.
-  void _generateRecurring() {
-    final today = dateOnly(_clock());
-    final thisMonth = DateTime(today.year, today.month, 1);
-    for (final r in _d.recurring) {
-      final cat = finCategory(r.categoryId);
-      if (cat == null) continue;
-      var month = parseYm(r.lastMonth) == null ? DateTime(r.start.year, r.start.month, 1) : addMonths(parseYm(r.lastMonth)!, 1);
-      int guard = 0;
-      while (!month.isAfter(thisMonth) && guard++ < 60) {
-        final due = DateTime(month.year, month.month, min(r.dayOfMonth, daysInMonth(month)));
-        if (due.isAfter(today)) break; // срок ещё не наступил — вернёмся позже
-        final id = 'rec_${r.id}_${ymKey(month)}';
-        if (!due.isBefore(r.start) && !_d.transactions.any((t) => t.id == id)) {
-          _insertTx(
-            MoneyTx(
-              id: id,
-              at: DateTime(due.year, due.month, due.day, 9),
-              isIncome: cat.isIncome,
-              amount: r.amount,
-              categoryId: r.categoryId,
-              note: r.note,
-              affectsNetWorth: r.affectsNetWorth,
-              recurringId: r.id,
-            ),
-            applyNetWorth: true,
-          );
-        }
-        r.lastMonth = ymKey(month);
-        month = addMonths(month, 1);
-      }
-    }
-  }
-
-  void _insertTx(MoneyTx tx, {required bool applyNetWorth}) {
-    _d.transactions.add(tx);
-    _d.transactions.sort((a, b) => a.at.compareTo(b.at));
-    _pending.upsertTx(tx);
-    if (applyNetWorth && tx.affectsNetWorth) _d.netWorth += tx.signed;
-    if (_d.transactions.length > _maxTx) {
-      final drop = _d.transactions.length - _maxTx;
-      final dropped = _d.transactions.take(drop).toList();
-      _d.transactions.removeRange(0, drop); // капитал не трогаем: старые операции уже учтены в нём
-      for (final x in dropped) {
-        _pending.deleteTx(x.id);
-      }
-      AppLog.e('Список операций превысил $_maxTx — удалено старейших: $drop');
-    }
   }
 
   // ---------------- здоровье: Health Connect ----------------
@@ -1385,14 +673,16 @@ class AppController extends ChangeNotifier {
           final idx = 6 - (dayIndex(today) - dayIndex(d.day));
           if (idx < 0 || idx > 6) continue;
           if (idx < 6) {
-            _recordPastActivity(d.day, steps: d.steps, calories: d.activeCalories);
+            _recordPastActivity(d.day, steps: d.steps, calories: d.activeCalories, sleep: d.sleepMinutes);
           } else {
             if (d.steps != null) _d.dailySteps = d.steps!;
             if (d.activeCalories != null) _d.activeCalories = d.activeCalories!;
             final p = d.protein;
             if (p != null && p > 0) _d.proteinGrams = p;
             _touchToday(activitySource: 'health');
+            if (d.sleepMinutes != null) _recordPastActivity(d.day, sleep: d.sleepMinutes);
           }
+          if (d.weightKg != null) _recordHealthWeight(d.day, d.weightKg!);
         }
         _d.lastHealthSyncMs = now.millisecondsSinceEpoch;
       });
@@ -1491,6 +781,27 @@ class AppController extends ChangeNotifier {
   }
 
   // ---------------- резервная копия ----------------
+
+  /// Открытый экспорт: CSV-таблица по [kind] (events, transactions, days, weights, sets) или null — нет такого набора.
+  String? exportCsv(String kind) => switch (kind) {
+        'events' => eventsCsv(_d.events,
+            goalTitles: {for (final g in _d.goals) g.id: g.title}, processTitles: {for (final p in _d.processes) p.id: p.title}),
+        'transactions' => transactionsCsv(_d.transactions),
+        'days' => snapshotsCsv(_d.snapshots.values),
+        'weights' => weightsCsv(_d.weights),
+        'sets' => setsCsv(_d.workoutSets, _d.muscles),
+        _ => null,
+      };
+
+  /// Хроника в Markdown — читается без приложения.
+  String exportChronicleMarkdown() => chronicleMarkdown(
+        userName: _d.userName,
+        now: _clock(),
+        entries: chronicle,
+        snapshots: _d.snapshots,
+        currentEvents: events,
+        processes: _d.processes,
+      );
 
   String exportBackup() => const JsonEncoder.withIndent('  ').convert(_d.toJson());
 
