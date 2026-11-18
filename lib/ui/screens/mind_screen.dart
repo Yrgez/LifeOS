@@ -53,16 +53,7 @@ class _MindScreenState extends State<MindScreen> {
               Expanded(
                 child: OutlinedButton.icon(
                   key: const ValueKey('open_graph'),
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => Scaffold(
-                      appBar: AppBar(
-                        title: const Text('Граф связей'),
-                        backgroundColor: AppColors.panel,
-                        elevation: 0,
-                      ),
-                      body: GraphScreen(controller: c),
-                    ),
-                  )),
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => GraphScreen(controller: c))),
                   icon: const Icon(Icons.hub_outlined, size: 18),
                   label: const Text('Граф связей'),
                 ),

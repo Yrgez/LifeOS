@@ -46,7 +46,7 @@ void main() {
     expect(find.text('Цели'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('open_graph')));
     await tester.pumpAndSettle();
-    expect(find.text('SECOND BRAIN GRAPH'), findsOneWidget);
+    expect(find.byKey(const ValueKey('graph_counts')), findsOneWidget);
     await tester.pageBack();
     await tester.pumpAndSettle();
 
@@ -222,6 +222,18 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull, reason: 'вкладка «$t»');
     }
+    // граф: шапка с действиями, фильтры, панель узла
+    await tester.tap(find.byKey(const ValueKey('tab_mind')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('open_graph')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('graph_from_entities')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('graph_filter_material')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull, reason: 'граф');
+    await tester.pageBack();
+    await tester.pumpAndSettle();
     await shutdown(tester, c);
   });
 
