@@ -18,6 +18,7 @@ import '../widgets/form_dialog.dart';
 import '../widgets/health_actions.dart';
 import '../widgets/progress_dialog.dart';
 import '../widgets/toast.dart';
+import 'statement_import_screen.dart';
 
 /// Настройки: профиль, цели дня, Health Connect, данные (резервная копия, примеры, сброс), о приложении.
 class SettingsScreen extends StatefulWidget {
@@ -316,6 +317,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _tile(Icons.table_chart_outlined, e.value.$1, e.value.$2, onTap: () => _copyExport(e.value.$1, c.exportCsv(e.key)!)),
         ]),
         _section('ДАННЫЕ', [
+          _tile(Icons.file_download_outlined, 'Импорт выписки банка (CSV)', 'Операции из выписки — в журнал, без повторов; импорт можно отменить',
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => StatementImportScreen(controller: c)))),
           _tile(Icons.upload_file, 'Экспорт резервной копии', 'В буфер обмена: с шифрованием паролем или без', onTap: () => exportBackup(context, c, cipher: security.backupCipher)),
           _tile(Icons.download, 'Импорт резервной копии', 'Обычная или зашифрованная; заменяет все данные', onTap: () => importBackupDialog(context, c, cipher: security.backupCipher)),
           _tile(Icons.auto_awesome, 'Загрузить примеры данных', 'Заменяет журнал, операции, цели и граф', onTap: _loadDemo),

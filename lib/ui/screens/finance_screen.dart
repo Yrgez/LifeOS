@@ -12,6 +12,7 @@ import '../../models/models.dart';
 import '../../state/app_controller.dart';
 import '../painters/chart_painters.dart';
 import '../widgets/form_dialog.dart';
+import 'statement_import_screen.dart';
 
 Map<String, String> _allCategoryOptions() => {for (final k in kFinCategories) k.id: '${k.isIncome ? 'Доход' : 'Расход'} • ${k.name}'};
 
@@ -201,6 +202,12 @@ class _FinanceScreenState extends State<FinanceScreen> {
         backgroundColor: AppColors.panel,
         elevation: 0,
         actions: [
+          IconButton(
+            key: const ValueKey('open_import'),
+            icon: const Icon(Icons.file_download_outlined),
+            tooltip: 'Импорт выписки (CSV)',
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => StatementImportScreen(controller: c))),
+          ),
           IconButton(
             icon: const Icon(Icons.autorenew),
             tooltip: 'Повторяющиеся операции',
@@ -472,9 +479,14 @@ class _FinanceScreenState extends State<FinanceScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(cat?.name ?? t.categoryId, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                if (t.note.isNotEmpty || !t.affectsNetWorth || t.recurringId != null)
+                if (t.note.isNotEmpty || !t.affectsNetWorth || t.recurringId != null || t.importId != null)
                   Text(
-                    [if (t.recurringId != null) '↻ повтор', if (t.note.isNotEmpty) t.note, if (!t.affectsNetWorth) 'вне капитала'].join(' • '),
+                    [
+                      if (t.recurringId != null) '↻ повтор',
+                      if (t.importId != null) 'из выписки',
+                      if (t.note.isNotEmpty) t.note,
+                      if (!t.affectsNetWorth) 'вне капитала',
+                    ].join(' • '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(color: AppColors.muted, fontSize: 11),

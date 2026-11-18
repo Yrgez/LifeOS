@@ -146,6 +146,7 @@ extension FinanceOps on AppController {
       note: note.trim(),
       affectsNetWorth: affectsNetWorth,
       recurringId: old.recurringId,
+      importId: old.importId,
     );
     _commit(() {
       if (old.affectsNetWorth) _d.netWorth -= old.signed;
@@ -155,6 +156,82 @@ extension FinanceOps on AppController {
       _pending.upsertTx(updated);
     });
     return true;
+  }
+
+  // ---------------- импорт выписки ----------------
+
+  List<StatementImport> get statementImports => List.unmodifiable(_d.imports);
+
+  /// Сколько операций ещё помещается в журнал. Импорт сверх предела не выполняется: вытеснять старые
+  /// операции ради новых нельзя.
+  int get transactionCapacityLeft => _maxTx - _d.transactions.length;
+
+  /// Предпросмотр: что будет добавлено, что уже загружалось раньше, какие строки не распознаны.
+  ({ParsedStatement parsed, List<StatementRow> fresh, List<StatementRow> duplicates}) previewStatement(String text, ColumnMapping mapping) {
+    final parsed = parseStatement(text, mapping, now: _clock());
+    final existing = [for (final t in _d.transactions) if (t.importId != null) statementFingerprint(t.at, t.signed, t.note)];
+    final split = splitDuplicates(parsed.rows, existing);
+    return (parsed: parsed, fresh: split.fresh, duplicates: split.duplicates);
+  }
+
+  /// Импортирует новые строки выписки как операции со ссылкой на импорт. Категории — общие для всех
+  /// поступлений и списаний (поправить можно у каждой операции). [affectsNetWorth] по умолчанию выключен:
+  /// капитал обычно уже учитывает прошлые траты. Возвращает id импорта или null (нечего добавить, не помещается,
+  /// неверные категории или название).
+  String? importStatement(
+    String text,
+    ColumnMapping mapping, {
+    required String name,
+    String expenseCategory = 'other_exp',
+    String incomeCategory = 'other_inc',
+    bool affectsNetWorth = false,
+  }) {
+    final exp = finCategory(expenseCategory), inc = finCategory(incomeCategory);
+    final n = name.trim();
+    if (exp == null || exp.isIncome || inc == null || !inc.isIncome || n.isEmpty || n.length > StatementImport.maxName) return null;
+    final p = previewStatement(text, mapping);
+    if (p.fresh.isEmpty || p.fresh.length > transactionCapacityLeft || _d.imports.length >= 5000) return null;
+    final now = _clock();
+    final id = 'imp_${now.microsecondsSinceEpoch}_${_random.nextInt(1 << 20)}';
+    _commit(() {
+      for (var k = 0; k < p.fresh.length; k++) {
+        final r = p.fresh[k];
+        _insertTx(
+          MoneyTx(
+            id: 'tx_${now.microsecondsSinceEpoch}_${k}_${_random.nextInt(1 << 20)}',
+            at: r.at,
+            isIncome: r.signed > 0,
+            amount: r.signed.abs(),
+            categoryId: r.signed > 0 ? incomeCategory : expenseCategory,
+            note: r.note,
+            affectsNetWorth: affectsNetWorth,
+            importId: id,
+          ),
+          applyNetWorth: true,
+        );
+      }
+      _d.imports.add(StatementImport(id: id, at: now, name: n, added: p.fresh.length, duplicates: p.duplicates.length, rejected: p.parsed.rejected.length));
+    });
+    return id;
+  }
+
+  /// Отмена импорта: его операции удаляются (влияние на капитал откатывается), запись импорта остаётся
+  /// с пометкой времени отмены. Явное действие с подтверждением в интерфейсе.
+  int? undoImport(String importId) {
+    final imp = _d.imports.where((x) => x.id == importId).firstOrNull;
+    if (imp == null || imp.undoneAt != null) return null;
+    var removed = 0;
+    _commit(() {
+      _d.transactions.removeWhere((t) {
+        if (t.importId != importId) return false;
+        _pending.deleteTx(t.id);
+        if (t.affectsNetWorth) _d.netWorth -= t.signed;
+        removed++;
+        return true;
+      });
+      imp.undoneAt = _clock();
+    });
+    return removed;
   }
 
   // ---------------- бюджеты ----------------

@@ -659,6 +659,9 @@ class MoneyTx {
   /// Создана правилом повторяющейся операции (id правила); null — введена вручную.
   final String? recurringId;
 
+  /// Пришла из импорта выписки (id импорта); null — введена в приложении. Видна как источник операции.
+  final String? importId;
+
   const MoneyTx({
     required this.id,
     required this.at,
@@ -668,6 +671,7 @@ class MoneyTx {
     this.note = '',
     this.affectsNetWorth = true,
     this.recurringId,
+    this.importId,
   });
 
   int get signed => isIncome ? amount : -amount;
@@ -681,6 +685,7 @@ class MoneyTx {
         'n': note,
         'nw': affectsNetWorth,
         'rid': recurringId,
+        if (importId != null) 'imp': importId,
       };
 
   factory MoneyTx.fromJson(Map<String, dynamic> j) =>
@@ -702,6 +707,7 @@ class MoneyTx {
       note: j['n'] as String? ?? '',
       affectsNetWorth: j['nw'] as bool? ?? true,
       recurringId: j['rid'] as String?,
+      importId: j['imp'] as String?,
     );
   }
 }

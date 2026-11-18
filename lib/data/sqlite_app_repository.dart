@@ -14,7 +14,7 @@ import 'change_set.dart';
 /// Версия SQL-схемы (PRAGMA user_version). Менять при изменении таблиц и добавлять шаг в [_onUpgrade].
 /// Не путать с [kSchemaVersion] — это версия формата JSON (резервные копии, поля AppData).
 /// 2 — таблица `life_events`. 3 — таблица `day_snapshots` (недельные массивы из `kv` переносятся в неё при загрузке).
-const int kDbVersion = 3;
+const int kDbVersion = 4;
 
 /// Хранилище в SQLite.
 ///
@@ -52,7 +52,7 @@ class SqliteAppRepository implements AppRepository {
     'hiddenSections',
   ];
 
-  static const _listCollections = ['goals', 'achievements', 'salaryHistory', 'graphNodes', 'graphEdges', 'recurring', 'processes', 'weights', 'accounts', 'experiments', 'checkins'];
+  static const _listCollections = ['goals', 'achievements', 'salaryHistory', 'graphNodes', 'graphEdges', 'recurring', 'processes', 'weights', 'accounts', 'experiments', 'checkins', 'imports'];
 
   // ---------------- открытие и схема ----------------
 
@@ -102,7 +102,8 @@ class SqliteAppRepository implements AppRepository {
         category_id TEXT NOT NULL,
         note TEXT NOT NULL,
         affects_net_worth INTEGER NOT NULL,
-        recurring_id TEXT
+        recurring_id TEXT,
+        import_id TEXT
       )''');
     await db.execute('CREATE INDEX idx_tx_ts ON money_tx (ts)');
     await db.execute('CREATE INDEX idx_tx_category ON money_tx (category_id, ts)');
@@ -124,6 +125,15 @@ class SqliteAppRepository implements AppRepository {
     // Шаги миграции: каждый — для перехода со своей версии; выполняются по порядку.
     if (oldVersion < 2) await _createEventsTable(db);
     if (oldVersion < 3) await _createSnapshotsTable(db);
+    // 4 — источник операции: импорт выписки
+    if (oldVersion < 4) await _addTxImportColumn(db);
+  }
+
+  /// Колонка источника операции. Проверяется наличие: шаг безопасен при повторе.
+  static Future<void> _addTxImportColumn(Database db) async {
+    final cols = await db.rawQuery('PRAGMA table_info(money_tx)');
+    if (cols.any((c) => c['name'] == 'import_id')) return;
+    await db.execute('ALTER TABLE money_tx ADD COLUMN import_id TEXT');
   }
 
   Future<Database> _open() async => _db ??= await opener();
@@ -229,6 +239,7 @@ class SqliteAppRepository implements AppRepository {
           'n': r['note'],
           'nw': r['affects_net_worth'] == 1,
           'rid': r['recurring_id'],
+          if (r['import_id'] != null) 'imp': r['import_id'],
         },
     ];
     final snaps = await db.query('day_snapshots', orderBy: 'day');
@@ -374,6 +385,7 @@ class SqliteAppRepository implements AppRepository {
         'note': t.note,
         'affects_net_worth': t.affectsNetWorth ? 1 : 0,
         'recurring_id': t.recurringId,
+        'import_id': t.importId,
       };
 
   static Map<String, Object?> _snapRow(DaySnapshot s) => {'day': s.day, 'body': jsonEncode(s.toJson())};
