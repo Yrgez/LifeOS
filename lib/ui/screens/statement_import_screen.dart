@@ -4,17 +4,24 @@ import 'package:flutter/services.dart';
 import '../../core/currency.dart';
 import '../../core/finance_categories.dart';
 import '../../core/statement_import.dart';
+import '../../core/text_decoding.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
+import '../../data/file_picker_source.dart';
+import '../../data/file_source.dart';
 import '../../state/app_controller.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/toast.dart';
 
-/// Импорт банковской выписки (CSV): вставка текста → колонки → предпросмотр → импорт. Внизу — прежние импорты
-/// с отменой. Файл не читается напрямую: текст выписки вставляется из буфера обмена (без доступа к файлам).
+/// Импорт банковской выписки (CSV): файл или текст из буфера → колонки → предпросмотр → импорт.
+/// Внизу — прежние импорты с отменой. Файл читается только в память и никуда не отправляется.
 class StatementImportScreen extends StatefulWidget {
+  /// Больше — точно не выписка за разумный период (и не стоит держать в памяти).
+  static const maxFileBytes = 5 * 1024 * 1024;
+
   final AppController controller;
-  const StatementImportScreen({super.key, required this.controller});
+  final FileSource files;
+  const StatementImportScreen({super.key, required this.controller, this.files = const FilePickerSource()});
 
   @override
   State<StatementImportScreen> createState() => _StatementImportScreenState();
@@ -29,6 +36,7 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
   String _expenseCat = 'other_exp';
   String _incomeCat = 'other_inc';
   bool _affectsNetWorth = false;
+  String? _source; // «файл.csv · Windows-1251» или «из буфера обмена»
 
   @override
   void dispose() {
@@ -45,6 +53,32 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
     });
   }
 
+  Future<void> _pickFile() async {
+    PickedFile? f;
+    try {
+      f = await widget.files.pickStatement();
+    } catch (_) {
+      if (mounted) showToast(context, 'Не удалось открыть файл. Попробуйте ещё раз или вставьте текст из буфера');
+      return;
+    }
+    if (f == null || !mounted) return;
+    if (f.bytes.length > StatementImportScreen.maxFileBytes) {
+      showToast(context, 'Файл больше 5 МБ — выгрузите выписку за меньший период');
+      return;
+    }
+    final d = decodeStatementBytes(f.bytes);
+    if (d == null) {
+      showToast(context, 'Это не текстовый CSV (например, Excel). Сохраните выписку в банке как CSV');
+      return;
+    }
+    _text.text = d.text;
+    final dot = f.name.lastIndexOf('.');
+    _name.text = (dot > 0 ? f.name.substring(0, dot) : f.name).trim();
+    if (_name.text.isEmpty) _name.text = 'Выписка ${fmtDate(c.now)}';
+    _source = '${f.name} · ${d.encoding}';
+    _analyze();
+  }
+
   Future<void> _paste() async {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     final s = data?.text ?? '';
@@ -54,6 +88,7 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
     }
     _text.text = s;
     if (_name.text.trim().isEmpty) _name.text = 'Выписка ${fmtDate(c.now)}';
+    _source = 'из буфера обмена';
     _analyze();
   }
 
@@ -68,6 +103,7 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
     showToast(context, 'Добавлено операций: ${imp.added}');
     setState(() {
       _text.clear();
+      _source = null;
       _header = const [];
       _mapping = const ColumnMapping();
     });
@@ -94,19 +130,29 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
           children: [
             const Text(
-              'Выгрузите выписку из банка в CSV, откройте файл, скопируйте весь текст и вставьте сюда. '
-              'Уже загруженные раньше операции не повторятся.',
+              'Выгрузите выписку из банка в CSV и выберите файл. Уже загруженные раньше операции не повторятся. '
+              'Файл читается только на телефоне.',
               style: TextStyle(color: AppColors.muted, fontSize: 13),
             ),
             const SizedBox(height: 12),
             FilledButton.icon(
-              key: const ValueKey('import_paste'),
+              key: const ValueKey('import_file'),
               style: FilledButton.styleFrom(backgroundColor: AppColors.accent, foregroundColor: Colors.black, minimumSize: const Size.fromHeight(46)),
-              onPressed: _paste,
-              icon: const Icon(Icons.content_paste),
-              label: const Text('Вставить из буфера'),
+              onPressed: _pickFile,
+              icon: const Icon(Icons.folder_open_outlined),
+              label: const Text('Выбрать файл'),
             ),
-            const SizedBox(height: 8),
+            TextButton.icon(
+              key: const ValueKey('import_paste'),
+              onPressed: _paste,
+              icon: const Icon(Icons.content_paste, size: 18),
+              label: const Text('Или вставить текст из буфера'),
+            ),
+            if (_source != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text('Источник: $_source', key: const ValueKey('import_source'), style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+              ),
             TextField(
               key: const ValueKey('import_text'),
               controller: _text,
@@ -114,7 +160,10 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
               maxLines: 6,
               style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
               decoration: const InputDecoration(hintText: 'Дата;Сумма;Описание\n18.11.2026;-450,00;Кофейня'),
-              onChanged: (_) => _analyze(),
+              onChanged: (_) {
+                _source = null; // текст правят руками — источник уже не файл
+                _analyze();
+              },
             ),
             if (_header.isNotEmpty) ..._mappingSection(),
             if (_mapping.isComplete) ..._previewSection(),
