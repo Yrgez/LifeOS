@@ -4,9 +4,16 @@ import 'package:flutter/services.dart';
 import '../../core/theme.dart';
 import '../../security/backup_cipher.dart';
 import '../../state/app_controller.dart';
+import '../../core/text_decoding.dart';
+import '../../data/file_selector_source.dart';
+import '../../data/file_source.dart';
+import 'confirm_dialog.dart';
 import 'form_dialog.dart';
 import 'progress_dialog.dart';
 import 'toast.dart';
+
+/// Предел файла копии: десятилетия журналов — единицы мегабайт; больше — точно не наша копия.
+const maxBackupFileBytes = 100 * 1024 * 1024;
 
 /// Резервная копия: экспорт в буфер обмена (по желанию — с шифрованием паролем) и импорт.
 /// Зашифрованная копия — JSON-контейнер AES-256-GCM; без пароля её не прочитать, а пароль не восстановить.
@@ -54,8 +61,41 @@ Future<void> importBackupDialog(BuildContext context, AppController c, {BackupCi
     validate: (v) => v['json']!.isNotEmpty,
   );
   if (r == null || !context.mounted) return;
+  await importBackupText(context, c, r['json']!, cipher: cipher);
+}
 
-  var text = r['json']!.trim();
+/// Восстановление из файла копии (в том числе автокопии из папки). Файл выбирает человек.
+Future<void> restoreFromFile(
+  BuildContext context,
+  AppController c, {
+  FileSource files = const FileSelectorSource(maxBytes: maxBackupFileBytes),
+  BackupCipher cipher = const BackupCipher(useIsolate: true),
+}) async {
+  PickedFile? f;
+  try {
+    f = await files.pickFile();
+  } on FileTooLargeException {
+    if (context.mounted) showToast(context, 'Файл слишком большой для резервной копии');
+    return;
+  } catch (_) {
+    if (context.mounted) showToast(context, 'Не удалось открыть файл');
+    return;
+  }
+  if (f == null || !context.mounted) return;
+  final d = decodeStatementBytes(f.bytes);
+  if (d == null) {
+    showToast(context, 'Это не файл резервной копии LIFE OS');
+    return;
+  }
+  final ok = await confirmDialog(context,
+      title: 'Восстановить из «${f.name}»?', message: 'Текущие данные будут заменены данными из копии.', confirmLabel: 'Продолжить', danger: true);
+  if (!ok || !context.mounted) return;
+  await importBackupText(context, c, d.text, cipher: cipher);
+}
+
+/// Копия (обычная или зашифрованная) → замена данных. Для зашифрованной спрашивается пароль.
+Future<void> importBackupText(BuildContext context, AppController c, String raw, {BackupCipher cipher = const BackupCipher(useIsolate: true)}) async {
+  var text = raw.trim();
   if (BackupCipher.looksEncrypted(text)) {
     final pr = await showFormDialog(
       context,

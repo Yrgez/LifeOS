@@ -15,8 +15,8 @@ class FileTooLargeException implements Exception {
 }
 
 abstract class FileSource {
-  /// Файл выписки, выбранный человеком; null — выбор отменён.
-  Future<PickedFile?> pickStatement();
+  /// Файл, выбранный человеком (выписка, резервная копия); null — выбор отменён.
+  Future<PickedFile?> pickFile();
 }
 
 /// Для тестов: возвращает заранее заданный файл.
@@ -27,7 +27,7 @@ class FakeFileSource implements FileSource {
   FakeFileSource([this.next]);
 
   @override
-  Future<PickedFile?> pickStatement() async {
+  Future<PickedFile?> pickFile() async {
     calls++;
     if (error != null) throw error!;
     return next;

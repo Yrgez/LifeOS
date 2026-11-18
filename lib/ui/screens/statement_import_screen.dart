@@ -56,7 +56,7 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
   Future<void> _pickFile() async {
     PickedFile? f;
     try {
-      f = await widget.files.pickStatement();
+      f = await widget.files.pickFile();
     } on FileTooLargeException {
       if (mounted) showToast(context, 'Файл больше 5 МБ — выгрузите выписку за меньший период');
       return;

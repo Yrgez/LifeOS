@@ -7,7 +7,10 @@ import '../../core/currency.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/app_data.dart';
+import '../../core/backup_schedule.dart';
 import '../../security/app_lock.dart';
+import '../../security/auto_backup.dart';
+import '../../security/backup_cipher.dart';
 import '../../security/biometric_authenticator.dart';
 import '../../security/security_service.dart';
 import '../../security/security_settings.dart';
@@ -90,6 +93,103 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     if (r == null || !mounted) return;
     c.updateSettings(proteinGoal: parseInt(r['v']!));
+  }
+
+  // ---------------- автоматическая резервная копия ----------------
+
+  static const _intervalLabels = {1: 'ежедневно', 7: 'еженедельно', 30: 'ежемесячно'};
+
+  Future<void> _backupPassword(AutoBackup b) async {
+    final r = await showFormDialog(
+      context,
+      title: 'Пароль резервных копий',
+      actionLabel: 'Сохранить',
+      accent: AppColors.accent,
+      fields: const [
+        FieldSpec('p', 'Пароль (от ${BackupCipher.minPassphraseLength} символов)', obscure: true),
+        FieldSpec('p2', 'Повторите пароль', obscure: true),
+      ],
+      validate: (v) => v['p']!.length >= BackupCipher.minPassphraseLength && v['p'] == v['p2'],
+    );
+    if (r == null || !mounted) return;
+    await b.setPassword(r['p']!);
+    if (mounted) showToast(context, 'Пароль сохранён. Запишите его: на новом телефоне без него копию не открыть');
+  }
+
+  Future<void> _backupNow(AutoBackup b) async {
+    final r = await runWithProgress(context, 'Резервная копия…', b.runNow);
+    if (!mounted) return;
+    showToast(context, switch (r) {
+      BackupOutcome.done => 'Копия записана: ${b.lastFile}',
+      BackupOutcome.notConfigured => 'Сначала выберите папку и задайте пароль',
+      BackupOutcome.noAccess => 'Нет доступа к папке — выберите её заново',
+      BackupOutcome.failed => 'Копия не записана: ${b.error ?? 'ошибка'}',
+    });
+  }
+
+  Future<void> _backupDisable(AutoBackup b) async {
+    final ok = await confirmDialog(context,
+        title: 'Отключить автокопию?',
+        message: 'Приложение забудет папку и пароль копий. Уже сделанные копии останутся в папке.',
+        confirmLabel: 'Отключить',
+        danger: true);
+    if (ok) await b.disable();
+  }
+
+  List<Widget> _backupTiles(AutoBackup? b) {
+    final restore = _tile(Icons.settings_backup_restore, 'Восстановить из файла', 'Копия LIFE OS (в том числе автокопия); заменяет все данные',
+        onTap: () => restoreFromFile(context, c, cipher: security.backupCipher));
+    if (b == null || !b.supported) return [restore];
+    final now = c.now;
+    final days = daysSinceBackup(b.lastAt, now);
+    final status = b.lastAt == null
+        ? 'Копий ещё не было'
+        : 'Последняя копия: ${fmtDate(b.lastAt!)} ${fmtTime(b.lastAt!)}${days != null && days > 0 ? ' ($days дн. назад)' : ''}';
+    return [
+      Padding(
+        key: const ValueKey('backup_status'),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Данные хранятся только на телефоне. Автокопия раз в выбранный срок кладёт зашифрованную копию в папку, '
+              'которую вы укажете — например, в Google Drive. Хранятся последние $backupKeepCount копий.',
+              style: TextStyle(color: AppColors.muted, fontSize: 12),
+            ),
+            const SizedBox(height: 8),
+            Text(status, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+            if (b.error != null) Text('Не получилось: ${b.error}', style: const TextStyle(color: AppColors.amber, fontSize: 12)),
+          ],
+        ),
+      ),
+      _tile(Icons.folder_outlined, 'Папка для копий', b.folder == null ? 'Не выбрана' : (b.folderName ?? 'выбрана'),
+          onTap: () async {
+        final ok = await b.chooseFolder();
+        if (ok && mounted && b.configured && b.lastAt == null) await _backupNow(b);
+      }),
+      _tile(Icons.password, 'Пароль копий', b.hasPassword ? 'Задан · хранится в защищённом хранилище телефона' : 'Не задан — без него копия не делается',
+          onTap: () async {
+        await _backupPassword(b);
+        if (mounted && b.configured && b.lastAt == null) await _backupNow(b);
+      }),
+      _tile(
+        Icons.schedule,
+        'Как часто',
+        'При открытии приложения',
+        trailing: DropdownButton<int>(
+          key: const ValueKey('backup_interval'),
+          value: b.intervalDays,
+          underline: const SizedBox.shrink(),
+          items: [for (final d in backupIntervalOptions) DropdownMenuItem(value: d, child: Text(_intervalLabels[d]!))],
+          onChanged: (v) => v == null ? null : b.setInterval(v),
+        ),
+      ),
+      _tile(Icons.backup_outlined, 'Сделать копию сейчас', b.configured ? 'Записать копию в папку' : 'Нужны папка и пароль',
+          onTap: b.configured && !b.running ? () => _backupNow(b) : null),
+      restore,
+      if (b.folder != null || b.hasPassword) _tile(Icons.cloud_off_outlined, 'Отключить автокопию', 'Забыть папку и пароль', onTap: () => _backupDisable(b)),
+    ];
   }
 
   Future<void> _loadDemo() async {
@@ -226,7 +326,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         backgroundColor: AppColors.panel,
         elevation: 0,
       ),
-      body: ListenableBuilder(listenable: Listenable.merge([c, security, lock]), builder: (context, _) => _content()),
+      body: ListenableBuilder(listenable: Listenable.merge([c, security, lock, if (security.backup != null) security.backup!]), builder: (context, _) => _content()),
     );
   }
 
@@ -316,11 +416,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           }.entries)
             _tile(Icons.table_chart_outlined, e.value.$1, e.value.$2, onTap: () => _copyExport(e.value.$1, c.exportCsv(e.key)!)),
         ]),
+        _section('РЕЗЕРВНАЯ КОПИЯ', _backupTiles(security.backup)),
         _section('ДАННЫЕ', [
           _tile(Icons.file_download_outlined, 'Импорт выписки банка (CSV)', 'Операции из выписки — в журнал, без повторов; импорт можно отменить',
               onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => StatementImportScreen(controller: c)))),
-          _tile(Icons.upload_file, 'Экспорт резервной копии', 'В буфер обмена: с шифрованием паролем или без', onTap: () => exportBackup(context, c, cipher: security.backupCipher)),
-          _tile(Icons.download, 'Импорт резервной копии', 'Обычная или зашифрованная; заменяет все данные', onTap: () => importBackupDialog(context, c, cipher: security.backupCipher)),
+          _tile(Icons.upload_file, 'Копия в буфер обмена', 'Разово: с шифрованием паролем или без', onTap: () => exportBackup(context, c, cipher: security.backupCipher)),
+          _tile(Icons.download, 'Копия из буфера обмена', 'Обычная или зашифрованная; заменяет все данные', onTap: () => importBackupDialog(context, c, cipher: security.backupCipher)),
           _tile(Icons.auto_awesome, 'Загрузить примеры данных', 'Заменяет журнал, операции, цели и граф', onTap: _loadDemo),
           _tile(Icons.delete_forever, 'Сбросить все данные', 'Начать с чистого листа', danger: true, onTap: _reset),
         ]),

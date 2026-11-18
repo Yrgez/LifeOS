@@ -11,7 +11,7 @@ class FileSelectorSource implements FileSource {
   const FileSelectorSource({this.maxBytes = 5 * 1024 * 1024});
 
   @override
-  Future<PickedFile?> pickStatement() async {
+  Future<PickedFile?> pickFile() async {
     final f = await openFile();
     if (f == null) return null;
     // размер до чтения: огромный файл не загружается в память целиком
