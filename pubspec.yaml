@@ -19,6 +19,8 @@ dependencies:
   cryptography: ^2.7.0 # шифрование резервных копий (AES-256-GCM, PBKDF2)
   health: ^12.0.0 # Health Connect (Android); см. docs/HEALTH_SETUP.md
   file_selector: ^1.1.0 # выбор файла выписки (CSV), официальный плагин Flutter; только за интерфейсом FileSource
+  backup_folder: # папка для резервных копий (Android SAF); локальный плагин, только за интерфейсом BackupStorage
+    path: packages/backup_folder
 dev_dependencies:
   flutter_test:
     sdk: flutter

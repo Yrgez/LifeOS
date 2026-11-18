@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/rhythm.dart';
 import '../../core/sections.dart';
 import '../../core/theme.dart';
+import '../../core/backup_schedule.dart';
 import '../../core/currency.dart';
 import '../../core/life_events.dart';
 import '../../core/memories.dart';
@@ -11,6 +12,7 @@ import '../../models/day_checkin.dart';
 import '../../models/experiment.dart';
 import '../../models/life_event.dart';
 import '../../models/life_process.dart';
+import '../../security/auto_backup.dart';
 import '../../security/security_service.dart';
 import '../../state/app_controller.dart';
 import '../widgets/health_card.dart';
@@ -119,6 +121,8 @@ class HubScreen extends StatelessWidget {
               ),
             ),
           ],
+          if (security.backup != null)
+            _BackupReminder(backup: security.backup!, controller: c, open: () => _push(context, SettingsScreen(controller: c, security: security))),
           if (c.isShown(Sections.checkIn)) _CheckInTile(controller: c, push: (w) => _push(context, w)),
           // платежи — только просроченные и на сегодня-завтра: остальное ждёт на «Материальном»
           if (c.isShown(Sections.bills))
@@ -603,6 +607,52 @@ class _HealthScreen extends StatelessWidget {
 }
 
 /// «В этот день»: было → стало, только факты из журналов.
+/// Напоминание о резервной копии: данные только на телефоне — без копии их можно потерять вместе с ним.
+/// Видно, только когда нужно: копий давно не было или автокопия перестала получаться. Новичка не дёргает,
+/// пока в приложении меньше недели данных.
+class _BackupReminder extends StatelessWidget {
+  final AutoBackup backup;
+  final AppController controller;
+  final VoidCallback open;
+  const _BackupReminder({required this.backup, required this.controller, required this.open});
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+        listenable: backup,
+        builder: (context, _) {
+          final now = controller.now;
+          if (!backup.needsAttention(now)) return const SizedBox.shrink();
+          final days = daysSinceBackup(backup.lastAt, now);
+          if (days == null && backup.error == null && controller.snapshotsByDay.length < 7) return const SizedBox.shrink();
+          final (title, sub) = backup.error != null
+              ? ('Автокопия не получилась', backup.error!)
+              : days == null
+                  ? ('Резервной копии ещё нет', 'Данные только на этом телефоне. Настройте автокопию — это пара минут')
+                  : ('Резервной копии нет $days дн.', 'Последняя — ${fmtDate(backup.lastAt!)}');
+          return Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: _Tile(
+              key: const ValueKey('backup_reminder'),
+              onTap: open,
+              child: Row(
+                children: [
+                  const Icon(Icons.backup_outlined, color: AppColors.amber),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [Text(title, style: _label), Text(sub, style: _sub, maxLines: 2, overflow: TextOverflow.ellipsis)],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right, color: AppColors.muted),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+}
+
 /// Вечерняя отметка дня: вопрос с оценкой в одно нажатие, после — короткая строка с итогом.
 class _CheckInTile extends StatelessWidget {
   final AppController controller;

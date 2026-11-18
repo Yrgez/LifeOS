@@ -8,6 +8,7 @@ import 'backup_cipher.dart';
 import 'biometric_authenticator.dart';
 import 'db_encryption.dart';
 import 'security_settings.dart';
+import 'auto_backup.dart';
 
 /// Запускает действие при закрытой базе и остановленной очереди сохранений (`SqliteAppRepository.exclusive`).
 typedef ExclusiveRunner = Future<T> Function<T>(Future<T> Function() action);
@@ -28,6 +29,7 @@ class SecurityService extends ChangeNotifier {
     this.exclusive,
     this.onStorageReset,
     this.backupCipher = const BackupCipher(),
+    this.backup,
   });
 
   /// Заглушка для тестов интерфейса и превью: блокировка выключена, шифрование базы недоступно.
@@ -47,6 +49,9 @@ class SecurityService extends ChangeNotifier {
   final Future<void> Function()? onStorageReset;
 
   final BackupCipher backupCipher;
+
+  /// Автоматическая резервная копия в выбранную папку; null — недоступна (тесты, превью).
+  final AutoBackup? backup;
 
   bool _encrypted = false;
   bool _busy = false;

@@ -330,7 +330,7 @@ void main() {
     tearDown(() => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
 
     Future<void> exportEncrypted(WidgetTester tester, String password) async {
-      await tester.tap(find.text('Экспорт резервной копии'));
+      await tester.tap(find.text('Копия в буфер обмена'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField).at(0), password);
       await tester.enterText(find.byType(TextField).at(1), password);
@@ -354,7 +354,7 @@ void main() {
     testWidgets('пароли не совпадают или слишком короткие — экспорт не выполняется', (tester) async {
       final e = await boot(tester);
       await openSettings(tester);
-      await tester.tap(find.text('Экспорт резервной копии'));
+      await tester.tap(find.text('Копия в буфер обмена'));
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField).at(0), 'длинный пароль 1');
@@ -375,7 +375,7 @@ void main() {
     testWidgets('экспорт без шифрования доступен, но явно помечен', (tester) async {
       final e = await boot(tester);
       await openSettings(tester);
-      await tester.tap(find.text('Экспорт резервной копии'));
+      await tester.tap(find.text('Копия в буфер обмена'));
       await tester.pumpAndSettle();
       await tester.tap(find.byType(DropdownButton<String>));
       await tester.pumpAndSettle();
@@ -390,7 +390,7 @@ void main() {
     });
 
     Future<void> importText(WidgetTester tester, String text) async {
-      await tester.tap(find.text('Импорт резервной копии'));
+      await tester.tap(find.text('Копия из буфера обмена'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), text);
       await tester.tap(find.text('Далее'));

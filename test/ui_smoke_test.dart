@@ -467,6 +467,8 @@ void main() {
     testWidgets('«Пройти знакомство заново» закрывает настройки и показывает знакомство', (tester) async {
       final c = await boot(tester);
       await openSettings(tester);
+      await tester.ensureVisible(find.text('Пройти знакомство заново'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Пройти знакомство заново'));
       await tester.pumpAndSettle();
       expect(find.text('Добро пожаловать в Life OS'), findsOneWidget);

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -8,10 +9,12 @@ import 'app.dart';
 import 'core/app_log.dart';
 import 'data/app_data.dart';
 import 'data/app_repository.dart';
+import 'data/folder_backup_storage.dart';
 import 'data/health_connect_source.dart';
 import 'data/sqlcipher_opener.dart';
 import 'data/sqlite_app_repository.dart';
 import 'security/app_lock.dart';
+import 'security/auto_backup.dart';
 import 'security/backup_cipher.dart';
 import 'security/db_encryption.dart';
 import 'security/local_auth_authenticator.dart';
@@ -72,6 +75,10 @@ Future<void> main() async {
     ..start() // холодный старт: если блокировка включена — приложение сразу заблокировано
     ..attach();
 
+  // автокопия в папку, выбранную человеком (Android); настройки и пароль — на устройстве
+  final backup = AutoBackup(controller: controller, storage: FolderBackupStorage.forPlatform(), keys: keys);
+  await backup.init();
+
   final security = SecurityService(
     lock: lock,
     encryption: encryption,
@@ -79,8 +86,10 @@ Future<void> main() async {
     exclusive: repository.exclusive,
     onStorageReset: controller.onStorageReset, // явный сброс снимает блокировку и создаёт новое хранилище
     backupCipher: const BackupCipher(useIsolate: true),
+    backup: backup,
   );
   await security.init();
 
   runApp(LifeOSApp(controller: controller, security: security));
+  unawaited(backup.maybeRun()); // не ждём: копия пишется в фоне, ошибка запоминается и видна на «Сегодня»
 }
