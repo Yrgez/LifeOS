@@ -10,6 +10,7 @@ import '../../state/app_controller.dart';
 import '../painters/chart_painters.dart';
 import '../painters/graph_painter.dart';
 import '../widgets/form_dialog.dart';
+import '../widgets/toast.dart';
 import 'events_screen.dart';
 
 const _categoryNames = {
@@ -169,6 +170,16 @@ class _GraphScreenState extends State<GraphScreen> {
 
   static String _refKey(NodeRef? r) => r == null ? '' : '${r.type}:${r.id}';
 
+  void _fromEntities() {
+    final r = c.graphFromEntities();
+    showToast(
+      context,
+      r.nodes == 0 && r.edges == 0
+          ? 'Все процессы и цели уже на графе'
+          : 'Добавлено узлов: ${r.nodes}, связей «процесс → цель»: ${r.edges}',
+    );
+  }
+
   Future<void> _addNodeDialog() async {
     final refs = _refOptions();
     final r = await showFormDialog(
@@ -274,6 +285,12 @@ class _GraphScreenState extends State<GraphScreen> {
               ),
               Row(
                 children: [
+                  IconButton(
+                    key: const ValueKey('graph_from_entities'),
+                    icon: const Icon(Icons.account_tree_outlined, size: 22),
+                    tooltip: 'Собрать из процессов и целей',
+                    onPressed: _fromEntities,
+                  ),
                   IconButton(icon: const Icon(Icons.add_circle, color: AppColors.violet, size: 24), tooltip: 'Добавить узел', onPressed: _addNodeDialog),
                   IconButton(icon: const Icon(Icons.alt_route, color: Colors.cyanAccent, size: 24), tooltip: 'Связать узлы', onPressed: () => _addEdgeDialog(_selectedNodeId)),
                 ],
@@ -338,6 +355,25 @@ class _GraphScreenState extends State<GraphScreen> {
   }
 
   Widget _canvas(Set<String> isolated) {
+    if (c.graphNodes.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Граф пуст. Его можно собрать из ваших процессов и целей — связи «процесс → цель» берутся из того, что вы уже указали.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.muted, fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton(onPressed: _fromEntities, child: const Text('Собрать из процессов и целей')),
+            ],
+          ),
+        ),
+      );
+    }
     return Container(
       margin: const EdgeInsets.all(12),
       decoration: BoxDecoration(color: AppColors.panel, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white12)),
@@ -574,6 +610,11 @@ class _GraphScreenState extends State<GraphScreen> {
             IconButton(icon: const Icon(Icons.close, color: AppColors.muted, size: 18), onPressed: _clearSelection, padding: EdgeInsets.zero, constraints: const BoxConstraints()),
           ],
         ),
+        if (c.edgeEvidence(edge) case final ev?)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text('По журналу: $ev', key: const ValueKey('edge_evidence'), style: const TextStyle(color: AppColors.muted, fontSize: 11)),
+          ),
         const SizedBox(height: 8),
         const Text('ТИП СВЯЗИ', style: TextStyle(color: AppColors.muted, fontSize: 9, fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),

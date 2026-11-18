@@ -148,10 +148,10 @@ class AppData {
         onboardingDone: true,
       );
 
-  /// Чистый старт для новой установки: нули, пустые журналы и цели, только «живые» узлы графа.
+  /// Чистый старт для новой установки: нули, пустые журналы и цели, пустой граф (он собирается
+  /// из процессов и целей — демонстрационных узлов с цифрами у нового пользователя нет).
   /// Знакомство ещё не пройдено ([onboardingDone] = false).
   factory AppData.blank({DateTime? now}) {
-    final nodes = blankGraphNodes();
     return AppData(
       netWorth: 0,
       monthlyIncome: 0,
@@ -164,8 +164,8 @@ class AppData {
       goals: <GlobalGoal>[],
       achievements: <AchievementItem>[],
       salaryHistory: <SalaryStep>[],
-      graphNodes: nodes,
-      graphEdges: blankGraphEdges(),
+      graphNodes: <GraphNode>[],
+      graphEdges: <GraphEdge>[],
       onboardingDone: false,
     );
   }

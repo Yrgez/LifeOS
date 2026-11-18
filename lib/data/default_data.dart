@@ -142,25 +142,3 @@ Map<String, MuscleGroup> blankMuscles() {
       ),
   };
 }
-
-/// Стартовый граф: только «живые» узлы, значения которых подставляются из данных.
-List<GraphNode> blankGraphNodes() {
-  GraphNode n(String id, String label, String category, double x, double y) =>
-      GraphNode(id: id, label: label, category: category, position: Offset(x, y), color: nodeColorFor(category));
-  return [
-    n('n_salary', 'ЗП: 0к', 'wealth', 0.22, 0.20),
-    n('n_capital', 'Капитал 0.00М', 'wealth', 0.76, 0.20),
-    n('n_sleep', 'Сон / Отдых', 'health', 0.22, 0.56),
-    n('n_chest', 'Грудь (1RM 0)', 'gym', 0.56, 0.62),
-    n('n_protein', 'Белок: 0 г', 'health', 0.78, 0.80),
-    n('n_activity', 'Шаги: 0.0k', 'health', 0.40, 0.88),
-  ];
-}
-
-List<GraphEdge> blankGraphEdges() => [
-      GraphEdge('n_salary', 'n_capital', kind: EdgeKind.supports, weight: 3),
-      GraphEdge('n_sleep', 'n_chest', kind: EdgeKind.supports, weight: 2),
-      GraphEdge('n_sleep', 'n_salary', kind: EdgeKind.supports),
-      GraphEdge('n_chest', 'n_protein'),
-      GraphEdge('n_protein', 'n_activity'),
-    ];

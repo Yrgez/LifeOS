@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:life_os/core/graph_stats.dart';
 import 'package:life_os/data/app_data.dart';
 import 'package:life_os/data/app_repository.dart';
+import 'package:life_os/models/life_event.dart';
+import 'package:life_os/models/life_process.dart';
 import 'package:life_os/models/models.dart';
 import 'package:life_os/state/app_controller.dart';
 
@@ -166,5 +168,33 @@ void main() {
     final d = AppData.defaults();
     final back = AppData.fromJson(d.toJson());
     expect(back.graphEdges.map((e) => '${e.key}:${e.kind}:${e.weight}'), d.graphEdges.map((e) => '${e.key}:${e.kind}:${e.weight}'));
+  });
+
+  test('граф собирается из процессов и целей: узлы, «процесс → цель», доказательство из журнала', () async {
+    var t = DateTime(2026, 11, 18, 12);
+    final c = AppController(MemoryAppRepository(), clock: () => t, saveDelay: Duration.zero, initialData: (n) => AppData.blank(now: n));
+    await c.load();
+    expect(c.graphNodes, isEmpty);
+    c.addGoal('Сменить работу', 'mind', const []);
+    final g = c.goals.single.id;
+    t = t.add(const Duration(seconds: 1));
+    final p = c.addProcess(title: 'Изучение Java', dimensions: [LifeDimension.mind], goalIds: [g])!;
+    final stopped = c.addProcess(title: 'Бросил', dimensions: [LifeDimension.body])!;
+    c.setProcessStatus(stopped, ProcessStatus.stopped);
+    c.addEvent(title: 'Урок', dimensions: [LifeDimension.mind], processIds: [p], goalIds: [g]);
+
+    expect(c.graphFromEntities(), (nodes: 2, edges: 1));
+    expect(c.graphFromEntities(), (nodes: 0, edges: 0)); // повтор ничего не дублирует
+    final e = c.graphEdges.single;
+    expect(e.kind, EdgeKind.supports);
+    expect(c.nodeById(e.fromId)!.ref!.id, p);
+    expect(c.edgeEvidence(e), 'процесс указан для этой цели · событий, связанных с обоими: 1');
+
+    // связь между узлами без сущностей — доказательства из журнала нет
+    c.addNode('Идея', 'mind');
+    c.addNode('Мысль', 'mind');
+    final ids = c.graphNodes.where((n) => n.ref == null).map((n) => n.id).toList();
+    c.addEdge(ids[0], ids[1]);
+    expect(c.edgeEvidence(c.graphEdges.last), isNull);
   });
 }

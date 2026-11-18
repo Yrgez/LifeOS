@@ -554,6 +554,43 @@ class AppController extends ChangeNotifier {
     return n.id;
   }
 
+  /// Собирает граф из того, что уже есть в жизни: узел на каждый процесс (кроме прекращённых) и цель,
+  /// связь «процесс → цель», если процесс указан для цели. Уже нарисованное не трогает, дубликатов не создаёт.
+  ({int nodes, int edges}) graphFromEntities() {
+    final before = _d.graphNodes.length;
+    for (final p in _d.processes) {
+      if (p.status != ProcessStatus.stopped) addNodeFor(NodeRef(NodeRef.process, p.id));
+    }
+    for (final g in _d.goals) {
+      addNodeFor(NodeRef(NodeRef.goal, g.id));
+    }
+    var edges = 0;
+    for (final p in _d.processes) {
+      final from = nodeForRef(NodeRef(NodeRef.process, p.id));
+      if (from == null) continue;
+      for (final gid in p.goalIds) {
+        final to = nodeForRef(NodeRef(NodeRef.goal, gid));
+        if (to != null && addEdge(from.id, to.id, kind: EdgeKind.supports)) edges++;
+      }
+    }
+    return (nodes: _d.graphNodes.length - before, edges: edges);
+  }
+
+  /// Чем подтверждается связь в журналах — для связей между процессами и целями. null — узлы не связаны
+  /// с сущностями (связь нарисована человеком, данных о ней нет).
+  String? edgeEvidence(GraphEdge e) {
+    final a = nodeById(e.fromId)?.ref, b = nodeById(e.toId)?.ref;
+    if (a == null || b == null) return null;
+    bool touches(LifeEvent ev, NodeRef r) => r.type == NodeRef.process ? ev.processIds.contains(r.id) : ev.goalIds.contains(r.id);
+    final both = events.where((ev) => ev.kind != LifeEventKind.review && touches(ev, a) && touches(ev, b)).length;
+    final parts = <String>[];
+    final p = a.type == NodeRef.process ? a : (b.type == NodeRef.process ? b : null);
+    final g = a.type == NodeRef.goal ? a : (b.type == NodeRef.goal ? b : null);
+    if (p != null && g != null && (processById(p.id)?.goalIds.contains(g.id) ?? false)) parts.add('процесс указан для этой цели');
+    parts.add(both == 0 ? 'событий, связанных с обоими, нет' : 'событий, связанных с обоими: $both');
+    return parts.join(' · ');
+  }
+
   void deleteNode(String id) => _commit(() {
         _d.graphNodes.removeWhere((n) => n.id == id);
         _d.graphEdges.removeWhere((e) => e.fromId == id || e.toId == id);
