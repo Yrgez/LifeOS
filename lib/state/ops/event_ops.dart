@@ -265,6 +265,15 @@ extension EventOps on AppController {
   /// Пора ли предложить обзор (прошлого нет или он старше недели).
   bool get weekReviewDue => reviewDue(events, _clock());
 
+  /// С какого момента пора делать обзор: сейчас, если он уже назрел; иначе через [reviewEveryDays] дней после
+  /// прошлого. null — обзоры пока не нужны (нет ни прошлого обзора, ни событий).
+  DateTime? get nextReviewDueAt {
+    final now = _clock();
+    if (reviewDue(events, now)) return now;
+    final last = lastReview(events);
+    return last == null ? null : last.at.add(const Duration(days: reviewEveryDays));
+  }
+
   /// Сохраняет обзор событием вида «обзор» и применяет решения по процессам (новый статус с пометкой).
   /// Возвращает id события или null (ни одного ответа и ни одного решения — сохранять нечего).
   String? saveWeekReview(List<String> answers, {Map<String, String> processDecisions = const {}}) {

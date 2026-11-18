@@ -8,6 +8,7 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/app_data.dart';
 import '../../core/backup_schedule.dart';
+import '../../core/reminders.dart';
 import '../../security/app_lock.dart';
 import '../../security/auto_backup.dart';
 import '../../security/backup_cipher.dart';
@@ -15,6 +16,7 @@ import '../../security/biometric_authenticator.dart';
 import '../../security/security_service.dart';
 import '../../security/security_settings.dart';
 import '../../state/app_controller.dart';
+import '../../state/reminders.dart';
 import '../widgets/backup_actions.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/form_dialog.dart';
@@ -93,6 +95,91 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     if (r == null || !mounted) return;
     c.updateSettings(proteinGoal: parseInt(r['v']!));
+  }
+
+  // ---------------- напоминания ----------------
+
+  Future<ReminderTime?> _pickTime(ReminderTime t) async {
+    final r = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: t.hour, minute: t.minute),
+      builder: (context, child) => MediaQuery(data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true), child: child!),
+    );
+    return r == null ? null : ReminderTime(r.hour, r.minute);
+  }
+
+  Widget _reminderRow(Reminders r, {required String id, required String title, required String hint, required bool on, required ReminderTime time,
+      required ReminderPrefs Function(bool on, ReminderTime t) build}) {
+    return SwitchListTile(
+      key: ValueKey('reminder_$id'),
+      value: on,
+      onChanged: (v) => r.update(build(v, time)),
+      title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+      subtitle: Wrap(
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 4,
+        children: [
+          Text(hint, style: const TextStyle(color: AppColors.muted, fontSize: 11)),
+          if (on)
+            TextButton(
+              key: ValueKey('reminder_${id}_time'),
+              style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 6), minimumSize: const Size(0, 28)),
+              onPressed: () async {
+                final t = await _pickTime(time);
+                if (t != null) await r.update(build(on, t));
+              },
+              child: Text('в ${time.label}'),
+            ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _reminderTiles(Reminders r) {
+    final p = r.prefs;
+    final next = r.scheduled.isEmpty ? null : r.scheduled.first;
+    return [
+      const Padding(
+        padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
+        child: Text('Приглашения, а не оценки: о том, что уже сделано, не напомним. Всё работает на телефоне, без сети.',
+            style: TextStyle(color: AppColors.muted, fontSize: 12)),
+      ),
+      _reminderRow(r,
+          id: 'checkin',
+          title: 'Отметка дня',
+          hint: 'вечером, если день не отмечен',
+          on: p.checkIn,
+          time: p.checkInTime,
+          build: (on, t) => ReminderPrefs(checkIn: on, checkInTime: t, bills: p.bills, billsTime: p.billsTime, review: p.review, reviewTime: p.reviewTime)),
+      _reminderRow(r,
+          id: 'bills',
+          title: 'Сроки счетов',
+          hint: 'накануне и в день оплаты',
+          on: p.bills,
+          time: p.billsTime,
+          build: (on, t) => ReminderPrefs(checkIn: p.checkIn, checkInTime: p.checkInTime, bills: on, billsTime: t, review: p.review, reviewTime: p.reviewTime)),
+      _reminderRow(r,
+          id: 'review',
+          title: 'Обзор недели',
+          hint: 'когда пора',
+          on: p.review,
+          time: p.reviewTime,
+          build: (on, t) => ReminderPrefs(checkIn: p.checkIn, checkInTime: p.checkInTime, bills: p.bills, billsTime: p.billsTime, review: on, reviewTime: t)),
+      if (p.any && !r.permitted)
+        ListTile(
+          key: const ValueKey('reminders_denied'),
+          leading: const Icon(Icons.notifications_off_outlined, color: AppColors.amber, size: 20),
+          title: const Text('Уведомления запрещены', style: TextStyle(fontSize: 14, color: AppColors.amber)),
+          subtitle: const Text('Разрешите их — или в настройках Android для LIFE OS', style: TextStyle(color: AppColors.muted, fontSize: 11)),
+          trailing: TextButton(onPressed: r.requestPermission, child: const Text('Разрешить')),
+        )
+      else if (next != null)
+        Padding(
+          key: const ValueKey('reminders_next'),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+          child: Text('Ближайшее: ${fmtDate(next.at)} ${fmtTime(next.at)} — ${next.title}', style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+        ),
+    ];
   }
 
   // ---------------- автоматическая резервная копия ----------------
@@ -326,7 +413,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         backgroundColor: AppColors.panel,
         elevation: 0,
       ),
-      body: ListenableBuilder(listenable: Listenable.merge([c, security, lock, if (security.backup != null) security.backup!]), builder: (context, _) => _content()),
+      body: ListenableBuilder(listenable: Listenable.merge([c, security, lock, if (security.backup != null) security.backup!, if (security.reminders != null) security.reminders!]), builder: (context, _) => _content()),
     );
   }
 
@@ -416,6 +503,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           }.entries)
             _tile(Icons.table_chart_outlined, e.value.$1, e.value.$2, onTap: () => _copyExport(e.value.$1, c.exportCsv(e.key)!)),
         ]),
+        if (security.reminders != null && security.reminders!.supported) _section('НАПОМИНАНИЯ', _reminderTiles(security.reminders!)),
         _section('РЕЗЕРВНАЯ КОПИЯ', _backupTiles(security.backup)),
         _section('ДАННЫЕ', [
           _tile(Icons.file_download_outlined, 'Импорт выписки банка (CSV)', 'Операции из выписки — в журнал, без повторов; импорт можно отменить',
