@@ -29,8 +29,6 @@ void main() {
       expect(m, contains('android.permission.health.$p'), reason: p);
     }
     expect(m, contains('androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE'));
-    // OpenGL ES вместо Vulkan: обход порчи текста драйвером Vulkan на части телефонов
-    expect(m, contains('io.flutter.embedding.android.ImpellerBackend'));
     final rules = read('android/app/src/main/res/xml/data_extraction_rules.xml');
     expect('<exclude domain="database"'.allMatches(rules).length, 2); // и облако, и перенос на новый телефон
   });
