@@ -58,6 +58,11 @@
                 <category android:name="android.intent.category.HEALTH_PERMISSIONS"/>
             </intent-filter>
         </activity-alias>
+        <!-- ДИАГНОСТИКА: прежний движок отрисовки (Skia) вместо Impeller — проверка, виноват ли Impeller
+             в битых буквах на Galaxy S10 (Mali-G76) при переходе на вкладку «Материальное». -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
         <!-- Не удалять: по нему Flutter создаёт GeneratedPluginRegistrant.java -->
         <meta-data
             android:name="flutterEmbedding"
