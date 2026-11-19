@@ -20,6 +20,7 @@ import '../core/memories.dart';
 import '../core/open_export.dart';
 import '../core/review.dart';
 import '../core/rhythm.dart';
+import '../core/search.dart';
 import '../core/sections.dart';
 import '../core/statement_import.dart';
 import '../core/recovery_stats.dart';

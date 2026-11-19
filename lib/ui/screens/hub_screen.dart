@@ -26,6 +26,7 @@ import 'experiments_screen.dart';
 import 'processes_screen.dart';
 import 'resources_screen.dart';
 import 'review_screen.dart';
+import 'search_screen.dart';
 import 'settings_screen.dart';
 
 /// Вкладка «Сегодня» (PRESENT): плитки состояния дня, идущие процессы, ресурсы недели. Отсюда же — запись события.
@@ -70,24 +71,31 @@ class HubScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // дата — над заголовком во всю ширину: кнопки справа её не обрезают
+          Text(
+            '${c.userName.isEmpty ? '' : '${c.userName} · '}${_weekday(now)}, ${now.day} ${_monthGen(now)}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            key: const ValueKey('today_date'),
+            style: const TextStyle(color: AppColors.muted, fontSize: 13, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 2),
           Row(
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${c.userName.isEmpty ? '' : '${c.userName} · '}${_weekday(now)}, ${now.day} ${_monthGen(now)}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      key: const ValueKey('today_date'),
-                      style: const TextStyle(color: AppColors.muted, fontSize: 13, fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(height: 2),
-                    const Text('Сегодня', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8)),
-                  ],
+              const Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text('Сегодня', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8)),
                 ),
               ),
+              _RoundButton(
+                key: const ValueKey('open_search'),
+                icon: Icons.search,
+                tooltip: 'Поиск',
+                onTap: () => _push(context, SearchScreen(controller: c)),
+              ),
+              const SizedBox(width: 10),
               _RoundButton(
                 icon: Icons.tune,
                 tooltip: 'Настройки',

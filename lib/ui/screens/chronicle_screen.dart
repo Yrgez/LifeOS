@@ -12,6 +12,7 @@ import '../../state/app_controller.dart';
 import '../widgets/event_dialog.dart';
 import '../widgets/process_ui.dart';
 import 'events_screen.dart';
+import 'search_screen.dart';
 
 /// Хроника (PAST): лента жизни по месяцам и дням — события, процессы, достижения и состояние дня.
 class ChronicleScreen extends StatefulWidget {
@@ -51,9 +52,19 @@ class _ChronicleScreenState extends State<ChronicleScreen> {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
       children: [
         if (widget.embedded)
-          const Padding(
-            padding: EdgeInsets.only(top: 8, bottom: 16),
-            child: Text('Хроника', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8)),
+          Padding(
+            padding: const EdgeInsets.only(top: 8, bottom: 16),
+            child: Row(
+              children: [
+                const Expanded(child: Text('Хроника', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8))),
+                IconButton(
+                  key: const ValueKey('chronicle_search'),
+                  tooltip: 'Поиск',
+                  icon: const Icon(Icons.search),
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => SearchScreen(controller: c))),
+                ),
+              ],
+            ),
           ),
         Wrap(
           spacing: 8,
