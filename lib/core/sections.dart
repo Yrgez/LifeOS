@@ -22,11 +22,13 @@ class Sections {
   static const memory = 'memory';
   static const review = 'review';
   static const bills = 'bills';
+  static const tasks = 'tasks';
 
   static const all = [
     AppSection(workouts, 'Тренировки', 'Тело: карта мышц, журнал подходов, сравнение метрик; «Сегодня»: восстановление'),
     AppSection(weight, 'Вес и ИМТ', 'Тело: вес, ИМТ, цель по весу'),
     AppSection(steps, 'Шаги и активность', '«Сегодня»: плитка шагов'),
+    AppSection(tasks, 'Задачи', '«Сегодня»: задачи на день'),
     AppSection(checkIn, 'Отметка дня', '«Сегодня»: вечерний вопрос «Как прошёл день?»'),
     AppSection(review, 'Обзор недели', '«Сегодня»: напоминание раз в 7 дней'),
     AppSection(memory, '«В этот день»', '«Сегодня»: что было год или месяц назад'),

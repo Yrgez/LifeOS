@@ -429,6 +429,8 @@ void main() {
       expect(c.goals, isNotEmpty);
       await openSettings(tester);
 
+      await tester.scrollUntilVisible(find.text('Сбросить все данные'), 300, scrollable: find.byType(Scrollable).last);
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Сбросить все данные'));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'нет');
@@ -467,7 +469,7 @@ void main() {
     testWidgets('«Пройти знакомство заново» закрывает настройки и показывает знакомство', (tester) async {
       final c = await boot(tester);
       await openSettings(tester);
-      await tester.ensureVisible(find.text('Пройти знакомство заново'));
+      await tester.scrollUntilVisible(find.text('Пройти знакомство заново'), 300, scrollable: find.byType(Scrollable).last);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Пройти знакомство заново'));
       await tester.pumpAndSettle();

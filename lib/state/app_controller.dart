@@ -40,6 +40,7 @@ import '../models/finance_rules.dart';
 import '../models/statement_import.dart';
 import '../models/life_event.dart';
 import '../models/life_process.dart';
+import '../models/life_task.dart';
 import '../models/models.dart';
 
 part 'ops/bill_ops.dart';
@@ -50,6 +51,7 @@ part 'ops/goal_ops.dart';
 part 'ops/event_ops.dart';
 part 'ops/process_ops.dart';
 part 'ops/section_ops.dart';
+part 'ops/task_ops.dart';
 part 'ops/finance_ops.dart';
 
 /// Вся бизнес-логика и состояние. UI только читает геттеры и вызывает методы.

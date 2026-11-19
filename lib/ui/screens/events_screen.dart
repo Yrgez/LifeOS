@@ -10,6 +10,7 @@ import '../widgets/confirm_dialog.dart';
 import '../widgets/event_dialog.dart';
 import '../widgets/process_ui.dart';
 import '../widgets/toast.dart';
+import '../widgets/task_ui.dart';
 
 /// Журнал событий жизни: факты по измерениям BODY / MIND / MATERIAL, их ресурсы и версии.
 /// С [processId] — экран процесса: шапка процесса и только его события.
@@ -183,6 +184,7 @@ class _EventsScreenState extends State<EventsScreen> {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
       children: [
         if (process != null) ...[ProcessHeader(controller: c, process: process), const SizedBox(height: 12)],
+        if (pid != null || gid != null) ...[_TasksBlock(controller: c, processId: pid, goalId: gid), const SizedBox(height: 12)],
         Wrap(
           spacing: 8,
           children: [
@@ -332,3 +334,39 @@ class _EventTile extends StatelessWidget {
     );
   }
 }
+
+/// Задачи процесса или цели: шаги, которые ещё впереди. «Сделано» записывает событие сюда же.
+class _TasksBlock extends StatelessWidget {
+  final AppController controller;
+  final String? processId;
+  final String? goalId;
+  const _TasksBlock({required this.controller, this.processId, this.goalId});
+
+  @override
+  Widget build(BuildContext context) {
+    final list = controller.openTasksFor(processId: processId, goalId: goalId);
+    return Container(
+      key: const ValueKey('tasks_block'),
+      padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
+      decoration: tileDecoration(radius: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text(list.isEmpty ? 'Задач нет' : 'Задачи · ${list.length}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500))),
+              TextButton.icon(
+                key: const ValueKey('block_add_task'),
+                onPressed: () => showTaskSheet(context, controller, presetProcessId: processId, presetGoalId: goalId),
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Задача'),
+              ),
+            ],
+          ),
+          for (final t in list) TaskRow(controller: controller, task: t),
+        ],
+      ),
+    );
+  }
+}
+

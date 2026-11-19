@@ -2,6 +2,7 @@ import '../models/bill.dart';
 import '../models/day_checkin.dart';
 import '../models/life_event.dart';
 import '../models/life_process.dart';
+import '../models/life_task.dart';
 import '../models/models.dart';
 import 'currency.dart';
 import 'finance_categories.dart';
@@ -18,6 +19,7 @@ class SearchKind {
   static const goal = 'goal';
   static const achievement = 'achievement';
   static const bill = 'bill';
+  static const task = 'task';
 
   static const labels = {
     event: 'Событие',
@@ -27,6 +29,7 @@ class SearchKind {
     goal: 'Цель',
     achievement: 'Достижение',
     bill: 'Счёт',
+    task: 'Задача',
   };
 }
 
@@ -82,6 +85,7 @@ List<SearchHit> searchRecords(
   List<GlobalGoal> goals = const [],
   List<AchievementItem> achievements = const [],
   List<Bill> bills = const [],
+  List<LifeTask> tasks = const [],
 }) {
   final tokens = searchTokens(query);
   if (tokens.isEmpty) return const [];
@@ -121,6 +125,17 @@ List<SearchHit> searchRecords(
   for (final a in achievements) {
     if (!_matches(tokens, [a.title, a.category])) continue;
     out.add(SearchHit(kind: SearchKind.achievement, refId: a.title, at: a.at, title: a.title, snippet: a.date));
+  }
+  for (final t in tasks) {
+    if (!_matches(tokens, [t.title, t.note])) continue;
+    final status = switch (t.status) { TaskStatus.done => 'сделано', TaskStatus.cancelled => 'отменена', TaskStatus.open => '' };
+    out.add(SearchHit(
+      kind: SearchKind.task,
+      refId: t.id,
+      at: t.doneChange?.at ?? t.createdAt,
+      title: status.isEmpty ? t.title : '${t.title} · $status',
+      snippet: searchSnippet(t.note, tokens),
+    ));
   }
   for (final b in bills) {
     if (!_matches(tokens, [b.title])) continue;

@@ -18,6 +18,7 @@ import '../../state/app_controller.dart';
 import '../widgets/health_card.dart';
 import '../widgets/event_dialog.dart';
 import '../widgets/process_ui.dart';
+import '../widgets/task_ui.dart';
 import '../widgets/toast.dart';
 import 'bills_screen.dart';
 import 'checkin_screen.dart';
@@ -27,6 +28,7 @@ import 'processes_screen.dart';
 import 'resources_screen.dart';
 import 'review_screen.dart';
 import 'search_screen.dart';
+import 'tasks_screen.dart';
 import 'settings_screen.dart';
 
 /// Вкладка «Сегодня» (PRESENT): плитки состояния дня, идущие процессы, ресурсы недели. Отсюда же — запись события.
@@ -156,6 +158,7 @@ class HubScreen extends StatelessWidget {
                 ),
               ),
           const SizedBox(height: 20),
+          if (c.isShown(Sections.tasks)) _TasksTile(controller: c, push: (w) => _push(context, w)),
           if (c.isShown(Sections.workouts) || c.isShown(Sections.steps)) ...[
             IntrinsicHeight(
               child: Row(
@@ -615,6 +618,47 @@ class _HealthScreen extends StatelessWidget {
 }
 
 /// «В этот день»: было → стало, только факты из журналов.
+/// Задачи на сегодня (с невыполненными с прошлых дней): «Сделано» в одно нажатие. Пусто — короткая строка.
+class _TasksTile extends StatelessWidget {
+  final AppController controller;
+  final void Function(Widget) push;
+  const _TasksTile({required this.controller, required this.push});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = controller;
+    final list = c.tasksForToday;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: _Tile(
+        key: const ValueKey('tasks_tile'),
+        padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const SizedBox(width: 4),
+                Expanded(child: Text(list.isEmpty ? 'Задач на сегодня нет' : 'Задачи на сегодня · ${list.length}', style: _label)),
+                IconButton(key: const ValueKey('hub_add_task'), tooltip: 'Новая задача', icon: const Icon(Icons.add), onPressed: () => showTaskSheet(context, c)),
+                IconButton(
+                  key: const ValueKey('open_tasks'),
+                  tooltip: 'Все задачи',
+                  icon: const Icon(Icons.chevron_right, color: AppColors.muted),
+                  onPressed: () => push(TasksScreen(controller: c)),
+                ),
+              ],
+            ),
+            for (final t in list.take(5)) TaskRow(controller: c, task: t),
+            if (list.length > 5)
+              TextButton(onPressed: () => push(TasksScreen(controller: c)), child: Text('Ещё ${list.length - 5}')),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// Напоминание о резервной копии: данные только на телефоне — без копии их можно потерять вместе с ним.
 /// Видно, только когда нужно: копий давно не было или автокопия перестала получаться. Новичка не дёргает,
 /// пока в приложении меньше недели данных.
