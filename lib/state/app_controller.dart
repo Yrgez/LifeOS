@@ -12,6 +12,7 @@ import '../core/body_stats.dart';
 import '../core/chronicle.dart';
 import '../core/finance_categories.dart';
 import '../core/finance_stats.dart';
+import '../core/import_rules.dart';
 import '../core/goal_stats.dart';
 import '../core/life_events.dart';
 import '../core/experiments.dart';
@@ -34,6 +35,7 @@ import '../models/body.dart';
 import '../models/day_checkin.dart';
 import '../models/day_snapshot.dart';
 import '../models/experiment.dart';
+import '../models/finance_rules.dart';
 import '../models/statement_import.dart';
 import '../models/life_event.dart';
 import '../models/life_process.dart';
@@ -41,6 +43,7 @@ import '../models/models.dart';
 
 part 'ops/bill_ops.dart';
 part 'ops/body_ops.dart';
+part 'ops/category_ops.dart';
 part 'ops/checkin_ops.dart';
 part 'ops/goal_ops.dart';
 part 'ops/event_ops.dart';
@@ -353,6 +356,8 @@ class AppController extends ChangeNotifier {
   /// Подписи «системных» узлов графа и снимок текущего дня всегда отражают реальные цифры.
   void _syncDerived() {
     currentCurrency = currencyByCode(_d.currency) ?? currencies.first;
+    setCustomFinCategories([for (final x in _d.categories) customFinCategory(x.id, x.name, x.isIncome, x.icon)],
+        archived: {for (final x in _d.categories) if (x.archivedAt != null) x.id});
     void set(String id, String label) {
       for (final n in _d.graphNodes) {
         if (n.id == id) n.label = label;

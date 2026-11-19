@@ -12,9 +12,12 @@ import '../../models/models.dart';
 import '../../state/app_controller.dart';
 import '../painters/chart_painters.dart';
 import '../widgets/form_dialog.dart';
+import 'categories_screen.dart';
 import 'statement_import_screen.dart';
 
-Map<String, String> _allCategoryOptions() => {for (final k in kFinCategories) k.id: '${k.isIncome ? 'Доход' : 'Расход'} • ${k.name}'};
+/// Категории для выбора: встроенные и свои; архивная остаётся, только если её уже выбрала правимая запись.
+Map<String, String> _allCategoryOptions({String? keep}) =>
+    {for (final k in pickableFinCategories(keep: keep)) k.id: '${k.isIncome ? 'Доход' : 'Расход'} • ${k.name}'};
 
 const _capitalOptions = {'1': 'Да — изменит чистый капитал', '0': 'Нет — только учёт'};
 
@@ -32,7 +35,7 @@ Future<void> showTransactionDialog(BuildContext context, AppController c, {Money
     actionLabel: 'Сохранить',
     accent: AppColors.gold,
     fields: [
-      FieldSpec('c', 'Категория', initial: existing?.categoryId ?? 'food', options: _allCategoryOptions()),
+      FieldSpec('c', 'Категория', initial: existing?.categoryId ?? 'food', options: _allCategoryOptions(keep: existing?.categoryId)),
       FieldSpec('a', 'Сумма ($cur)', numeric: true, initial: existing == null ? '' : '${existing.amount}'),
       FieldSpec('d', 'Дата (дд.мм.гггг)', initial: fmtDate(existing?.at ?? c.now)),
       FieldSpec('n', 'Заметка (необязательно)', initial: existing?.note ?? ''),
@@ -64,7 +67,7 @@ Future<void> showAddTransactionDialog(BuildContext context, AppController c) => 
 
 /// Лимит расходов на месяц по категории. Пустое значение или 0 снимает лимит.
 Future<void> showBudgetDialog(BuildContext context, AppController c, {String? categoryId}) async {
-  final expenseOptions = {for (final k in kFinCategories) if (!k.isIncome) k.id: k.name};
+  final expenseOptions = {for (final k in pickableFinCategories(income: false, keep: categoryId)) k.id: k.name};
   final cat = categoryId != null && expenseOptions.containsKey(categoryId) ? categoryId : expenseOptions.keys.first;
   final current = c.budgets[cat];
   final r = await showFormDialog(
@@ -90,7 +93,7 @@ Future<void> showRecurringDialog(BuildContext context, AppController c, {Recurri
     actionLabel: existing == null ? 'Создать' : 'Сохранить',
     accent: AppColors.gold,
     fields: [
-      FieldSpec('c', 'Категория', initial: existing?.categoryId ?? 'housing', options: _allCategoryOptions()),
+      FieldSpec('c', 'Категория', initial: existing?.categoryId ?? 'housing', options: _allCategoryOptions(keep: existing?.categoryId)),
       FieldSpec('a', 'Сумма ($cur)', numeric: true, initial: existing == null ? '' : '${existing.amount}'),
       FieldSpec('d', 'Число месяца (1–31)', numeric: true, initial: '${existing?.dayOfMonth ?? c.now.day}'),
       FieldSpec('n', 'Заметка (необязательно)', initial: existing?.note ?? ''),
@@ -202,6 +205,12 @@ class _FinanceScreenState extends State<FinanceScreen> {
         backgroundColor: AppColors.panel,
         elevation: 0,
         actions: [
+          IconButton(
+            key: const ValueKey('open_categories'),
+            icon: const Icon(Icons.category_outlined),
+            tooltip: 'Категории и правила',
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => CategoriesScreen(controller: c))),
+          ),
           IconButton(
             key: const ValueKey('open_import'),
             icon: const Icon(Icons.file_download_outlined),

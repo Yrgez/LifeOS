@@ -27,7 +27,7 @@ class BillsScreen extends StatelessWidget {
 
   AppController get c => controller;
 
-  static Map<String, String> get _expenseCats => {for (final x in kFinCategories) if (!x.isIncome) x.id: x.name};
+  static Map<String, String> _expenseCats({String? keep}) => {for (final x in pickableFinCategories(income: false, keep: keep)) x.id: x.name};
 
   Future<void> _edit(BuildContext context, [Bill? b]) async {
     final paid = b != null && b.payments.isNotEmpty;
@@ -39,7 +39,7 @@ class BillsScreen extends StatelessWidget {
       fields: [
         FieldSpec('t', 'Название: интернет, аренда, страховка', initial: b?.title ?? ''),
         FieldSpec('a', 'Сумма, $cur (пусто — меняется)', numeric: true, initial: b?.amount?.toString() ?? ''),
-        FieldSpec('c', 'Категория расхода', initial: b?.categoryId ?? 'other_exp', options: _expenseCats),
+        FieldSpec('c', 'Категория расхода', initial: b?.categoryId ?? 'other_exp', options: _expenseCats(keep: b?.categoryId)),
         if (!paid) ...[
           FieldSpec('d', 'Ближайший срок (дд.мм.гггг)', initial: fmtDate(b == null ? c.now : DateTime.parse(b.firstDue))),
           FieldSpec('r', 'Повтор', initial: b?.repeat ?? BillRepeat.month, options: BillRepeat.labels),

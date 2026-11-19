@@ -166,6 +166,13 @@ extension FinanceOps on AppController {
   /// операции ради новых нельзя.
   int get transactionCapacityLeft => _maxTx - _d.transactions.length;
 
+  /// Сколько строк предпросмотра разберут правила.
+  int statementRuleHits(List<StatementRow> rows) => rows.where((r) => categoryByRules(r.note, r.signed > 0, _d.importRules) != null).length;
+
+  /// Частые описания списаний без правила — чтобы назначить категорию сразу из предпросмотра.
+  List<(String, int)> statementUnmatched(List<StatementRow> rows) =>
+      unmatchedPatterns([for (final r in rows) if (r.signed < 0) (r.note, false)], _d.importRules);
+
   /// Предпросмотр: что будет добавлено, что уже загружалось раньше, какие строки не распознаны.
   ({ParsedStatement parsed, List<StatementRow> fresh, List<StatementRow> duplicates}) previewStatement(String text, ColumnMapping mapping) {
     final parsed = parseStatement(text, mapping, now: _clock());
@@ -202,7 +209,8 @@ extension FinanceOps on AppController {
             at: r.at,
             isIncome: r.signed > 0,
             amount: r.signed.abs(),
-            categoryId: r.signed > 0 ? incomeCategory : expenseCategory,
+            // правила человека — первыми; не подошло ни одно — категория по умолчанию
+            categoryId: categoryByRules(r.note, r.signed > 0, _d.importRules) ?? (r.signed > 0 ? incomeCategory : expenseCategory),
             note: r.note,
             affectsNetWorth: affectsNetWorth,
             importId: id,
