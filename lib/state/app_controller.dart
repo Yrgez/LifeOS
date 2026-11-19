@@ -367,10 +367,10 @@ class AppController extends ChangeNotifier {
       }
     }
 
-    set('n_salary', 'ЗП: ${_d.monthlyIncome ~/ 1000}к');
-    set('n_capital', 'Капитал ${(netWorth / 1000000).toStringAsFixed(2)}М');
+    set('n_salary', 'ЗП: ${fmtCompact(_d.monthlyIncome)}');
+    set('n_capital', 'Капитал ${fmtCompact(netWorth)}');
     set('n_protein', 'Белок: ${_d.proteinGrams} г');
-    set('n_activity', 'Шаги: ${(_d.dailySteps / 1000).toStringAsFixed(1)}k');
+    set('n_activity', 'Шаги: ${fmtCompact(_d.dailySteps)}');
     final chest = _d.muscles['chest'];
     if (chest != null) set('n_chest', 'Грудь (1RM ${chest.maxWeight.toInt()})');
     for (final n in _d.graphNodes) {

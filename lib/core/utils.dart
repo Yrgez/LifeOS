@@ -18,6 +18,26 @@ String fmtMoney(int v) {
   return '${v < 0 ? '-' : ''}$b';
 }
 
+/// Короткая запись числа для подписей на графиках и узлах: 850, «1,5к», «380к», «1,25М».
+/// Меньше тысячи — как есть (не «0к»); дробная часть — через запятую, без лишних нулей.
+String fmtCompact(num v) {
+  final a = v.abs();
+  final sign = v < 0 ? '−' : '';
+  String dec(double x, int digits) {
+    var s = x.toStringAsFixed(digits);
+    if (s.contains('.')) s = s.replaceFirst(RegExp(r'\.?0+$'), '');
+    return s.replaceAll('.', ',');
+  }
+
+  if (a.round() < 1000) return '$sign${a.round()}';
+  final k = a / 1000;
+  final kText = k < 10 ? dec(k, 1) : '${k.round()}';
+  // 999 600 → не «1000к», а «1М»
+  if (k.round() < 1000 && kText != '1000') return '$sign$kTextк';
+  final m = a / 1000000;
+  return '$sign${dec(m, m < 10 ? 2 : (m < 100 ? 1 : 0))}М';
+}
+
 const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
 const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 String monthYear(DateTime d) => '${monthNames[d.month - 1]} ${d.year}';

@@ -251,7 +251,7 @@ void main() {
       final c = make();
       await c.load();
       c.updateWealth(netWorth: 3000000, income: 450000);
-      expect(c.nodeById('n_capital')!.label, 'Капитал 3.00М');
+      expect(c.nodeById('n_capital')!.label, 'Капитал 3М');
       expect(c.nodeById('n_salary')!.label, 'ЗП: 450к');
     });
 
