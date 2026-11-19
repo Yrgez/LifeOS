@@ -27,6 +27,7 @@ extension EventOps on AppController {
       goals: _d.goals,
       achievements: _d.achievements,
       bills: _d.bills,
+      tasks: _d.tasks,
     );
   }
 

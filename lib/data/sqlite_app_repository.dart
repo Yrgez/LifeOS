@@ -52,7 +52,7 @@ class SqliteAppRepository implements AppRepository {
     'hiddenSections',
   ];
 
-  static const _listCollections = ['goals', 'achievements', 'salaryHistory', 'graphNodes', 'graphEdges', 'recurring', 'processes', 'weights', 'accounts', 'experiments', 'checkins', 'imports', 'bills', 'categories', 'importRules'];
+  static const _listCollections = ['goals', 'achievements', 'salaryHistory', 'graphNodes', 'graphEdges', 'recurring', 'processes', 'weights', 'accounts', 'experiments', 'checkins', 'imports', 'bills', 'categories', 'importRules', 'tasks'];
 
   // ---------------- открытие и схема ----------------
 

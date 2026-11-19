@@ -123,7 +123,8 @@ class EventRef {
   static const workoutSet = 'set';
   static const transaction = 'tx';
   static const achievement = 'ach';
-  static const _types = {workoutSet, transaction, achievement};
+  static const task = 'task'; // событие — выполнение задачи
+  static const _types = {workoutSet, transaction, achievement, task};
 
   final String type;
   final String id;

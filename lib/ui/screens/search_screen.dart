@@ -5,6 +5,7 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../state/app_controller.dart';
 import '../widgets/event_dialog.dart';
+import '../widgets/task_ui.dart';
 import '../widgets/toast.dart';
 import 'bills_screen.dart';
 import 'checkin_screen.dart';
@@ -53,6 +54,9 @@ class _SearchScreenState extends State<SearchScreen> {
         push(EventsScreen(controller: c, goalId: h.refId));
       case SearchKind.bill:
         push(BillsScreen(controller: c));
+      case SearchKind.task:
+        final t = c.taskById(h.refId);
+        if (t != null) await showTaskSheet(context, c, initial: t);
     }
   }
 
