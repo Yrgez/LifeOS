@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/theme.dart';
 import 'security/security_service.dart';
@@ -18,6 +19,10 @@ class LifeOSApp extends StatelessWidget {
       title: 'Life OS Ultimate Engine',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
+      // русский — и для системных текстов: календари, «Назад», «Показать меню»; их же читает TalkBack
+      locale: const Locale('ru'),
+      supportedLocales: const [Locale('ru')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       // слой блокировки — над всем приложением, включая открытые экраны и диалоги
       builder: (context, child) => LockLayer(lock: security.lock, child: child ?? const SizedBox()),
       home: MainNavigationScreen(controller: controller, security: security),

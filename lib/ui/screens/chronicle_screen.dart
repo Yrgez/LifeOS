@@ -56,7 +56,7 @@ class _ChronicleScreenState extends State<ChronicleScreen> {
             padding: const EdgeInsets.only(top: 8, bottom: 16),
             child: Row(
               children: [
-                const Expanded(child: Text('Хроника', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8))),
+                const Expanded(child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text('Хроника', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8)))),
                 IconButton(
                   key: const ValueKey('chronicle_search'),
                   tooltip: 'Поиск',

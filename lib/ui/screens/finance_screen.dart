@@ -2,8 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-import '../../core/finance_categories.dart';
 import '../../core/currency.dart';
+import '../../core/finance_categories.dart';
 import '../../core/finance_stats.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
@@ -11,9 +11,11 @@ import '../../core/workout_stats.dart';
 import '../../models/models.dart';
 import '../../state/app_controller.dart';
 import '../painters/chart_painters.dart';
+import '../widgets/chart_semantics.dart';
 import '../widgets/form_dialog.dart';
 import 'categories_screen.dart';
 import 'statement_import_screen.dart';
+import '../widgets/adaptive_pair.dart';
 
 /// Категории для выбора: встроенные и свои; архивная остаётся, только если её уже выбрала правимая запись.
 Map<String, String> _allCategoryOptions({String? keep}) =>
@@ -123,14 +125,14 @@ Future<void> showRecurringSheet(BuildContext context, AppController c) {
       builder: (_, __) {
         final rules = c.recurring;
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+          // один прокручиваемый список: при крупном шрифте панель не вылезает за край экрана
+          child: ListView(
+              shrinkWrap: true,
+              padding: const EdgeInsets.all(16),
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     const Text('ПОВТОРЯЮЩИЕСЯ ОПЕРАЦИИ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.6)),
                     TextButton.icon(
@@ -148,10 +150,6 @@ Future<void> showRecurringSheet(BuildContext context, AppController c) {
                     child: Text('Правил нет. Создайте правило (аренда, подписка, зарплата) — операция будет появляться сама каждый месяц.', style: TextStyle(color: AppColors.muted, fontSize: 12)),
                   )
                 else
-                  Flexible(
-                    child: ListView(
-                      shrinkWrap: true,
-                      children: [
                         for (final r in rules)
                           ListTile(
                             contentPadding: EdgeInsets.zero,
@@ -167,16 +165,12 @@ Future<void> showRecurringSheet(BuildContext context, AppController c) {
                               style: const TextStyle(color: AppColors.muted, fontSize: 11),
                             ),
                             trailing: IconButton(
-                              icon: const Icon(Icons.delete_outline, color: Colors.white24, size: 18),
+                              icon: const Icon(Icons.delete_outline, color: AppColors.muted, size: 18),
                               tooltip: 'Удалить правило (созданные операции останутся)',
                               onPressed: () => c.removeRecurring(r.id),
                             ),
                           ),
-                      ],
-                    ),
-                  ),
               ],
-            ),
           ),
         );
       },
@@ -247,19 +241,16 @@ class _FinanceScreenState extends State<FinanceScreen> {
       children: [
         _monthSelector(),
         const SizedBox(height: 8),
-        Row(
+        AdaptivePair(
+          spacing: 8,
           children: [
-            Expanded(child: _tile('ДОХОД', '+${fmtCur(totals.income)}', AppColors.green, '')),
-            const SizedBox(width: 8),
-            Expanded(child: _tile('РАСХОД', '−${fmtCur(totals.expense)}', AppColors.red, '')),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _tile(
-                'БАЛАНС',
-                '${totals.saldo >= 0 ? '+' : '−'}${fmtCur(totals.saldo.abs())}',
-                totals.saldo >= 0 ? AppColors.gold : AppColors.red,
-                totals.savingsRate == null ? 'нет дохода' : 'сбережения ${totals.savingsRate!.round()}%',
-              ),
+            _tile('ДОХОД', '+${fmtCur(totals.income)}', AppColors.green, ''),
+            _tile('РАСХОД', '−${fmtCur(totals.expense)}', AppColors.red, ''),
+            _tile(
+              'БАЛАНС',
+              '${totals.saldo >= 0 ? '+' : '−'}${fmtCur(totals.saldo.abs())}',
+              totals.saldo >= 0 ? AppColors.gold : AppColors.red,
+              totals.savingsRate == null ? 'нет дохода' : 'сбережения ${totals.savingsRate!.round()}%',
             ),
           ],
         ),
@@ -279,9 +270,10 @@ class _FinanceScreenState extends State<FinanceScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        IconButton(icon: const Icon(Icons.chevron_left), onPressed: () => setState(() => _month = addMonths(_month, -1))),
+        IconButton(tooltip: 'Предыдущий месяц', icon: const Icon(Icons.chevron_left), onPressed: () => setState(() => _month = addMonths(_month, -1))),
         SizedBox(width: 170, child: Text(monthYear(_month), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15))),
         IconButton(
+          tooltip: 'Следующий месяц',
           icon: const Icon(Icons.chevron_right),
           onPressed: _isCurrentMonth ? null : () => setState(() => _month = addMonths(_month, 1)),
         ),
@@ -315,11 +307,15 @@ class _FinanceScreenState extends State<FinanceScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Wrap: при крупном шрифте легенда уходит под заголовок
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 4,
             children: [
               const Text('ДИНАМИКА ЗА 6 МЕСЯЦЕВ', style: TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold)),
-              Row(children: [
+              Row(mainAxisSize: MainAxisSize.min, children: [
                 const CircleAvatar(radius: 4, backgroundColor: AppColors.green),
                 const SizedBox(width: 4),
                 const Text('доход', style: TextStyle(color: AppColors.muted, fontSize: 10)),
@@ -331,16 +327,20 @@ class _FinanceScreenState extends State<FinanceScreen> {
             ],
           ),
           const SizedBox(height: 10),
-          SizedBox(
-            height: 110,
-            width: double.infinity,
-            child: CustomPaint(
-              painter: DualBarsPainter(
-                a: months.map((m) => m.income.toDouble()).toList(),
-                b: months.map((m) => m.expense.toDouble()).toList(),
-                labels: labels,
-                colorA: AppColors.green,
-                colorB: AppColors.red,
+          ChartSemantics(
+            label: 'Доход и расход за 6 месяцев: '
+                '${[for (var i = 0; i < months.length; i++) '${labels[i]} — доход ${fmtCur(months[i].income)}, расход ${fmtCur(months[i].expense)}'].join('; ')}',
+            child: SizedBox(
+              height: 110,
+              width: double.infinity,
+              child: CustomPaint(
+                painter: DualBarsPainter(
+                  a: months.map((m) => m.income.toDouble()).toList(),
+                  b: months.map((m) => m.expense.toDouble()).toList(),
+                  labels: labels,
+                  colorA: AppColors.green,
+                  colorB: AppColors.red,
+                ),
               ),
             ),
           ),
@@ -362,7 +362,8 @@ class _FinanceScreenState extends State<FinanceScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('РАСХОДЫ ПО КАТЕГОРИЯМ', style: TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold)),
+              // на узком экране заголовок переносится, а не выталкивает соседей за край
+              Flexible(child: Text('РАСХОДЫ ПО КАТЕГОРИЯМ', style: const TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold))),
               TextButton.icon(
                 onPressed: () => showBudgetDialog(context, c),
                 style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 24)),
@@ -449,7 +450,8 @@ class _FinanceScreenState extends State<FinanceScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(shortDate(t.at), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              Flexible(child: Text(shortDate(t.at), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              const SizedBox(width: 8),
               Text('${dayTotal >= 0 ? '+' : '−'}${fmtCur(dayTotal.abs())}', style: const TextStyle(color: AppColors.muted, fontSize: 11)),
             ],
           ),
@@ -508,7 +510,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: t.isIncome ? AppColors.green : Colors.white),
           ),
           IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.white24, size: 18),
+            icon: const Icon(Icons.delete_outline, color: AppColors.muted, size: 18),
             tooltip: 'Удалить операцию',
             onPressed: () {
               final removed = c.deleteTransaction(t.id);

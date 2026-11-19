@@ -297,7 +297,7 @@ class _EventTile extends StatelessWidget {
                 if (e.goalIds.isNotEmpty)
                   Text(
                     '→ ${e.goalIds.map((id) => goalTitles[id] ?? 'цель удалена').join(', ')}',
-                    style: const TextStyle(color: AppColors.violet, fontSize: 11),
+                    style: const TextStyle(color: AppColors.violetText, fontSize: 11),
                   ),
                 if (e.processIds.isNotEmpty)
                   Text(

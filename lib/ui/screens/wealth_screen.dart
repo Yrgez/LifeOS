@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 
-import '../../core/sections.dart';
-import 'bills_screen.dart';
-import '../../core/finance_stats.dart';
 import '../../core/currency.dart';
+import '../../core/finance_stats.dart';
+import '../../core/sections.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../models/models.dart';
 import '../../state/app_controller.dart';
 import '../painters/chart_painters.dart';
+import '../widgets/chart_semantics.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/form_dialog.dart';
+import 'bills_screen.dart';
 import 'finance_screen.dart';
 
 /// Вкладка «Капитал»: капитал, доход и траты, вход в учёт операций, график зарплаты.
@@ -36,6 +37,7 @@ class _WealthScreenState extends State<WealthScreen> {
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.tile), side: const BorderSide(color: AppColors.border)),
       child: InkWell(
+        key: const ValueKey('open_finance'),
         onTap: _openFinance,
         child: Padding(
           padding: const EdgeInsets.all(14),
@@ -140,7 +142,7 @@ class _WealthScreenState extends State<WealthScreen> {
         children: [
           Text(accounts.isEmpty ? 'Чистый капитал · указан вручную' : 'Чистый капитал · по счетам', style: const TextStyle(color: AppColors.muted, fontSize: 13)),
           const SizedBox(height: 6),
-          Text(fmtCur(c.netWorth), key: const ValueKey('net_worth'), style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8)),
+          FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(fmtCur(c.netWorth), key: const ValueKey('net_worth'), style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8))),
           const SizedBox(height: 4),
           Text(
             'Норма сбережений ${isFact ? 'за месяц (по операциям)' : '(по плану)'}: $savingsRate%',
@@ -213,12 +215,19 @@ class _WealthScreenState extends State<WealthScreen> {
       decoration: tileDecoration(radius: 20),
       child: Row(
         children: [
-          SizedBox(width: 56, child: Text(st.year, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-          Expanded(child: Text(st.role.isEmpty ? '—' : st.role, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted, fontSize: 12))),
-          Text('${fmtCur(st.salary)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+          // год и сумма — строкой, должность — под ними: при крупном шрифте строка переносится, а не вылезает за край
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${st.year} · ${fmtCur(st.salary)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                if (st.role.isNotEmpty) Text(st.role, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+              ],
+            ),
+          ),
           IconButton(icon: const Icon(Icons.edit, size: 16, color: AppColors.muted), tooltip: 'Изменить', onPressed: () => _addSalaryStepDialog(i)),
           IconButton(
-            icon: const Icon(Icons.close, size: 16, color: Colors.white24),
+            icon: const Icon(Icons.close, size: 16, color: AppColors.muted),
             tooltip: 'Удалить точку',
             onPressed: () {
               final removed = c.removeSalaryStep(i);
@@ -270,7 +279,7 @@ class _WealthScreenState extends State<WealthScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Материальное', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8)),
+                    FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text('Материальное', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8))),
                     SizedBox(height: 2),
                     Text('Капитал, доход, финансы', style: TextStyle(color: AppColors.muted, fontSize: 13)),
                   ],
@@ -359,7 +368,10 @@ class _WealthScreenState extends State<WealthScreen> {
           padding: const EdgeInsets.all(16),
           height: 200,
           decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
-          child: CustomPaint(size: Size.infinite, painter: SalaryLineChartPainter(steps: c.salaryHistory)),
+          child: ChartSemantics(
+            label: 'График зарплаты: ${c.salaryHistory.isEmpty ? 'нет данных' : [for (final st in c.salaryHistory) '${st.year} — ${fmtCur(st.salary)}'].join(', ')}',
+            child: CustomPaint(size: Size.infinite, painter: SalaryLineChartPainter(steps: c.salaryHistory)),
+          ),
         ),
         const SizedBox(height: 8),
         for (int i = 0; i < c.salaryHistory.length; i++) _salaryRow(i),

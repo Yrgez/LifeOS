@@ -47,7 +47,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('open_graph')));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('graph_counts')), findsOneWidget);
-    await tester.pageBack();
+    await tester.tap(find.byTooltip('Назад'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const ValueKey('tab_material')));
@@ -202,7 +202,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('open_graph')));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    await tester.pageBack();
+    await tester.tap(find.byTooltip('Назад'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('tab_body')));
     await tester.pumpAndSettle();
@@ -232,7 +232,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('graph_filter_material')));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull, reason: 'граф');
-    await tester.pageBack();
+    await tester.tap(find.byTooltip('Назад'));
     await tester.pumpAndSettle();
     await shutdown(tester, c);
   });
@@ -404,7 +404,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(c.stepsGoal, 12000);
 
-      await tester.pageBack();
+      await tester.tap(find.byTooltip('Назад'));
       await tester.pumpAndSettle();
       expect(find.textContaining('Мария'), findsOneWidget);
       expect(find.textContaining('Цель 12'), findsOneWidget); // плитка шагов на «Сегодня»

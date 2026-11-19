@@ -244,6 +244,7 @@ class _EventDialogState extends State<_EventDialog> {
             _label('ВИД'),
             DropdownButtonFormField<String>(
               initialValue: _kind,
+              isExpanded: true, // длинное название вида при крупном шрифте обрезается, а не вылезает за край
               decoration: _dec('Вид события'),
               items: [
                 // «обзор» создаётся только экраном обзора недели

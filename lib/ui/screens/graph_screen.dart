@@ -317,30 +317,42 @@ class _GraphScreenState extends State<GraphScreen> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             // переключатель измерений — как выбор цели по весу на «Теле»
             child: Container(
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(color: AppColors.field, borderRadius: BorderRadius.circular(22), border: Border.all(color: AppColors.border)),
+              decoration: BoxDecoration(color: AppColors.field, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppColors.border)),
               child: Row(
                 children: [
                   for (final f in _filters.entries)
                     Expanded(
                       flex: f.key == 'material' ? 3 : 2,
-                      child: GestureDetector(
-                        key: ValueKey('graph_filter_${f.key}'),
+                      child: Semantics(
+                        button: true,
+                        selected: _filter == f.key,
+                        inMutuallyExclusiveGroup: true,
+                        label: f.value,
                         onTap: () => setState(() => _filter = f.key),
-                        child: Container(
-                          height: 36,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: _filter == f.key ? AppColors.accent : Colors.transparent,
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 6),
-                              child: Text(
-                                f.value,
-                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: _filter == f.key ? Colors.black : AppColors.muted),
+                        excludeSemantics: true,
+                        child: GestureDetector(
+                          key: ValueKey('graph_filter_${f.key}'),
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => setState(() => _filter = f.key),
+                          // область нажатия 48 px, видимый сегмент — с отступом 3 px внутри таблетки
+                          child: Padding(
+                            padding: const EdgeInsets.all(3),
+                            child: Container(
+                              height: 42,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: _filter == f.key ? AppColors.accent : Colors.transparent,
+                                borderRadius: BorderRadius.circular(21),
+                              ),
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                                  child: Text(
+                                    f.value,
+                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: _filter == f.key ? Colors.black : AppColors.muted),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
@@ -420,6 +432,8 @@ class _GraphScreenState extends State<GraphScreen> {
                       onPointerCancel: (_) => _onPointerEnd(),
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
+                        // для программы чтения экрана нажатие — по узлам из semanticsBuilder, а не по холсту целиком
+                        excludeFromSemantics: true,
                         onTapUp: (d) => _onTap(d.localPosition, size),
                         child: RepaintBoundary(
                           child: CustomPaint(
@@ -432,6 +446,14 @@ class _GraphScreenState extends State<GraphScreen> {
                               selectedNodeId: _selectedNodeId,
                               selectedEdgeKey: _selectedEdgeKey,
                               visibleCategories: _filterCategories[_filter],
+                              semanticLabels: {
+                                for (final n in c.graphNodes)
+                                  n.id: '${n.label}. ${isolated.contains(n.id) ? 'Без связей' : 'Связей: ${c.graphEdges.where((e) => e.fromId == n.id || e.toId == n.id).length}'}',
+                              },
+                              onSelect: (id) => setState(() {
+                                _selectedNodeId = id;
+                                _selectedEdgeKey = null;
+                              }),
                             ),
                           ),
                         ),
@@ -561,9 +583,15 @@ class _GraphScreenState extends State<GraphScreen> {
         const SizedBox(height: 8),
         Row(
           children: [
-            TextButton.icon(onPressed: () => _addEdgeDialog(node.id), icon: const Icon(Icons.link, size: 18), label: const Text('Связать')),
-            TextButton.icon(onPressed: () => _editNodeDialog(node), icon: const Icon(Icons.edit_outlined, size: 18), label: const Text('Изменить')),
-            const Spacer(),
+            // на узком экране или с крупным шрифтом кнопки переносятся, а не вылезают за край
+            Expanded(
+              child: Wrap(
+                children: [
+                  TextButton.icon(onPressed: () => _addEdgeDialog(node.id), icon: const Icon(Icons.link, size: 18), label: const Text('Связать')),
+                  TextButton.icon(onPressed: () => _editNodeDialog(node), icon: const Icon(Icons.edit_outlined, size: 18), label: const Text('Изменить')),
+                ],
+              ),
+            ),
             IconButton(
               key: const ValueKey('graph_delete_node'),
               tooltip: 'Удалить узел',

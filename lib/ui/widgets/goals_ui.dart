@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme.dart';
 import '../../core/currency.dart';
+import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../core/workout_stats.dart';
+import '../../models/life_event.dart';
 import '../../models/models.dart';
 import '../../state/app_controller.dart';
-import '../../models/life_event.dart';
 import '../screens/events_screen.dart';
 import 'event_dialog.dart';
 import 'form_dialog.dart';
@@ -232,13 +232,17 @@ class GoalCard extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Checkbox(
-          value: cp.isCompleted,
-          activeColor: AppColors.text,
-          checkColor: Colors.black,
-          visualDensity: VisualDensity.compact,
-          // привязанные к метрике отмечаются сами
-          onChanged: link == null ? (v) => c.toggleCheckpoint(goal.id, index, v ?? false) : null,
+        // название этапа — подпись галочки для программы чтения экрана
+        Semantics(
+          label: cp.title,
+          hint: link == null ? null : 'отмечается сам по метрике',
+          child: Checkbox(
+            value: cp.isCompleted,
+            activeColor: AppColors.text,
+            checkColor: Colors.black,
+            // привязанные к метрике отмечаются сами
+            onChanged: link == null ? (v) => c.toggleCheckpoint(goal.id, index, v ?? false) : null,
+          ),
         ),
         Expanded(
           child: Padding(
@@ -282,7 +286,7 @@ class GoalCard extends StatelessWidget {
           ),
         ),
         IconButton(
-          icon: const Icon(Icons.close, color: Colors.white24, size: 16),
+          icon: const Icon(Icons.close, color: AppColors.muted, size: 16),
           tooltip: 'Удалить чекпоинт',
           onPressed: () => c.removeCheckpoint(goal.id, index),
         ),

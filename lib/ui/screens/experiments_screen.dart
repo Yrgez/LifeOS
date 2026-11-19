@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/chart_text.dart';
 import '../../core/experiments.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
@@ -8,6 +9,7 @@ import '../../models/experiment.dart';
 import '../../models/life_process.dart';
 import '../../state/app_controller.dart';
 import '../widgets/body_metrics.dart' show fmtKg;
+import '../widgets/chart_semantics.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/process_ui.dart';
 import '../widgets/toast.dart';
@@ -359,9 +361,12 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
           ),
           if (daily && sides.any((s) => s.$2.values.isNotEmpty)) ...[
             const SizedBox(height: 12),
-            SizedBox(
-              height: 18.0 * sides.length + 8,
-              child: CustomPaint(painter: _StripPainter([for (final s in sides) s.$2.values])),
+            ChartSemantics(
+              label: 'Значения по дням. ${[for (final s in sides) '${s.$1}: ${describeSeries(s.$2.values)}'].join('. ')}',
+              child: SizedBox(
+                height: 18.0 * sides.length + 8,
+                child: CustomPaint(painter: _StripPainter([for (final s in sides) s.$2.values])),
+              ),
             ),
             const Text('Каждая точка — один день с данными', style: TextStyle(color: AppColors.muted, fontSize: 11)),
           ],

@@ -13,6 +13,7 @@ import '../widgets/toast.dart';
 import '../widgets/comparison_card.dart';
 import '../widgets/log_set_dialog.dart';
 import 'journal_screen.dart';
+import '../widgets/adaptive_pair.dart';
 
 /// Вкладка «Тело»: карта тела, вход в журнал, список мышечных групп.
 class GymScreen extends StatefulWidget {
@@ -122,7 +123,7 @@ class _GymScreenState extends State<GymScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Тело', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8)),
+          const FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text('Тело', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8))),
           const SizedBox(height: 2),
           const Text('Вес, восстановление, тренировки', style: TextStyle(color: AppColors.muted, fontSize: 13)),
           const SizedBox(height: 20),
@@ -161,12 +162,22 @@ class _GymScreenState extends State<GymScreen> {
                 child: ListTile(
                   onTap: () => selection.select(muscle.id),
                   title: Text(muscle.name, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15)),
-                  subtitle: Text('1RM ${muscle.maxWeight.toInt()} кг · ${muscle.lastTrained}', style: const TextStyle(color: AppColors.muted, fontSize: 13)),
-                  trailing: OutlinedButton(
-                    style: OutlinedButton.styleFrom(minimumSize: const Size(0, 36), padding: const EdgeInsets.symmetric(horizontal: 12)),
-                    onPressed: () => _logWorkoutForMuscle(muscle),
-                    child: const Text('+ Подход', style: TextStyle(fontSize: 13)),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('1RM ${muscle.maxWeight.toInt()} кг · ${muscle.lastTrained}', style: const TextStyle(color: AppColors.muted, fontSize: 13)),
+                      // при крупном шрифте кнопка — под текстом: иначе название мышцы рвётся посередине
+                      if (largeText(context))
+                        OutlinedButton(onPressed: () => _logWorkoutForMuscle(muscle), child: const Text('+ Подход', style: TextStyle(fontSize: 13))),
+                    ],
                   ),
+                  trailing: largeText(context)
+                      ? null
+                      : OutlinedButton(
+                          style: OutlinedButton.styleFrom(minimumSize: const Size(0, 36), padding: const EdgeInsets.symmetric(horizontal: 12)),
+                          onPressed: () => _logWorkoutForMuscle(muscle),
+                          child: const Text('+ Подход', style: TextStyle(fontSize: 13)),
+                        ),
                 ),
               ),
             ),

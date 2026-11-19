@@ -2,9 +2,11 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../../core/chart_text.dart';
 import '../../core/theme.dart';
 import '../../state/app_controller.dart';
 import '../painters/chart_painters.dart';
+import 'chart_semantics.dart';
 import 'form_dialog.dart';
 
 /// Сравнение двух метрик на одном графике с коэффициентом корреляции.
@@ -97,19 +99,23 @@ class _ComparisonCardState extends State<ComparisonCard> {
             ],
           ),
           const SizedBox(height: 16),
-          SizedBox(
-            height: 170,
-            width: double.infinity,
-            child: RepaintBoundary(
-              child: CustomPaint(
-                painter: DualLineComparisonPainter(
-                  dataA: seriesA,
-                  dataB: seriesB,
-                  labels: labels,
-                  colorA: AppColors.green,
-                  colorB: Colors.cyanAccent,
-                  unitA: _metricUnits[_compareMetricA] ?? '',
-                  unitB: _metricUnits[_compareMetricB] ?? '',
+          ChartSemantics(
+            label: 'Сравнение. ${_metricNames[_compareMetricA]}: ${describeSeries(seriesA, labels: labels)}. '
+                '${_metricNames[_compareMetricB]}: ${describeSeries(seriesB, labels: labels)}',
+            child: SizedBox(
+              height: 170,
+              width: double.infinity,
+              child: RepaintBoundary(
+                child: CustomPaint(
+                  painter: DualLineComparisonPainter(
+                    dataA: seriesA,
+                    dataB: seriesB,
+                    labels: labels,
+                    colorA: AppColors.green,
+                    colorB: Colors.cyanAccent,
+                    unitA: _metricUnits[_compareMetricA] ?? '',
+                    unitB: _metricUnits[_compareMetricB] ?? '',
+                  ),
                 ),
               ),
             ),

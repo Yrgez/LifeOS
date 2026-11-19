@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../core/sections.dart';
 import '../../core/theme.dart';
 import '../../state/app_controller.dart';
+import '../widgets/adaptive_pair.dart';
+import '../widgets/confirm_dialog.dart';
 import '../widgets/form_dialog.dart';
 import '../widgets/goals_ui.dart';
 import 'experiments_screen.dart';
@@ -45,29 +47,24 @@ class _MindScreenState extends State<MindScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Разум', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8)),
+          const FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text('Разум', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8))),
           const SizedBox(height: 2),
           const Text('Цели, достижения, связи', style: TextStyle(color: AppColors.muted, fontSize: 13)),
           const SizedBox(height: 20),
-          Row(
+          AdaptivePair(
+            spacing: 8,
             children: [
-              if (c.isShown(Sections.graph)) ...[
-                Expanded(
-                  child: OutlinedButton.icon(
-                    key: const ValueKey('open_graph'),
-                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => GraphScreen(controller: c))),
-                    icon: const Icon(Icons.hub_outlined, size: 18),
-                    label: const Text('Граф связей'),
-                  ),
+              if (c.isShown(Sections.graph))
+                OutlinedButton.icon(
+                  key: const ValueKey('open_graph'),
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => GraphScreen(controller: c))),
+                  icon: const Icon(Icons.hub_outlined, size: 18),
+                  label: const Text('Граф связей'),
                 ),
-                const SizedBox(width: 8),
-              ],
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProcessesScreen(controller: c))),
-                  icon: const Icon(Icons.autorenew, size: 18),
-                  label: const Text('Процессы'),
-                ),
+              OutlinedButton.icon(
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProcessesScreen(controller: c))),
+                icon: const Icon(Icons.autorenew, size: 18),
+                label: const Text('Процессы'),
               ),
             ],
           ),
@@ -125,8 +122,13 @@ class _MindScreenState extends State<MindScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white24, size: 16),
-                    onPressed: () => c.removeAchievement(item.id),
+                    tooltip: 'Удалить достижение',
+                    icon: const Icon(Icons.close, color: AppColors.muted, size: 16),
+                    onPressed: () async {
+                      final ok = await confirmDialog(context,
+                          title: 'Удалить достижение?', message: '«${item.title}» будет удалено без возможности вернуть.', confirmLabel: 'Удалить', danger: true);
+                      if (ok) c.removeAchievement(item.id);
+                    },
                   ),
                 ],
               ),

@@ -24,6 +24,7 @@ import '../widgets/health_actions.dart';
 import '../widgets/progress_dialog.dart';
 import '../widgets/toast.dart';
 import 'statement_import_screen.dart';
+import '../widgets/adaptive_pair.dart';
 
 /// Настройки: профиль, цели дня, Health Connect, данные (резервная копия, примеры, сброс), о приложении.
 class SettingsScreen extends StatefulWidget {
@@ -482,7 +483,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 style: TextStyle(color: AppColors.muted, fontSize: 12)),
           ),
           for (final s in Sections.all)
-            SwitchListTile(
+            adaptiveSwitchTile(
+              context,
               key: ValueKey('section_${s.id}'),
               value: c.isShown(s.id),
               onChanged: (v) => c.setSectionShown(s.id, v),
@@ -554,8 +556,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _switchTile(IconData icon, String title, String subtitle, bool value, ValueChanged<bool>? onChanged) {
-    return SwitchListTile(
-      secondary: Icon(icon, color: AppColors.muted, size: 20),
+    return adaptiveSwitchTile(
+      context,
+      // значок — украшение: при крупном шрифте его место нужнее тексту
+      secondary: largeText(context) ? null : Icon(icon, color: AppColors.muted, size: 20),
       title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
       subtitle: Text(subtitle, style: const TextStyle(color: AppColors.muted, fontSize: 11)),
       value: value,
@@ -567,7 +571,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _tile(IconData icon, String title, String subtitle, {VoidCallback? onTap, Widget? trailing, bool danger = false}) {
     final color = danger ? AppColors.red : Colors.white;
     return ListTile(
-      leading: Icon(icon, color: danger ? AppColors.red : AppColors.muted, size: 20),
+      leading: largeText(context) ? null : Icon(icon, color: danger ? AppColors.red : AppColors.muted, size: 20),
       title: Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: color)),
       subtitle: Text(subtitle, style: const TextStyle(color: AppColors.muted, fontSize: 11)),
       trailing: trailing ?? (onTap != null ? const Icon(Icons.chevron_right, color: Colors.white24) : null),
