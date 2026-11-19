@@ -1,3 +1,7 @@
 .dart_tool/
 build/
 __pycache__/
+# файлы IDE и служебные файлы Flutter
+.idea/
+*.iml
+.flutter-plugins-dependencies

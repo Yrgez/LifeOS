@@ -1,0 +1,75 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Сети нет: приложение ничего не отправляет наружу (README, «User ownership»). Разрешение удаляется,
+         даже если его запросит плагин; отладочная сборка (src/debug) добавляет его только для горячей перезагрузки. -->
+    <uses-permission android:name="android.permission.INTERNET" tools:node="remove"/>
+
+    <!-- Блокировка приложения: биометрия или PIN устройства (local_auth) -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
+
+    <!-- Health Connect: только чтение (docs/HEALTH_SETUP.md) -->
+    <uses-permission android:name="android.permission.health.READ_STEPS"/>
+    <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED"/>
+    <uses-permission android:name="android.permission.health.READ_NUTRITION"/>
+    <uses-permission android:name="android.permission.health.READ_SLEEP"/>
+    <uses-permission android:name="android.permission.health.READ_WEIGHT"/>
+
+    <!-- allowBackup=false и dataExtractionRules: система не копирует базу в облако и на другой телефон.
+         Зашифрованная база там нечитаема (ключ — в Keystore этого устройства); переносите данные копией
+         из приложения (docs/SECURITY_SETUP.md). -->
+    <application
+        android:label="LIFE OS"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <!-- Тема окна под интерфейсом Flutter, пока он запускается и после -->
+            <meta-data
+              android:name="io.flutter.embedding.android.NormalTheme"
+              android:resource="@style/NormalTheme"
+              />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <!-- Health Connect: экран с пояснением, зачем нужны разрешения -->
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"/>
+            </intent-filter>
+        </activity>
+        <!-- Health Connect, Android 14+: просмотр использования разрешений -->
+        <activity-alias
+            android:name="ViewPermissionUsageActivity"
+            android:exported="true"
+            android:targetActivity=".MainActivity"
+            android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE"/>
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS"/>
+            </intent-filter>
+        </activity-alias>
+        <!-- Не удалять: по нему Flutter создаёт GeneratedPluginRegistrant.java -->
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+    </application>
+    <queries>
+        <!-- проверка, установлен ли Health Connect -->
+        <package android:name="com.google.android.apps.healthdata"/>
+        <!-- io.flutter.plugin.text.ProcessTextPlugin -->
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT"/>
+            <data android:mimeType="text/plain"/>
+        </intent>
+    </queries>
+</manifest>

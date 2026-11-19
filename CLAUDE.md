@@ -29,6 +29,9 @@
   Доменные операции — расширения в `lib/state/ops/*.dart` (`part of` контроллера); новую область — туда же, не в класс.
 - Новый необязательный блок интерфейса — в реестр `Sections` (`lib/core/sections.dart`) и под `c.isShown(...)`.
 - Логика без Flutter → `lib/core/`, модели → `lib/models/`, экран → `lib/ui/screens/`, переиспользуемый блок → `lib/ui/widgets/`.
+- Android-проект — в репозитории (`android/`, `docs/RELEASE.md`). Идентификатор `io.github.yrgez.lifeos` не менять
+  (иначе обновление не встанет поверх). Новое разрешение или нативная настройка — в манифест/Gradle и в
+  `test/android_project_test.dart`. Разрешения INTERNET нет и не будет.
 - Плагины — только за интерфейсами (`AppRepository`, `HealthDataSource`, `FileSource`, `BackupStorage`, `ReminderScheduler`, файлы `*_authenticator`, `secure_key_store`, `sqlcipher_opener`).
 - Смена формата JSON → поднять `kSchemaVersion` (`lib/data/app_data.dart`). Смена таблиц → поднять `kDbVersion` и добавить шаг
   в `onUpgradeSchema` (`lib/data/sqlite_app_repository.dart`). Новую таблицу добавить в `SqliteAppRepository.tables`
@@ -69,3 +72,5 @@ flutter pub get && flutter analyze --no-fatal-infos && flutter test
 9. ✅ По аудиту слабых сторон: автокопия в выбранную папку, локальные напоминания, свои категории и правила разбора
    выписки, поиск, задачи (намерение → «Сделано» = событие журнала), доступность (TalkBack, русские системные тексты,
    области нажатия 48 px, крупный шрифт до 200 %).
+10. ✅ Сборка для установки: Android-проект в репозитории, постоянный идентификатор, подпись своим ключом,
+   номер сборки из истории, выпуск по тегу; release-сборка без разрешения INTERNET.

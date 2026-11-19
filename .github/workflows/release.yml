@@ -1,0 +1,98 @@
+name: Выпуск
+
+# Тег v<версия> (например, v1.1.0) — подписанный APK в GitHub Releases (docs/RELEASE.md).
+# Версия в теге должна совпадать с version в pubspec.yaml.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write # создать выпуск и приложить APK
+
+jobs:
+  release:
+    name: Подписанный APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # номер сборки = число коммитов
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Версия из тега и pubspec.yaml
+        id: ver
+        run: |
+          name=$(sed -n 's/^version: *\([0-9.]*\).*/\1/p' pubspec.yaml)
+          tag=${GITHUB_REF_NAME#v}
+          if [ "$name" != "$tag" ]; then
+            echo "::error::Тег $GITHUB_REF_NAME не совпадает с версией $name в pubspec.yaml"
+            exit 1
+          fi
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "build=$(git rev-list --count HEAD)" >> "$GITHUB_OUTPUT"
+
+      # Выпуск без ключа не делается: APK с отладочной подписью не обновит установленное приложение
+      - name: Ключ подписи
+        env:
+          KEYSTORE_BASE64: ${{ secrets.LIFEOS_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Нет секрета LIFEOS_KEYSTORE_BASE64 — см. docs/RELEASE.md"
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/lifeos.jks"
+
+      - run: flutter pub get
+
+      - name: Тесты
+        run: |
+          sudo apt-get update && sudo apt-get install -y libsqlite3-dev
+          flutter analyze --no-fatal-infos
+          flutter test
+
+      - name: Сборка
+        shell: bash -eo pipefail {0}
+        env:
+          LIFEOS_KEYSTORE_PATH: ${{ runner.temp }}/lifeos.jks
+          LIFEOS_KEYSTORE_PASSWORD: ${{ secrets.LIFEOS_KEYSTORE_PASSWORD }}
+          LIFEOS_KEY_ALIAS: ${{ secrets.LIFEOS_KEY_ALIAS }}
+          LIFEOS_KEY_PASSWORD: ${{ secrets.LIFEOS_KEY_PASSWORD }}
+        run: |
+          flutter build apk --release \
+            --build-name=${{ steps.ver.outputs.name }} \
+            --build-number=${{ steps.ver.outputs.build }} \
+            --dart-define=LIFEOS_VERSION=${{ steps.ver.outputs.name }} \
+            --dart-define=LIFEOS_BUILD=${{ steps.ver.outputs.build }} \
+            --dart-define=LIFEOS_COMMIT=${{ github.sha }}
+          apk=life-os-${{ steps.ver.outputs.name }}.apk
+          mv build/app/outputs/flutter-apk/app-release.apk "$apk"
+          signer=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          "$signer" verify --print-certs "$apk" 2>&1 | tee certs.txt
+          grep -E "certificate SHA-256 digest" certs.txt | head -1 > cert.txt
+          test -s cert.txt
+          sha256sum "$apk" > "$apk.sha256"
+
+      - name: Выпуск на GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          apk=life-os-${{ steps.ver.outputs.name }}.apk
+          {
+            echo "LIFE OS ${{ steps.ver.outputs.name }} (сборка ${{ steps.ver.outputs.build }})."
+            echo
+            echo "Установка и обновление — docs/RELEASE.md. Обновление ставится поверх, данные сохраняются."
+            echo
+            echo "Подпись APK: \`$(sed 's/.*: //' cert.txt)\`"
+            echo "Контрольная сумма: \`$(cut -d' ' -f1 "$apk.sha256")\`"
+          } > notes.md
+          gh release create "$GITHUB_REF_NAME" "$apk" "$apk.sha256" --title "LIFE OS ${{ steps.ver.outputs.name }}" --notes-file notes.md
