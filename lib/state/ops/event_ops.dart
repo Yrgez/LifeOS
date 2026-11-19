@@ -14,6 +14,22 @@ extension EventOps on AppController {
   /// Актуальные события (последние версии, не отменённые), по возрастанию времени.
   List<LifeEvent> get events => currentEvents(_d.events);
 
+  /// Поиск по всем записям: последние версии событий (отменённые — тоже, с пометкой), операции, отметки,
+  /// процессы, цели, достижения, счета.
+  List<SearchHit> search(String query) {
+    final replaced = {for (final e in _d.events) if (e.supersedesId != null) e.supersedesId!};
+    return searchRecords(
+      query,
+      events: [for (final e in _d.events) if (!replaced.contains(e.id)) e],
+      transactions: _d.transactions,
+      checkIns: checkInsByDay.values,
+      processes: _d.processes,
+      goals: _d.goals,
+      achievements: _d.achievements,
+      bills: _d.bills,
+    );
+  }
+
   bool get eventsFull => _d.events.length >= _maxEvents;
 
   LifeEvent? eventById(String id) {
