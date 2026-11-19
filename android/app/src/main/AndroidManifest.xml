@@ -58,6 +58,11 @@
                 <category android:name="android.intent.category.HEALTH_PERMISSIONS"/>
             </intent-filter>
         </activity-alias>
+        <!-- Графический движок Impeller — через OpenGL ES, а не Vulkan: на части телефонов (Samsung, GPU Mali)
+             драйвер Vulkan портит текст при первом показе экрана («мигание», битые буквы до прокрутки). -->
+        <meta-data
+            android:name="io.flutter.embedding.android.ImpellerBackend"
+            android:value="opengles" />
         <!-- Не удалять: по нему Flutter создаёт GeneratedPluginRegistrant.java -->
         <meta-data
             android:name="flutterEmbedding"
