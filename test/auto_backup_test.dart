@@ -235,7 +235,7 @@ void main() {
       await tester.runAsync(backup.runNow);
       await tester.pumpAndSettle();
       expect(find.textContaining('Последняя копия: 18.11.2026'), findsOneWidget);
-      await tester.pageBack();
+      await tester.tap(find.byTooltip('Назад'));
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('backup_reminder')), findsNothing);
       expect(tester.takeException(), isNull);

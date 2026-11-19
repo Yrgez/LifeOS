@@ -388,7 +388,7 @@ class ProcessHeader extends StatelessWidget {
           if (p.goalIds.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: Text('→ ${p.goalIds.map((id) => goalTitles[id] ?? 'цель удалена').join(', ')}', style: const TextStyle(color: AppColors.violet, fontSize: 11)),
+              child: Text('→ ${p.goalIds.map((id) => goalTitles[id] ?? 'цель удалена').join(', ')}', style: const TextStyle(color: AppColors.violetText, fontSize: 11)),
             ),
           if (p.rhythm != null) ...[
             const SizedBox(height: 10),

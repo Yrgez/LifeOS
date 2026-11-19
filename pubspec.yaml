@@ -10,6 +10,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations: # русские системные тексты: календари, подсказки кнопок, озвучка программой чтения экрана
+    sdk: flutter
   shared_preferences: ^2.2.0
   sqflite_sqlcipher: ^3.4.0 # SQLite с поддержкой шифрования (SQLCipher); без пароля работает как обычный SQLite
   sqflite_common: '>=2.4.0 <3.0.0' # общие типы базы (репозиторий от плагина не зависит); диапазон — чтобы не конфликтовать с sqflite_sqlcipher

@@ -6,6 +6,7 @@ class AppColors {
   // смысловые цвета (не для украшения)
   static const green = Color(0xFF00E676);
   static const violet = Color(0xFF7C4DFF);
+  static const violetText = Color(0xFFA78BFF); // фиолетовый для текста: контраст на плитке 6.8:1 (violet — лишь 3.8:1)
   static const gold = Color(0xFFFFD700);
   static const red = Color(0xFFFF3D71);
   static const amber = Color(0xFFFFB300);

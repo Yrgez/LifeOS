@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../core/body_stats.dart';
+import '../../core/chart_text.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../models/body.dart';
 import '../../state/app_controller.dart';
 import '../painters/chart_painters.dart';
+import 'adaptive_pair.dart';
+import 'chart_semantics.dart';
 import 'form_dialog.dart';
 import 'toast.dart';
 
@@ -71,72 +74,68 @@ class BodyMetrics extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: _Tile(
-                  key: const ValueKey('weight_tile'),
-                  onTap: last == null ? () => _addWeight(context) : () => _history(context),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Вес', style: _sub),
-                      const SizedBox(height: 6),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(last == null ? '—' : fmtKg(last.kg), style: _big),
-                      ),
-                      const SizedBox(height: 10),
-                      if (c.weights.length >= 2)
-                        SizedBox(
+        AdaptivePair(
+          children: [
+            _Tile(
+              key: const ValueKey('weight_tile'),
+              onTap: last == null ? () => _addWeight(context) : () => _history(context),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Вес', style: _sub),
+                  const SizedBox(height: 6),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(last == null ? '—' : fmtKg(last.kg), style: _big),
+                  ),
+                  const SizedBox(height: 10),
+                  if (c.weights.length >= 2)
+                    Builder(builder: (context) {
+                      final recent = [for (final w in c.weights.skip(c.weights.length > 30 ? c.weights.length - 30 : 0)) w.kg];
+                      return ChartSemantics(
+                        label: 'Вес, последние замеры, кг: ${describeSeries(recent)}',
+                        child: SizedBox(
                           height: 28,
                           width: double.infinity,
-                          child: CustomPaint(
-                            painter: MiniSparklinePainter(data: [for (final w in c.weights.skip(c.weights.length > 30 ? c.weights.length - 30 : 0)) w.kg], color: AppColors.text),
-                          ),
+                          child: CustomPaint(painter: MiniSparklinePainter(data: recent, color: AppColors.text)),
                         ),
-                      const Spacer(),
-                      Text(
-                        last == null
-                            ? 'Нажмите, чтобы записать'
-                            : change == null
-                                ? 'Замер ${fmtDate(last.at)}'
-                                : '30 дней: ${change.delta > 0 ? '+' : change.delta < 0 ? '−' : '±'}${fmtKg(change.delta.abs())}',
-                        style: _sub,
-                      ),
-                    ],
+                      );
+                    }),
+                  const Spacer(),
+                  Text(
+                    last == null
+                        ? 'Нажмите, чтобы записать'
+                        : change == null
+                            ? 'Замер ${fmtDate(last.at)}'
+                            : '30 дней: ${change.delta > 0 ? '+' : change.delta < 0 ? '−' : '±'}${fmtKg(change.delta.abs())}',
+                    style: _sub,
                   ),
-                ),
+                ],
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _Tile(
-                  key: const ValueKey('bmi_tile'),
-                  onTap: () => _editHeight(context),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('ИМТ', style: _sub),
-                      const SizedBox(height: 6),
-                      Text(index == null ? '—' : index.toStringAsFixed(1).replaceAll('.', ','), style: _big),
-                      const SizedBox(height: 4),
-                      Text(
-                        index == null
-                            ? (c.heightCm == null ? 'Укажите рост' : 'Нужен замер веса')
-                            : '${bmiCategory(index)} · рост ${c.heightCm} см',
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                      ),
-                      const Spacer(),
-                      const Text('Не учитывает мышцы и жир — грубый ориентир', style: _sub),
-                    ],
+            ),
+            _Tile(
+              key: const ValueKey('bmi_tile'),
+              onTap: () => _editHeight(context),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('ИМТ', style: _sub),
+                  const SizedBox(height: 6),
+                  Text(index == null ? '—' : index.toStringAsFixed(1).replaceAll('.', ','), style: _big),
+                  const SizedBox(height: 4),
+                  Text(
+                    index == null
+                        ? (c.heightCm == null ? 'Укажите рост' : 'Нужен замер веса')
+                        : '${bmiCategory(index)} · рост ${c.heightCm} см',
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                   ),
-                ),
+                  const Spacer(),
+                  const Text('Не учитывает мышцы и жир — грубый ориентир', style: _sub),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         _Tile(
@@ -157,25 +156,37 @@ class BodyMetrics extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.all(3),
-                decoration: BoxDecoration(color: AppColors.field, borderRadius: BorderRadius.circular(22), border: Border.all(color: AppColors.border)),
+                decoration: BoxDecoration(color: AppColors.field, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppColors.border)),
                 child: Row(
                   children: [
                     for (final g in BodyGoal.all)
                       Expanded(
-                        child: GestureDetector(
-                          key: ValueKey('goal_$g'),
-                          // повторное нажатие снимает цель
+                        child: Semantics(
+                          button: true,
+                          selected: c.bodyGoal == g,
+                          label: BodyGoal.labels[g],
+                          hint: c.bodyGoal == g ? 'нажмите ещё раз, чтобы снять цель' : null,
                           onTap: () => c.setBodyGoal(c.bodyGoal == g ? null : g),
-                          child: Container(
-                            height: 38,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(color: c.bodyGoal == g ? AppColors.accent : Colors.transparent, borderRadius: BorderRadius.circular(19)),
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                                BodyGoal.labels[g]!,
-                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: c.bodyGoal == g ? Colors.black : AppColors.muted),
+                          excludeSemantics: true,
+                          child: GestureDetector(
+                            key: ValueKey('goal_$g'),
+                            behavior: HitTestBehavior.opaque,
+                            // повторное нажатие снимает цель
+                            onTap: () => c.setBodyGoal(c.bodyGoal == g ? null : g),
+                            // область нажатия 48 px, видимый сегмент — с отступом 3 px внутри таблетки
+                            child: Padding(
+                              padding: const EdgeInsets.all(3),
+                              child: Container(
+                                height: 42,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(color: c.bodyGoal == g ? AppColors.accent : Colors.transparent, borderRadius: BorderRadius.circular(21)),
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    BodyGoal.labels[g]!,
+                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: c.bodyGoal == g ? Colors.black : AppColors.muted),
+                                  ),
+                                ),
                               ),
                             ),
                           ),

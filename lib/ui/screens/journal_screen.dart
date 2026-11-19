@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../../core/chart_text.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../core/workout_stats.dart';
 import '../../models/models.dart';
 import '../../state/app_controller.dart';
 import '../painters/chart_painters.dart';
+import '../widgets/chart_semantics.dart';
 import '../widgets/log_set_dialog.dart';
+import '../widgets/segment_pill.dart';
 
 /// Журнал тренировок: история подходов, прогрессия и объём нагрузки.
 /// Без упражнений, шаблонов и таймеров — только то, что нужно для отслеживания прогресса.
@@ -147,30 +150,26 @@ class _JournalScreenState extends State<JournalScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('ОБЪЁМ НАГРУЗКИ (вес × повторы, кг)', style: TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold)),
-              Container(
-                decoration: BoxDecoration(color: AppColors.field, borderRadius: BorderRadius.circular(14)),
-                child: Row(children: [_seg('7 дн', !_weekly, () => setState(() => _weekly = false)), _seg('8 нед', _weekly, () => setState(() => _weekly = true))]),
+              SegmentPill<bool>(
+                options: const {false: '7 дн', true: '8 нед'},
+                value: _weekly,
+                onChanged: (v) => setState(() => _weekly = v),
+                activeColor: AppColors.green,
+                fontSize: 10,
+                segmentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               ),
             ],
           ),
           const SizedBox(height: 10),
-          SizedBox(
-            height: 130,
-            width: double.infinity,
-            child: CustomPaint(painter: VolumeBarsPainter(values: values, labels: labels, color: AppColors.green)),
+          ChartSemantics(
+            label: 'Объём нагрузки по ${_weekly ? 'неделям' : 'дням'}, кг: ${describeSeries(values, labels: labels)}',
+            child: SizedBox(
+              height: 130,
+              width: double.infinity,
+              child: CustomPaint(painter: VolumeBarsPainter(values: values, labels: labels, color: AppColors.green)),
+            ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _seg(String text, bool active, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(color: active ? AppColors.green : Colors.transparent, borderRadius: BorderRadius.circular(14)),
-        child: Text(text, style: TextStyle(color: active ? Colors.black : Colors.white60, fontSize: 10, fontWeight: FontWeight.bold)),
       ),
     );
   }
@@ -234,7 +233,10 @@ class _JournalScreenState extends State<JournalScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          SizedBox(height: 70, width: double.infinity, child: CustomPaint(painter: MiniSparklinePainter(data: series, color: m?.color ?? AppColors.green))),
+          ChartSemantics(
+            label: 'Прогрессия 1RM, кг: ${describeSeries(series)}',
+            child: SizedBox(height: 70, width: double.infinity, child: CustomPaint(painter: MiniSparklinePainter(data: series, color: m?.color ?? AppColors.green))),
+          ),
           const SizedBox(height: 8),
           Text(
             'Рекорд 1RM: ${trimNum(m?.maxWeight ?? 0)} кг'
@@ -307,7 +309,7 @@ class _JournalScreenState extends State<JournalScreen> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.white24, size: 18),
+            icon: const Icon(Icons.delete_outline, color: AppColors.muted, size: 18),
             tooltip: 'Удалить подход',
             onPressed: () {
               final removed = c.deleteSet(s.id);

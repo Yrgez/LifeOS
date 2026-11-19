@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 
 import '../../core/theme.dart';
 import '../../core/utils.dart';
@@ -15,6 +16,10 @@ class LifeGraphPainter extends CustomPainter {
   final Map<String, int> degree; // суммарная сила связей узла — «хабы» рисуются крупнее
   final Set<String> isolated; // узлы без связей — пунктирное кольцо
 
+  /// Подписи узлов для программы чтения экрана; каждый узел — отдельная кнопка (граф только нарисован).
+  final Map<String, String> semanticLabels;
+  final ValueChanged<String>? onSelect;
+
   LifeGraphPainter({
     required this.nodes,
     required this.edges,
@@ -23,6 +28,8 @@ class LifeGraphPainter extends CustomPainter {
     this.selectedNodeId,
     this.selectedEdgeKey,
     this.visibleCategories,
+    this.semanticLabels = const {},
+    this.onSelect,
   });
 
   static double radiusOf(int degree, bool selected) => 8.0 + min(6, degree).toDouble() + (selected ? 4 : 0);
@@ -169,4 +176,32 @@ class LifeGraphPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant LifeGraphPainter old) => true;
+
+  @override
+  SemanticsBuilderCallback get semanticsBuilder => (size) {
+        final ordered = [for (final n in nodes) if (semanticLabels[n.id] != null) n]
+          // порядок чтения — сверху вниз, слева направо
+          ..sort((a, b) {
+            final byTop = a.position.dy.compareTo(b.position.dy);
+            return byTop != 0 ? byTop : a.position.dx.compareTo(b.position.dx);
+          });
+        return [
+          for (final n in ordered)
+            CustomPainterSemantics(
+              key: ValueKey('node_sem_${n.id}'),
+              // 48 px — область фокуса не меньше рекомендуемой, даже если кружок узла мельче
+              rect: Rect.fromCenter(center: Offset(n.position.dx * size.width, n.position.dy * size.height), width: 48, height: 48),
+              properties: SemanticsProperties(
+                label: semanticLabels[n.id],
+                button: true,
+                selected: n.id == selectedNodeId,
+                textDirection: TextDirection.ltr,
+                onTap: onSelect == null ? null : () => onSelect!(n.id),
+              ),
+            ),
+        ];
+      };
+
+  @override
+  bool shouldRebuildSemantics(covariant LifeGraphPainter old) => true;
 }

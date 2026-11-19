@@ -155,25 +155,27 @@ class LabeledDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InputDecorator(
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: labelColor == null ? null : TextStyle(color: labelColor, fontSize: 11),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: items.containsKey(value) ? value : null,
-          isExpanded: true,
-          isDense: true,
-          dropdownColor: AppColors.field,
-          items: [
-            for (final e in items.entries)
-              DropdownMenuItem(value: e.key, child: Text(e.value, overflow: TextOverflow.ellipsis)),
-          ],
-          onChanged: (v) {
-            if (v != null) onChanged(v);
-          },
+    // подпись поля читается вместе с выбранным значением: «Метрика A, Шаги»
+    return Semantics(
+      label: label,
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: labelColor == null ? null : TextStyle(color: labelColor, fontSize: 11),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+        ),
+        child: DropdownButtonHideUnderline(
+          child: DropdownButton<String>(
+            value: items.containsKey(value) ? value : null,
+            isExpanded: true,
+            dropdownColor: AppColors.field,
+            items: [
+              for (final e in items.entries) DropdownMenuItem(value: e.key, child: Text(e.value, overflow: TextOverflow.ellipsis)),
+            ],
+            onChanged: (v) {
+              if (v != null) onChanged(v);
+            },
+          ),
         ),
       ),
     );

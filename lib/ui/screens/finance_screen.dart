@@ -2,8 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-import '../../core/finance_categories.dart';
 import '../../core/currency.dart';
+import '../../core/finance_categories.dart';
 import '../../core/finance_stats.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
@@ -11,6 +11,7 @@ import '../../core/workout_stats.dart';
 import '../../models/models.dart';
 import '../../state/app_controller.dart';
 import '../painters/chart_painters.dart';
+import '../widgets/chart_semantics.dart';
 import '../widgets/form_dialog.dart';
 import 'categories_screen.dart';
 import 'statement_import_screen.dart';
@@ -167,7 +168,7 @@ Future<void> showRecurringSheet(BuildContext context, AppController c) {
                               style: const TextStyle(color: AppColors.muted, fontSize: 11),
                             ),
                             trailing: IconButton(
-                              icon: const Icon(Icons.delete_outline, color: Colors.white24, size: 18),
+                              icon: const Icon(Icons.delete_outline, color: AppColors.muted, size: 18),
                               tooltip: 'Удалить правило (созданные операции останутся)',
                               onPressed: () => c.removeRecurring(r.id),
                             ),
@@ -279,9 +280,10 @@ class _FinanceScreenState extends State<FinanceScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        IconButton(icon: const Icon(Icons.chevron_left), onPressed: () => setState(() => _month = addMonths(_month, -1))),
+        IconButton(tooltip: 'Предыдущий месяц', icon: const Icon(Icons.chevron_left), onPressed: () => setState(() => _month = addMonths(_month, -1))),
         SizedBox(width: 170, child: Text(monthYear(_month), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15))),
         IconButton(
+          tooltip: 'Следующий месяц',
           icon: const Icon(Icons.chevron_right),
           onPressed: _isCurrentMonth ? null : () => setState(() => _month = addMonths(_month, 1)),
         ),
@@ -318,7 +320,9 @@ class _FinanceScreenState extends State<FinanceScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('ДИНАМИКА ЗА 6 МЕСЯЦЕВ', style: TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold)),
+              // на узком экране заголовок переносится, а не выталкивает соседей за край
+              Flexible(child: Text('ДИНАМИКА ЗА 6 МЕСЯЦЕВ', style: const TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold))),
+              const SizedBox(width: 8),
               Row(children: [
                 const CircleAvatar(radius: 4, backgroundColor: AppColors.green),
                 const SizedBox(width: 4),
@@ -331,16 +335,20 @@ class _FinanceScreenState extends State<FinanceScreen> {
             ],
           ),
           const SizedBox(height: 10),
-          SizedBox(
-            height: 110,
-            width: double.infinity,
-            child: CustomPaint(
-              painter: DualBarsPainter(
-                a: months.map((m) => m.income.toDouble()).toList(),
-                b: months.map((m) => m.expense.toDouble()).toList(),
-                labels: labels,
-                colorA: AppColors.green,
-                colorB: AppColors.red,
+          ChartSemantics(
+            label: 'Доход и расход за 6 месяцев: '
+                '${[for (var i = 0; i < months.length; i++) '${labels[i]} — доход ${fmtCur(months[i].income)}, расход ${fmtCur(months[i].expense)}'].join('; ')}',
+            child: SizedBox(
+              height: 110,
+              width: double.infinity,
+              child: CustomPaint(
+                painter: DualBarsPainter(
+                  a: months.map((m) => m.income.toDouble()).toList(),
+                  b: months.map((m) => m.expense.toDouble()).toList(),
+                  labels: labels,
+                  colorA: AppColors.green,
+                  colorB: AppColors.red,
+                ),
               ),
             ),
           ),
@@ -362,7 +370,8 @@ class _FinanceScreenState extends State<FinanceScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('РАСХОДЫ ПО КАТЕГОРИЯМ', style: TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold)),
+              // на узком экране заголовок переносится, а не выталкивает соседей за край
+              Flexible(child: Text('РАСХОДЫ ПО КАТЕГОРИЯМ', style: const TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold))),
               TextButton.icon(
                 onPressed: () => showBudgetDialog(context, c),
                 style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 24)),
@@ -508,7 +517,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: t.isIncome ? AppColors.green : Colors.white),
           ),
           IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.white24, size: 18),
+            icon: const Icon(Icons.delete_outline, color: AppColors.muted, size: 18),
             tooltip: 'Удалить операцию',
             onPressed: () {
               final removed = c.deleteTransaction(t.id);

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../core/rhythm.dart';
-import '../../core/sections.dart';
-import '../../core/theme.dart';
 import '../../core/backup_schedule.dart';
 import '../../core/currency.dart';
 import '../../core/life_events.dart';
 import '../../core/memories.dart';
+import '../../core/rhythm.dart';
+import '../../core/sections.dart';
+import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../models/day_checkin.dart';
 import '../../models/experiment.dart';
@@ -15,8 +15,9 @@ import '../../models/life_process.dart';
 import '../../security/auto_backup.dart';
 import '../../security/security_service.dart';
 import '../../state/app_controller.dart';
-import '../widgets/health_card.dart';
+import '../widgets/adaptive_pair.dart';
 import '../widgets/event_dialog.dart';
+import '../widgets/health_card.dart';
 import '../widgets/process_ui.dart';
 import '../widgets/task_ui.dart';
 import '../widgets/toast.dart';
@@ -28,8 +29,8 @@ import 'processes_screen.dart';
 import 'resources_screen.dart';
 import 'review_screen.dart';
 import 'search_screen.dart';
-import 'tasks_screen.dart';
 import 'settings_screen.dart';
+import 'tasks_screen.dart';
 
 /// Вкладка «Сегодня» (PRESENT): плитки состояния дня, идущие процессы, ресурсы недели. Отсюда же — запись события.
 class HubScreen extends StatelessWidget {
@@ -160,15 +161,11 @@ class HubScreen extends StatelessWidget {
           const SizedBox(height: 20),
           if (c.isShown(Sections.tasks)) _TasksTile(controller: c, push: (w) => _push(context, w)),
           if (c.isShown(Sections.workouts) || c.isShown(Sections.steps)) ...[
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (c.isShown(Sections.workouts)) Expanded(child: _RecoveryTile(controller: c)),
-                  if (c.isShown(Sections.workouts) && c.isShown(Sections.steps)) const SizedBox(width: 12),
-                  if (c.isShown(Sections.steps)) Expanded(child: _StepsTile(controller: c, onTap: () => _push(context, _HealthScreen(controller: c)))),
-                ],
-              ),
+            AdaptivePair(
+              children: [
+                if (c.isShown(Sections.workouts)) _RecoveryTile(controller: c),
+                if (c.isShown(Sections.steps)) _StepsTile(controller: c, onTap: () => _push(context, _HealthScreen(controller: c))),
+              ],
             ),
             const SizedBox(height: 12),
           ],
@@ -208,24 +205,20 @@ class HubScreen extends StatelessWidget {
             _MemoryTile(memory: c.memory!),
           ],
           const SizedBox(height: 16),
-          Row(
+          AdaptivePair(
+            spacing: 10,
             children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  key: const ValueKey('open_events'),
-                  onPressed: () => _push(context, EventsScreen(controller: c)),
-                  icon: const Icon(Icons.timeline, size: 18),
-                  label: const Text('События'),
-                ),
+              OutlinedButton.icon(
+                key: const ValueKey('open_events'),
+                onPressed: () => _push(context, EventsScreen(controller: c)),
+                icon: const Icon(Icons.timeline, size: 18),
+                label: const Text('События'),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: OutlinedButton.icon(
-                  key: const ValueKey('open_processes'),
-                  onPressed: () => _push(context, ProcessesScreen(controller: c)),
-                  icon: const Icon(Icons.autorenew, size: 18),
-                  label: const Text('Процессы'),
-                ),
+              OutlinedButton.icon(
+                key: const ValueKey('open_processes'),
+                onPressed: () => _push(context, ProcessesScreen(controller: c)),
+                icon: const Icon(Icons.autorenew, size: 18),
+                label: const Text('Процессы'),
               ),
             ],
           ),
@@ -259,15 +252,19 @@ class _RoundButton extends StatelessWidget {
   const _RoundButton({super.key, required this.icon, required this.tooltip, required this.onTap, this.filled = false});
 
   @override
-  Widget build(BuildContext context) => Tooltip(
-        message: tooltip,
-        child: Material(
-          color: filled ? AppColors.accent : AppColors.raised,
-          shape: CircleBorder(side: BorderSide(color: filled ? AppColors.accent : AppColors.border)),
-          child: InkWell(
-            customBorder: const CircleBorder(),
-            onTap: onTap,
-            child: SizedBox(width: 46, height: 46, child: Icon(icon, size: 21, color: filled ? Colors.black : AppColors.text, semanticLabel: tooltip)),
+  // 48 px — минимальная область нажатия по рекомендации Android; название кнопки читается из подсказки
+  Widget build(BuildContext context) => Semantics(
+        button: true,
+        child: Tooltip(
+          message: tooltip,
+          child: Material(
+            color: filled ? AppColors.accent : AppColors.raised,
+            shape: CircleBorder(side: BorderSide(color: filled ? AppColors.accent : AppColors.border)),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: onTap,
+              child: SizedBox(width: 48, height: 48, child: Icon(icon, size: 21, color: filled ? Colors.black : AppColors.text)),
+            ),
           ),
         ),
       );
@@ -307,12 +304,15 @@ class _RecoveryTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(
-              width: 52,
-              height: 52,
-              child: CustomPaint(
-                painter: _RingPainter(r.total == 0 ? 0 : r.recovered / r.total),
-                child: Center(child: Text('${r.recovered}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
+            // кольцо дублирует подпись ниже — программе чтения экрана достаточно текста
+            ExcludeSemantics(
+              child: SizedBox(
+                width: 52,
+                height: 52,
+                child: CustomPaint(
+                  painter: _RingPainter(r.total == 0 ? 0 : r.recovered / r.total),
+                  child: Center(child: Text('${r.recovered}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
+                ),
               ),
             ),
             const SizedBox(height: 28),

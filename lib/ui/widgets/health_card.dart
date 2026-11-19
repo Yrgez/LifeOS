@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../core/chart_text.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../state/app_controller.dart';
 import '../painters/chart_painters.dart';
+import 'chart_semantics.dart';
 import 'form_dialog.dart';
 import 'health_actions.dart';
 import 'process_ui.dart';
@@ -108,10 +110,13 @@ class _HealthCardState extends State<HealthCard> {
           ],
           const Text('ДИНАМИКА ШАГОВ ЗА НЕДЕЛЮ:', style: TextStyle(color: AppColors.muted, fontSize: 10, fontWeight: FontWeight.bold)),
           const SizedBox(height: 6),
-          SizedBox(
-            height: 48,
-            width: double.infinity,
-            child: CustomPaint(painter: MiniSparklinePainter(data: c.stepsWeekHistory, color: Colors.cyanAccent)),
+          ChartSemantics(
+            label: 'Шаги за неделю: ${describeSeries(c.stepsWeekHistory, labels: c.weekLabels)}',
+            child: SizedBox(
+              height: 48,
+              width: double.infinity,
+              child: CustomPaint(painter: MiniSparklinePainter(data: c.stepsWeekHistory, color: Colors.cyanAccent)),
+            ),
           ),
         ],
       ),

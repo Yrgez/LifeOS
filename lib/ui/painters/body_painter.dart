@@ -1,6 +1,8 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 
 import '../../core/theme.dart';
 import '../../models/models.dart';
@@ -11,7 +13,18 @@ class AnatomicalSilhouettePainter extends CustomPainter {
   final bool isFront;
   final String? selectedMuscleId;
 
-  AnatomicalSilhouettePainter({required this.muscles, required this.isFront, this.selectedMuscleId});
+  /// Подписи мышц для программы чтения экрана: «Грудь, восстановлена (оценка)». Каждая мышца — отдельная кнопка,
+  /// потому что фигура только нарисована и иначе для TalkBack пуста.
+  final Map<String, String> semanticLabels;
+  final ValueChanged<String>? onSelect;
+
+  AnatomicalSilhouettePainter({
+    required this.muscles,
+    required this.isFront,
+    this.selectedMuscleId,
+    this.semanticLabels = const {},
+    this.onSelect,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -85,4 +98,45 @@ class AnatomicalSilhouettePainter extends CustomPainter {
   // (как было раньше) НЕ перерисовывало силуэт после записи подхода.
   @override
   bool shouldRepaint(covariant AnatomicalSilhouettePainter old) => true;
+
+  @override
+  SemanticsBuilderCallback get semanticsBuilder => (size) {
+        final scale = min(size.width / AnatomicalGeometry.baseWidth, size.height / AnatomicalGeometry.baseHeight);
+        final dx = (size.width - AnatomicalGeometry.baseWidth * scale) / 2;
+        final dy = (size.height - AnatomicalGeometry.baseHeight * scale) / 2;
+        final paths = AnatomicalGeometry.pathsFor(isFront).entries.toList()
+          // порядок чтения — сверху вниз, слева направо
+          ..sort((a, b) {
+            final ra = a.value.getBounds(), rb = b.value.getBounds();
+            final byTop = ra.top.compareTo(rb.top);
+            return byTop != 0 ? byTop : ra.left.compareTo(rb.left);
+          });
+        return [
+          for (final e in paths)
+            if (semanticLabels[e.key] != null)
+              CustomPainterSemantics(
+                key: ValueKey('muscle_sem_${e.key}'),
+                rect: _focusRect(Rect.fromLTRB(
+                  dx + e.value.getBounds().left * scale,
+                  dy + e.value.getBounds().top * scale,
+                  dx + e.value.getBounds().right * scale,
+                  dy + e.value.getBounds().bottom * scale,
+                )),
+                properties: SemanticsProperties(
+                  label: semanticLabels[e.key],
+                  button: true,
+                  selected: e.key == selectedMuscleId,
+                  textDirection: TextDirection.ltr,
+                  onTap: onSelect == null ? null : () => onSelect!(e.key),
+                ),
+              ),
+        ];
+      };
+
+  /// Область фокуса программы чтения экрана — не меньше 48 × 48 px, даже если мышца на рисунке мельче.
+  static Rect _focusRect(Rect r) => Rect.fromCenter(center: r.center, width: max(r.width, 48), height: max(r.height, 48));
+
+  @override
+  bool shouldRebuildSemantics(covariant AnatomicalSilhouettePainter old) =>
+      old.isFront != isFront || old.selectedMuscleId != selectedMuscleId || !mapEquals(old.semanticLabels, semanticLabels);
 }
