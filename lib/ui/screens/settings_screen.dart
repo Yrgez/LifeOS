@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../core/sections.dart';
 import '../../core/app_log.dart';
+import '../../core/app_version.dart';
+import '../../core/backup_schedule.dart';
 import '../../core/currency.dart';
+import '../../core/reminders.dart';
+import '../../core/sections.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../data/app_data.dart';
-import '../../core/backup_schedule.dart';
-import '../../core/reminders.dart';
 import '../../security/app_lock.dart';
 import '../../security/auto_backup.dart';
 import '../../security/backup_cipher.dart';
@@ -17,6 +18,7 @@ import '../../security/security_service.dart';
 import '../../security/security_settings.dart';
 import '../../state/app_controller.dart';
 import '../../state/reminders.dart';
+import '../widgets/adaptive_pair.dart';
 import '../widgets/backup_actions.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/form_dialog.dart';
@@ -24,7 +26,6 @@ import '../widgets/health_actions.dart';
 import '../widgets/progress_dialog.dart';
 import '../widgets/toast.dart';
 import 'statement_import_screen.dart';
-import '../widgets/adaptive_pair.dart';
 
 /// Настройки: профиль, цели дня, Health Connect, данные (резервная копия, примеры, сброс), о приложении.
 class SettingsScreen extends StatefulWidget {
@@ -516,6 +517,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _tile(Icons.delete_forever, 'Сбросить все данные', 'Начать с чистого листа', danger: true, onTap: _reset),
         ]),
         _section('О ПРИЛОЖЕНИИ', [
+          _tile(Icons.info_outline, 'Версия', appVersionLabel()),
           _tile(Icons.waving_hand, 'Пройти знакомство заново', 'Имя, цели, деньги — данные не удаляются', onTap: _restartOnboarding),
           _tile(Icons.storage, 'Формат данных', 'JSON v$kSchemaVersion • хранилище SQLite'),
           _tile(Icons.bug_report, 'Журнал диагностики', 'Записей: ${AppLog.recent.length} • нажмите, чтобы скопировать', onTap: _copyLog),

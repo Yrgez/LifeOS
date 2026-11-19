@@ -15,13 +15,15 @@
 > сверьте их с README установленных версий.
 
 ## Android
+Всё перечисленное ниже уже сделано в Android-проекте репозитория (`android/`, проверяет `test/android_project_test.dart`);
+разделы — пояснение, что и зачем. Сборка и подпись — [`RELEASE.md`](RELEASE.md).
 
 ### 1. `android/app/build.gradle(.kts)`
 `minSdk` — не ниже **26** (уже нужно для Health Connect).
 
 ### 2. `MainActivity.kt` — `FlutterFragmentActivity` + канал защиты экрана
 ```kotlin
-package com.example.life_os
+package io.github.yrgez.lifeos
 
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterFragmentActivity
@@ -66,8 +68,8 @@ class MainActivity : FlutterFragmentActivity() {
 По README `local_auth` для Android в `res/values/styles.xml` и `res/values-night/styles.xml`
 родитель `LaunchTheme` и `NormalTheme` должен быть из семейства `Theme.AppCompat`:
 ```xml
-<style name="LaunchTheme" parent="Theme.AppCompat.DayNight">
-<style name="NormalTheme" parent="Theme.AppCompat.DayNight">
+<style name="LaunchTheme" parent="Theme.AppCompat.NoActionBar">
+<style name="NormalTheme" parent="Theme.AppCompat.NoActionBar">
 ```
 
 ### 5. ProGuard / R8 (обязательно для release-сборки с SQLCipher)

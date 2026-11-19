@@ -9,10 +9,10 @@ Samsung Health, часы и другие приложения записываю
 > Шаги ниже собраны по README плагина и документации Health Connect; сверьте их с README
 > установленной версии плагина — требования Android меняются между релизами.
 
-## Как это делается в CI
-Папка `android/` в репозитории не хранится. Шаги сборки APK в `.github/workflows/ci.yml` создают её
-(`flutter create`) и применяют настройки из разделов 1–3 автоматически. Вручную их нужно делать только
-при локальной сборке с папкой `android/`.
+## Где это настроено
+Android-проект хранится в репозитории (`android/`), настройки из разделов 1–3 в нём уже сделаны
+(`test/android_project_test.dart` проверяет их). Разделы ниже — пояснение, что и зачем; вручную ничего делать не нужно.
+Сборка и подпись — [`RELEASE.md`](RELEASE.md).
 
 ## 1. `android/app/build.gradle(.kts)`
 - `minSdk` — не ниже **26** (Android 8.0).
@@ -20,7 +20,7 @@ Samsung Health, часы и другие приложения записываю
 
 ## 2. `MainActivity` — наследник `FlutterFragmentActivity`
 ```kotlin
-package com.example.life_os
+package io.github.yrgez.lifeos
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

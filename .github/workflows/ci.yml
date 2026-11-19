@@ -52,6 +52,8 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # номер сборки = число коммитов
 
       # Java 21: lint плагинов на новом Android Gradle Plugin (file_selector_android) использует API Java 21
       # (List.removeLast) и на JDK 17 падает в lintVitalAnalyzeRelease
@@ -65,98 +67,66 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Создать Android-проект, если его нет
-        run: |
-          if [ ! -d android ]; then
-            flutter create --platforms=android --org com.example --project-name life_os .
-          fi
-
-      - name: Поднять minSdk до 26 (требует плагин health)
-        run: |
-          f=android/app/build.gradle.kts
-          if [ -f "$f" ]; then
-            sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 26/' "$f"
-          else
-            f=android/app/build.gradle
-            sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 26/' "$f"
-          fi
-          grep -n "minSdk" "$f"
-
-      - name: Собрать все плагины под compileSdk 36
-        run: |
-          if [ -f android/build.gradle.kts ]; then
-            cat >> android/build.gradle.kts <<'EOF'
-
-          subprojects {
-              val fixSdk: Project.() -> Unit = {
-                  if (name != "app") {
-                      val ext = extensions.findByName("android")
-                      if (ext != null) {
-                          ext.javaClass.getMethod("setCompileSdkVersion", Int::class.javaPrimitiveType).invoke(ext, 36)
-                      }
-                  }
-              }
-              if (state.executed) fixSdk() else afterEvaluate { fixSdk() }
-          }
-          EOF
-          else
-            cat >> android/build.gradle <<'EOF'
-
-          subprojects {
-              afterEvaluate { p ->
-                  if (p.name != 'app' && p.hasProperty('android')) {
-                      p.android.compileSdkVersion 36
-                  }
-              }
-          }
-          EOF
-          fi
-
-      - name: Настроить Health Connect (разрешения и MainActivity)
-        run: |
-          python3 - <<'EOF'
-          p = 'android/app/src/main/AndroidManifest.xml'
-          s = open(p, encoding='utf-8').read()
-          if 'health.READ_STEPS' not in s:
-              perms = (
-                  '    <uses-permission android:name="android.permission.health.READ_STEPS"/>\n'
-                  '    <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED"/>\n'
-                  '    <uses-permission android:name="android.permission.health.READ_NUTRITION"/>\n'
-                  '    <queries>\n'
-                  '        <package android:name="com.google.android.apps.healthdata"/>\n'
-                  '    </queries>\n'
-              )
-              s = s.replace('<application', perms + '    <application', 1)
-              extra = (
-                  '    <intent-filter>\n'
-                  '                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"/>\n'
-                  '            </intent-filter>\n'
-                  '        </activity>\n'
-                  '        <activity-alias android:name="ViewPermissionUsageActivity" android:exported="true" '
-                  'android:targetActivity=".MainActivity" android:permission="android.permission.START_VIEW_PERMISSION_USAGE">\n'
-                  '            <intent-filter>\n'
-                  '                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE"/>\n'
-                  '                <category android:name="android.intent.category.HEALTH_PERMISSIONS"/>\n'
-                  '            </intent-filter>\n'
-                  '        </activity-alias>'
-              )
-              s = s.replace('</activity>', extra, 1)
-              open(p, 'w', encoding='utf-8').write(s)
-          EOF
-          f=$(find android/app/src/main -name 'MainActivity.*' | head -1)
-          sed -i 's/FlutterActivity/FlutterFragmentActivity/g' "$f"
-          echo "--- $f"; cat "$f"
-          echo "--- manifest"; cat android/app/src/main/AndroidManifest.xml
-
       - run: flutter pub get
 
+      # Android-проект хранится в репозитории (android/): идентификатор, разрешения, тема, правила R8 — см. docs/RELEASE.md
+      - name: Версия сборки
+        id: ver
+        run: |
+          name=$(sed -n 's/^version: *\([0-9.]*\).*/\1/p' pubspec.yaml)
+          build=$(git rev-list --count HEAD)
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+          echo "Версия $name, сборка $build, коммит $GITHUB_SHA"
+
+      # Ключ подписи — из секретов репозитория (docs/RELEASE.md). Без них (форки, ключ ещё не заведён) —
+      # отладочная подпись: такой APK не обновит установленную версию.
+      - name: Ключ подписи
+        id: key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.LIFEOS_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/lifeos.jks"
+            echo "path=$RUNNER_TEMP/lifeos.jks" >> "$GITHUB_OUTPUT"
+            echo "Подпись: ключ LIFE OS"
+          else
+            echo "path=" >> "$GITHUB_OUTPUT"
+            echo "::warning::Секрет LIFEOS_KEYSTORE_BASE64 не задан — APK подписан отладочным ключом и не обновит установленную версию (docs/RELEASE.md)"
+          fi
+
       - name: Сборка release APK
-        run: flutter build apk --release
+        env:
+          LIFEOS_KEYSTORE_PATH: ${{ steps.key.outputs.path }}
+          LIFEOS_KEYSTORE_PASSWORD: ${{ secrets.LIFEOS_KEYSTORE_PASSWORD }}
+          LIFEOS_KEY_ALIAS: ${{ secrets.LIFEOS_KEY_ALIAS }}
+          LIFEOS_KEY_PASSWORD: ${{ secrets.LIFEOS_KEY_PASSWORD }}
+        run: |
+          flutter build apk --release \
+            --build-name=${{ steps.ver.outputs.name }} \
+            --build-number=${{ steps.ver.outputs.build }} \
+            --dart-define=LIFEOS_VERSION=${{ steps.ver.outputs.name }} \
+            --dart-define=LIFEOS_BUILD=${{ steps.ver.outputs.build }} \
+            --dart-define=LIFEOS_COMMIT=${{ github.sha }}
+          mv build/app/outputs/flutter-apk/app-release.apk "life-os-${{ steps.ver.outputs.name }}-${{ steps.ver.outputs.build }}.apk"
+
+      - name: Проверка APK
+        run: |
+          apk=life-os-${{ steps.ver.outputs.name }}-${{ steps.ver.outputs.build }}.apk
+          aapt=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -1)
+          "$aapt" dump badging "$apk" | grep -E "^package:|sdkVersion|uses-permission" | tee badging.txt
+          grep -q "name='io.github.yrgez.lifeos'" badging.txt
+          grep -q "versionCode='${{ steps.ver.outputs.build }}'" badging.txt
+          grep -q "android.permission.USE_BIOMETRIC" badging.txt
+          grep -q "android.permission.health.READ_STEPS" badging.txt
+          if grep -q "android.permission.INTERNET" badging.txt; then echo "::error::В APK есть разрешение INTERNET"; exit 1; fi
+          signer=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
+          "$signer" verify --print-certs "$apk" | grep -E "Signer #1 certificate (DN|SHA-256)" | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: APK как артефакт
         uses: actions/upload-artifact@v4
         with:
-          name: life-os-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: life-os-${{ steps.ver.outputs.name }}-${{ steps.ver.outputs.build }}
+          path: life-os-*.apk
           if-no-files-found: error
           retention-days: 14
