@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: subosito/flutter-action@v2
         with:
@@ -39,7 +39,7 @@ jobs:
 
       - name: Отчёт о покрытии
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: coverage
           path: coverage/lcov.info
@@ -51,7 +51,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # номер сборки = число коммитов
 
@@ -127,7 +127,7 @@ jobs:
           grep -E "certificate (DN|SHA-256 digest)" certs.txt >> "$GITHUB_STEP_SUMMARY"
 
       - name: APK как артефакт
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: life-os-${{ steps.ver.outputs.name }}-${{ steps.ver.outputs.build }}
           path: life-os-*.apk
