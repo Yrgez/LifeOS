@@ -186,7 +186,7 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
               minLines: 3,
               maxLines: 6,
               style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
-              decoration: const InputDecoration(hintText: 'Дата;Сумма;Описание\n18.11.2026;-450,00;Кофейня'),
+              decoration: const InputDecoration(hintText: 'Дата; Сумма; Описание\n18.11.2026; -450,00; Кофейня'),
               onChanged: (_) {
                 _source = null; // текст правят руками — источник уже не файл
                 _analyze();

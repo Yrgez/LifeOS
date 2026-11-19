@@ -6,9 +6,17 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../models/models.dart';
 
+/// Масштаб подписей на холсте: следует системному размеру шрифта, но не больше чем на 30 % —
+/// у графиков фиксированное место под подписи. Сами данные графика программа чтения экрана получает текстом.
+TextScaler canvasTextScaler() {
+  final s = WidgetsBinding.instance.platformDispatcher.textScaleFactor;
+  return TextScaler.linear(s.clamp(1.0, 1.3));
+}
+
 void drawText(Canvas canvas, String text, Offset offset, TextStyle style, {double anchor = 0, TextAlign align = TextAlign.start}) {
   final tp = TextPainter(
     text: TextSpan(text: text, style: style.copyWith(fontFamily: 'Inter')),
+    textScaler: canvasTextScaler(),
     textAlign: align,
     textDirection: TextDirection.ltr,
   )..layout();

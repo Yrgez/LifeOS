@@ -9,6 +9,7 @@ import '../../models/life_event.dart';
 import '../../models/life_process.dart';
 import '../../models/models.dart';
 import '../../state/app_controller.dart';
+import 'adaptive_pair.dart';
 import 'confirm_dialog.dart';
 import 'event_dialog.dart';
 
@@ -195,6 +196,7 @@ class _ProcessDialogState extends State<_ProcessDialog> {
                 children: [
                   DropdownButton<int>(
                     key: const ValueKey('process_rhythm_times'),
+                    isExpanded: largeText(context), // при крупном шрифте — на всю строку, иначе не помещается
                     value: _rhythmTimes.clamp(0, RhythmPeriod.maxTimes[_rhythmPeriod]!),
                     items: [
                       const DropdownMenuItem(value: 0, child: Text('не задан')),

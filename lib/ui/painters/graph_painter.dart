@@ -6,6 +6,7 @@ import 'package:flutter/semantics.dart';
 import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../models/models.dart';
+import 'chart_painters.dart';
 
 class LifeGraphPainter extends CustomPainter {
   final List<GraphNode> nodes;
@@ -135,6 +136,7 @@ class LifeGraphPainter extends CustomPainter {
           ),
         ),
         textDirection: TextDirection.ltr,
+        textScaler: canvasTextScaler(),
         maxLines: 1,
         ellipsis: '…',
       )..layout(maxWidth: max(40.0, size.width - 12));

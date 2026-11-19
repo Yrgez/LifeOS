@@ -47,7 +47,7 @@ class _MindScreenState extends State<MindScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Разум', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8)),
+          const FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text('Разум', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8))),
           const SizedBox(height: 2),
           const Text('Цели, достижения, связи', style: TextStyle(color: AppColors.muted, fontSize: 13)),
           const SizedBox(height: 20),

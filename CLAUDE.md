@@ -45,7 +45,9 @@
 - Доступность (`test/accessibility_test.dart`): нарисованный график — в `ChartSemantics` с данными из `describeSeries`
   (`lib/core/chart_text.dart`); нажимаемое на холсте — узлами `semanticsBuilder` художника. У кнопки-иконки — `tooltip`;
   область нажатия не меньше 48 px (переключатели — `SegmentPill`). Цвет текста — из палитры с контрастом ≥ 4.5:1
-  (фиолетовый текст — `AppColors.violetText`). Плитки в ряд — `AdaptivePair` (при шрифте ≥ 150 % встают друг под другом).
+  (фиолетовый текст — `AppColors.violetText`). Плитки в ряд — `AdaptivePair` (при шрифте ≥ 130 % встают друг под другом),
+  строка «текст — значение» — `LeadTrailing`, переключатель — `adaptiveSwitchTile`. Новый экран или диалог — в
+  `test/large_text_test.dart`: он ловит переполнения и слова, разорванные переносом, на всех шагах шрифта Android.
 
 ## Проверка
 ```

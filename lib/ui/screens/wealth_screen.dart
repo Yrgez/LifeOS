@@ -142,7 +142,7 @@ class _WealthScreenState extends State<WealthScreen> {
         children: [
           Text(accounts.isEmpty ? 'Чистый капитал · указан вручную' : 'Чистый капитал · по счетам', style: const TextStyle(color: AppColors.muted, fontSize: 13)),
           const SizedBox(height: 6),
-          Text(fmtCur(c.netWorth), key: const ValueKey('net_worth'), style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8)),
+          FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(fmtCur(c.netWorth), key: const ValueKey('net_worth'), style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8))),
           const SizedBox(height: 4),
           Text(
             'Норма сбережений ${isFact ? 'за месяц (по операциям)' : '(по плану)'}: $savingsRate%',
@@ -279,7 +279,7 @@ class _WealthScreenState extends State<WealthScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Материальное', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8)),
+                    FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text('Материальное', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8))),
                     SizedBox(height: 2),
                     Text('Капитал, доход, финансы', style: TextStyle(color: AppColors.muted, fontSize: 13)),
                   ],

@@ -504,7 +504,11 @@ class _MonthDots extends StatelessWidget {
     final shown = isCurrent ? today.day : n; // будущие дни не рисуются
     return Column(
       children: [
-        Text(monthNames[month.month - 1], style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w500)),
+        // название месяца — одной строкой: при крупном шрифте чуть сжимается, а не рвётся («Сентяб-рь»)
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(monthNames[month.month - 1], maxLines: 1, style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w500)),
+        ),
         const SizedBox(height: 8),
         SizedBox(
           width: 7 * 6 + 6 * 4, // ровно 7 точек в ряд, как неделя
@@ -545,30 +549,25 @@ class _ResourcesTile extends StatelessWidget {
           key: const ValueKey('open_resources'),
           onTap: onTap,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Ресурсы', style: _label),
-                    const SizedBox(height: 2),
-                    Text(
-                      t.events == 0 ? '7 дней · событий нет' : '7 дней · время указано в ${t.minutesKnown} из ${t.events}',
-                      style: _sub,
-                    ),
-                  ],
+          child: LeadTrailing(
+            lead: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Ресурсы', style: _label),
+                const SizedBox(height: 2),
+                Text(
+                  t.events == 0 ? '7 дней · событий нет' : '7 дней · время указано в ${t.minutesKnown} из ${t.events}',
+                  style: _sub,
                 ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(t.minutesKnown > 0 ? fmtMinutes(t.minutes) : '—',
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600, letterSpacing: -0.4)),
-                  if (t.moneyKnown > 0) Text(fmtCur(t.money), style: _sub),
-                ],
-              ),
-            ],
+              ],
+            ),
+            trailing: Column(
+              crossAxisAlignment: largeText(context) ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+              children: [
+                Text(t.minutesKnown > 0 ? fmtMinutes(t.minutes) : '—', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600, letterSpacing: -0.4)),
+                if (t.moneyKnown > 0) Text(fmtCur(t.money), style: _sub),
+              ],
+            ),
           ),
         ),
         if (t.events > 0) ...[
@@ -587,9 +586,11 @@ class _ResourcesTile extends StatelessWidget {
                       children: [
                         Container(width: 8, height: 8, decoration: BoxDecoration(color: dimensionChartColor(d), shape: BoxShape.circle)),
                         const SizedBox(width: 6),
-                        Text(
-                          '${LifeDimension.labels[d]} ${b.byDimension[d]!.minutesKnown > 0 ? fmtMinutes(b.byDimension[d]!.minutes) : '· ${b.byDimension[d]!.events}'}',
-                          style: const TextStyle(color: Color(0xFFC8C8CC), fontSize: 13),
+                        Flexible(
+                          child: Text(
+                            '${LifeDimension.labels[d]} ${b.byDimension[d]!.minutesKnown > 0 ? fmtMinutes(b.byDimension[d]!.minutes) : '· ${b.byDimension[d]!.events}'}',
+                            style: const TextStyle(color: Color(0xFFC8C8CC), fontSize: 13),
+                          ),
                         ),
                       ],
                     ),

@@ -7,6 +7,7 @@ import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../models/bill.dart';
 import '../../state/app_controller.dart';
+import '../widgets/adaptive_pair.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/form_dialog.dart';
 import '../widgets/toast.dart';
@@ -139,40 +140,40 @@ class BillsScreen extends StatelessWidget {
   Widget _tile(BuildContext context, Bill b, DateTime now) {
     final due = nextDue(b);
     final last = b.payments.isEmpty ? null : b.payments.last;
+    final info = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(b.title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: b.archivedAt == null ? AppColors.text : AppColors.muted)),
+        if (due != null) billDueLine(b, due, now) else Text(b.archivedAt != null ? 'в архиве' : 'оплачен', style: const TextStyle(color: AppColors.muted, fontSize: 13)),
+        Text(
+          [BillRepeat.labels[b.repeat]!, if (last != null) 'последняя оплата ${fmtDate(last.paidAt)}'].join(' · '),
+          style: const TextStyle(color: AppColors.muted, fontSize: 11),
+        ),
+      ],
+    );
+    final actions = <Widget>[
+      if (due != null)
+        TextButton(key: ValueKey('pay_${b.id}'), onPressed: () => _pay(context, b), child: const Text('Оплачено')),
+      PopupMenuButton<String>(
+        icon: const Icon(Icons.more_vert, color: AppColors.muted, size: 20),
+        onSelected: (v) => _menu(context, b, v),
+        itemBuilder: (_) => [
+          const PopupMenuItem(value: 'edit', child: Text('Изменить')),
+          if (b.payments.isNotEmpty) const PopupMenuItem(value: 'undo', child: Text('Отменить последнюю оплату')),
+          PopupMenuItem(value: 'archive', child: Text(b.archivedAt == null ? 'В архив' : 'Вернуть из архива')),
+          const PopupMenuItem(value: 'remove', child: Text('Удалить')),
+        ],
+      ),
+    ];
     return Container(
       key: ValueKey('bill_${b.id}'),
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
       decoration: tileDecoration(radius: 20),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(b.title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: b.archivedAt == null ? AppColors.text : AppColors.muted)),
-                if (due != null) billDueLine(b, due, now) else Text(b.archivedAt != null ? 'в архиве' : 'оплачен', style: const TextStyle(color: AppColors.muted, fontSize: 13)),
-                Text(
-                  [BillRepeat.labels[b.repeat]!, if (last != null) 'последняя оплата ${fmtDate(last.paidAt)}'].join(' · '),
-                  style: const TextStyle(color: AppColors.muted, fontSize: 11),
-                ),
-              ],
-            ),
-          ),
-          if (due != null)
-            TextButton(key: ValueKey('pay_${b.id}'), onPressed: () => _pay(context, b), child: const Text('Оплачено')),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: AppColors.muted, size: 20),
-            onSelected: (v) => _menu(context, b, v),
-            itemBuilder: (_) => [
-              const PopupMenuItem(value: 'edit', child: Text('Изменить')),
-              if (b.payments.isNotEmpty) const PopupMenuItem(value: 'undo', child: Text('Отменить последнюю оплату')),
-              PopupMenuItem(value: 'archive', child: Text(b.archivedAt == null ? 'В архив' : 'Вернуть из архива')),
-              const PopupMenuItem(value: 'remove', child: Text('Удалить')),
-            ],
-          ),
-        ],
-      ),
+      // при крупном шрифте кнопки — под описанием: иначе название и срок рвутся посередине слова
+      child: largeText(context)
+          ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [info, Row(mainAxisAlignment: MainAxisAlignment.end, children: actions)])
+          : Row(children: [Expanded(child: info), ...actions]),
     );
   }
 }

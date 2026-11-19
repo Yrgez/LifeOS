@@ -10,6 +10,7 @@ import '../painters/chart_painters.dart';
 import '../widgets/chart_semantics.dart';
 import '../widgets/log_set_dialog.dart';
 import '../widgets/segment_pill.dart';
+import '../widgets/adaptive_pair.dart';
 
 /// Журнал тренировок: история подходов, прогрессия и объём нагрузки.
 /// Без упражнений, шаблонов и таймеров — только то, что нужно для отслеживания прогресса.
@@ -63,13 +64,12 @@ class _JournalScreenState extends State<JournalScreen> {
       children: [
         _muscleChips(ids, filter),
         const SizedBox(height: 12),
-        Row(
+        AdaptivePair(
+          spacing: 8,
           children: [
-            Expanded(child: _statTile('ОБЪЁМ 7 ДН', '${fmtVolume(vol7)} кг', change == null ? 'нет данных за прошлую' : '${change >= 0 ? '+' : '−'}${change.abs().toStringAsFixed(0)}% к прошлой', change == null ? AppColors.muted : (change >= 0 ? AppColors.green : AppColors.red))),
-            const SizedBox(width: 8),
-            Expanded(child: _statTile('ПОДХОДОВ 7 ДН', '${setsInWindow(sets, now, 7)}', 'всего: ${sets.length}', AppColors.muted)),
-            const SizedBox(width: 8),
-            Expanded(child: _statTile('ДНЕЙ / 28', '${trainingDaysInWindow(sets, now, 28)}', 'с тренировками', AppColors.muted)),
+            _statTile('ОБЪЁМ 7 ДН', '${fmtVolume(vol7)} кг', change == null ? 'нет данных за прошлую' : '${change >= 0 ? '+' : '−'}${change.abs().toStringAsFixed(0)}% к прошлой', change == null ? AppColors.muted : (change >= 0 ? AppColors.green : AppColors.red)),
+            _statTile('ПОДХОДОВ 7 ДН', '${setsInWindow(sets, now, 7)}', 'всего: ${sets.length}', AppColors.muted),
+            _statTile('ДНЕЙ / 28', '${trainingDaysInWindow(sets, now, 28)}', 'с тренировками', AppColors.muted),
           ],
         ),
         const SizedBox(height: 12),
@@ -149,7 +149,8 @@ class _JournalScreenState extends State<JournalScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('ОБЪЁМ НАГРУЗКИ (вес × повторы, кг)', style: TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold)),
+              const Flexible(child: Text('ОБЪЁМ НАГРУЗКИ (вес × повторы, кг)', style: TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold))),
+              const SizedBox(width: 8),
               SegmentPill<bool>(
                 options: const {false: '7 дн', true: '8 нед'},
                 value: _weekly,
