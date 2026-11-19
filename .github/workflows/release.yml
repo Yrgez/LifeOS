@@ -61,6 +61,7 @@ jobs:
           flutter test
 
       - name: Сборка
+        shell: bash -eo pipefail {0}
         env:
           LIFEOS_KEYSTORE_PATH: ${{ runner.temp }}/lifeos.jks
           LIFEOS_KEYSTORE_PASSWORD: ${{ secrets.LIFEOS_KEYSTORE_PASSWORD }}
@@ -76,7 +77,9 @@ jobs:
           apk=life-os-${{ steps.ver.outputs.name }}.apk
           mv build/app/outputs/flutter-apk/app-release.apk "$apk"
           signer=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
-          "$signer" verify --print-certs "$apk" | grep -E "Signer #1 certificate SHA-256" | tee cert.txt
+          "$signer" verify --print-certs "$apk" 2>&1 | tee certs.txt
+          grep -E "certificate SHA-256 digest" certs.txt | head -1 > cert.txt
+          test -s cert.txt
           sha256sum "$apk" > "$apk.sha256"
 
       - name: Выпуск на GitHub

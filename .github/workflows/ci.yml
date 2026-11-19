@@ -111,6 +111,7 @@ jobs:
           mv build/app/outputs/flutter-apk/app-release.apk "life-os-${{ steps.ver.outputs.name }}-${{ steps.ver.outputs.build }}.apk"
 
       - name: Проверка APK
+        shell: bash -eo pipefail {0}
         run: |
           apk=life-os-${{ steps.ver.outputs.name }}-${{ steps.ver.outputs.build }}.apk
           aapt=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -1)
@@ -121,7 +122,9 @@ jobs:
           grep -q "android.permission.health.READ_STEPS" badging.txt
           if grep -q "android.permission.INTERNET" badging.txt; then echo "::error::В APK есть разрешение INTERNET"; exit 1; fi
           signer=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | sort -V | tail -1)
-          "$signer" verify --print-certs "$apk" | grep -E "Signer #1 certificate (DN|SHA-256)" | tee -a "$GITHUB_STEP_SUMMARY"
+          "$signer" verify --print-certs "$apk" 2>&1 | tee certs.txt
+          # отпечаток сертификата — в сводку: у всех сборок с вашим ключом он одинаковый
+          grep -E "certificate (DN|SHA-256 digest)" certs.txt >> "$GITHUB_STEP_SUMMARY"
 
       - name: APK как артефакт
         uses: actions/upload-artifact@v4
