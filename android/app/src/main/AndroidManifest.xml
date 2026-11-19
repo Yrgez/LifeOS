@@ -58,6 +58,12 @@
                 <category android:name="android.intent.category.HEALTH_PERMISSIONS"/>
             </intent-filter>
         </activity-alias>
+        <!-- Движок отрисовки Skia вместо Impeller: на Galaxy S10 (Exynos, Mali-G76) Impeller при первом показе
+             экрана рисует в тексте чужие буквы и штрихи (проверено на телефоне: со Skia сбоя нет). Flutter закреплён
+             в CI на 3.50.0 — в новых версиях этот переключатель могут убрать (docs/RELEASE.md). -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
         <!-- Не удалять: по нему Flutter создаёт GeneratedPluginRegistrant.java -->
         <meta-data
             android:name="flutterEmbedding"

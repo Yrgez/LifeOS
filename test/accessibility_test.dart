@@ -14,11 +14,11 @@ import 'package:life_os/state/app_controller.dart';
 /// Каждое нажимаемое место подписано, не меньше 48 × 48 px (рекомендация Android),
 /// нарисованные графики и фигура описаны текстом, системные тексты — по-русски.
 void main() {
-  Future<AppController> boot(WidgetTester tester) async {
+  Future<AppController> boot(WidgetTester tester, {DateTime Function()? clock}) async {
     tester.view.physicalSize = const Size(360, 3000); // ширина телефона; высокая — все блоки без прокрутки
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    final c = AppController(MemoryAppRepository(), saveDelay: Duration.zero);
+    final c = AppController(MemoryAppRepository(), saveDelay: Duration.zero, clock: clock);
     await c.load();
     await tester.pumpWidget(LifeOSApp(controller: c));
     await tester.pumpAndSettle();
@@ -64,6 +64,19 @@ void main() {
       h.dispose();
     });
   }
+
+  // вечером на «Сегодня» — вопрос об оценке дня (кнопки 1–5); тест не зависит от того, когда его запускают
+  testWidgets('Сегодня вечером: оценка дня подписана и не меньше 48 px', (tester) async {
+    final h = tester.ensureSemantics();
+    final evening = DateTime.now().copyWith(hour: 21, minute: 30);
+    final c = await boot(tester, clock: () => evening);
+    expect(c.checkInPromptDay, isNotNull);
+    await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+    expect(find.semantics.byLabel('Оценка 3 из 5'), findsOne);
+    await shutdown(tester, c);
+    h.dispose();
+  });
 
   // крупный системный шрифт (Android допускает до 200 %) на узком экране: ничего не вылезает за край
   for (final e in screens.entries) {

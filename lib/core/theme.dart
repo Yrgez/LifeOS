@@ -61,6 +61,9 @@ ThemeData buildAppTheme() {
     cardColor: AppColors.card,
     primaryColor: AppColors.accent,
     dividerColor: const Color(0x1AFFFFFF),
+    // Волна нажатия без шейдера (InkSparkle по умолчанию рисуется фрагментным шейдером с «зерном»).
+    // Входит в конфигурацию, проверенную на Galaxy S10; сам сбой с буквами устранил движок Skia (AndroidManifest.xml).
+    splashFactory: InkRipple.splashFactory,
     textTheme: base.textTheme.apply(fontFamily: 'Inter', bodyColor: AppColors.text, displayColor: AppColors.text),
     primaryTextTheme: base.primaryTextTheme.apply(fontFamily: 'Inter'),
     appBarTheme: const AppBarTheme(

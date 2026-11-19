@@ -28,17 +28,26 @@ class RatingPicker extends StatelessWidget {
           for (var r = DayCheckIn.minRating; r <= DayCheckIn.maxRating; r++) ...[
             if (r > DayCheckIn.minRating) const SizedBox(width: 8),
             Expanded(
-              child: Material(
-                key: ValueKey('${keyPrefix}_$r'),
-                color: value == r ? AppColors.accent : AppColors.field,
-                shape: const StadiumBorder(side: BorderSide(color: AppColors.border)),
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: () => onSelected(r),
-                  child: SizedBox(
-                    height: 44,
-                    child: Center(
-                      child: Text('$r', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: value == r ? Colors.black : AppColors.text)),
+              // программа чтения экрана слышит «Оценка 3 из 5», а не просто «3»; высота 48 — область нажатия Android
+              child: Semantics(
+                button: true,
+                selected: value == r,
+                inMutuallyExclusiveGroup: true,
+                label: 'Оценка $r из ${DayCheckIn.maxRating}',
+                onTap: () => onSelected(r),
+                excludeSemantics: true,
+                child: Material(
+                  key: ValueKey('${keyPrefix}_$r'),
+                  color: value == r ? AppColors.accent : AppColors.field,
+                  shape: const StadiumBorder(side: BorderSide(color: AppColors.border)),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: () => onSelected(r),
+                    child: SizedBox(
+                      height: 48,
+                      child: Center(
+                        child: Text('$r', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: value == r ? Colors.black : AppColors.text)),
+                      ),
                     ),
                   ),
                 ),
