@@ -12,6 +12,7 @@ Android-проект хранится в репозитории (`android/`). В
 | `FlutterFragmentActivity` и защита от скриншотов | `MainActivity.kt` |
 | Тема AppCompat для окна биометрии, чёрный экран запуска | `res/values/styles.xml`, `res/drawable*/launch_background.xml` |
 | Правило R8 для SQLCipher | `android/app/proguard-rules.pro` |
+| Движок отрисовки Skia вместо Impeller (Impeller портит текст на Galaxy S10, Mali-G76) | `AndroidManifest.xml` |
 | Подпись release-сборки | `android/app/build.gradle.kts` (ключ — из `android/key.properties` или секретов CI) |
 
 `test/android_project_test.dart` проверяет эти настройки, CI — собранный APK
@@ -64,6 +65,14 @@ keyAlias=lifeos
 keyPassword=…
 ```
 и `flutter build apk --release`.
+
+## Версия Flutter и движок отрисовки
+
+CI собирает **закреплённой** версией Flutter (`flutter-version` в `.github/workflows/*.yml`, сейчас 3.50.0).
+Причина: приложение отключает новый движок отрисовки Impeller (`io.flutter.embedding.android.EnableImpeller=false`
+в манифесте) — на Galaxy S10 (Exynos, Mali-G76) он при первом показе экрана рисует в тексте чужие буквы и штрихи.
+Flutter предупреждает, что этот переключатель уберут в одной из следующих версий. Перед обновлением Flutter:
+проверить, что переключатель ещё действует (в журнале запуска нет Impeller), и пройти по вкладкам на Galaxy S10.
 
 ## Версия
 

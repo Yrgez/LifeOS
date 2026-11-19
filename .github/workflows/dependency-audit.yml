@@ -28,6 +28,9 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+          # версия закреплена: сборка для Android отключает Impeller (AndroidManifest.xml), а в новых версиях Flutter
+          # этот переключатель обещают убрать — обновлять осознанно и проверять на Galaxy S10 (docs/RELEASE.md)
+          flutter-version: 3.50.0
           cache: true
 
       # Resolve the exact dependency graph used by this CI run. The generated

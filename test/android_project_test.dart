@@ -29,6 +29,8 @@ void main() {
       expect(m, contains('android.permission.health.$p'), reason: p);
     }
     expect(m, contains('androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE'));
+    // Skia вместо Impeller: Impeller портит текст на Galaxy S10 (Mali-G76)
+    expect(m, contains('android:name="io.flutter.embedding.android.EnableImpeller"\n            android:value="false"'));
     final rules = read('android/app/src/main/res/xml/data_extraction_rules.xml');
     expect('<exclude domain="database"'.allMatches(rules).length, 2); // и облако, и перенос на новый телефон
   });
@@ -39,6 +41,13 @@ void main() {
     expect(a, contains('"life_os/screen_security"')); // как в lib/security/screen_security.dart
     expect(read('lib/security/screen_security.dart'), contains("'life_os/screen_security'"));
     expect(read('android/app/src/main/res/values/styles.xml'), contains('Theme.AppCompat'));
+  });
+
+  test('CI собирает закреплённой версией Flutter (переключатель Impeller в новых версиях могут убрать)', () {
+    for (final p in ['.github/workflows/ci.yml', '.github/workflows/release.yml']) {
+      final w = read(p);
+      expect('subosito/flutter-action'.allMatches(w).length, 'flutter-version: 3.50.0'.allMatches(w).length, reason: p);
+    }
   });
 
   test('ключ подписи не попадает в репозиторий', () {

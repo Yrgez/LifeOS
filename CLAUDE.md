@@ -31,7 +31,8 @@
 - Логика без Flutter → `lib/core/`, модели → `lib/models/`, экран → `lib/ui/screens/`, переиспользуемый блок → `lib/ui/widgets/`.
 - Android-проект — в репозитории (`android/`, `docs/RELEASE.md`). Идентификатор `io.github.yrgez.lifeos` не менять
   (иначе обновление не встанет поверх). Новое разрешение или нативная настройка — в манифест/Gradle и в
-  `test/android_project_test.dart`. Разрешения INTERNET нет и не будет.
+  `test/android_project_test.dart`. Разрешения INTERNET нет и не будет. Движок отрисовки — Skia (Impeller портит текст
+  на Galaxy S10), поэтому Flutter в CI закреплён (3.50.0); обновлять — по `docs/RELEASE.md`.
 - Плагины — только за интерфейсами (`AppRepository`, `HealthDataSource`, `FileSource`, `BackupStorage`, `ReminderScheduler`, файлы `*_authenticator`, `secure_key_store`, `sqlcipher_opener`).
 - Смена формата JSON → поднять `kSchemaVersion` (`lib/data/app_data.dart`). Смена таблиц → поднять `kDbVersion` и добавить шаг
   в `onUpgradeSchema` (`lib/data/sqlite_app_repository.dart`). Новую таблицу добавить в `SqliteAppRepository.tables`

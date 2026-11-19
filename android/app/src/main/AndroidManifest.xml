@@ -58,8 +58,9 @@
                 <category android:name="android.intent.category.HEALTH_PERMISSIONS"/>
             </intent-filter>
         </activity-alias>
-        <!-- ДИАГНОСТИКА: прежний движок отрисовки (Skia) вместо Impeller — проверка, виноват ли Impeller
-             в битых буквах на Galaxy S10 (Mali-G76) при переходе на вкладку «Материальное». -->
+        <!-- Движок отрисовки Skia вместо Impeller: на Galaxy S10 (Exynos, Mali-G76) Impeller при первом показе
+             экрана рисует в тексте чужие буквы и штрихи (проверено на телефоне: со Skia сбоя нет). Flutter закреплён
+             в CI на 3.50.0 — в новых версиях этот переключатель могут убрать (docs/RELEASE.md). -->
         <meta-data
             android:name="io.flutter.embedding.android.EnableImpeller"
             android:value="false" />
