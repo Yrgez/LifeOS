@@ -43,6 +43,19 @@ void main() {
     expect(read('android/app/src/main/res/values/styles.xml'), contains('Theme.AppCompat'));
   });
 
+  test('свой адаптивный значок: три измерения, тематический слой, без PNG Flutter', () {
+    expect(read('android/app/src/main/AndroidManifest.xml'), contains('android:icon="@mipmap/ic_launcher"'));
+    final icon = read('android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml');
+    for (final l in ['@drawable/ic_launcher_foreground', '@drawable/ic_launcher_monochrome']) {
+      expect(icon, contains(l));
+    }
+    final fg = read('android/app/src/main/res/drawable/ic_launcher_foreground.xml');
+    for (final c in ['#00E676', '#7C4DFF', '#FFD700']) {
+      expect(fg, contains(c)); // как AppColors.green / violet / gold (dimensionColor)
+    }
+    expect(File('android/app/src/main/res/mipmap-hdpi/ic_launcher.png').existsSync(), isFalse);
+  });
+
   test('CI собирает закреплённой версией Flutter (переключатель Impeller в новых версиях могут убрать)', () {
     for (final p in ['.github/workflows/ci.yml', '.github/workflows/release.yml']) {
       final w = read(p);
