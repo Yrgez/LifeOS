@@ -7,9 +7,21 @@ class AppColors {
   static const green = Color(0xFF00E676);
   static const violet = Color(0xFF7C4DFF);
   static const violetText = Color(0xFFA78BFF); // фиолетовый для текста: контраст на плитке 6.8:1 (violet — лишь 3.8:1)
-  static const gold = Color(0xFFFFD700);
   static const red = Color(0xFFFF3D71);
   static const amber = Color(0xFFFFB300);
+
+  // измерения жизни — на круге Иттена синий против расщеплённого оранжевого (красно- и жёлто-оранжевый), приглушены и выровнены по светлоте:
+  // тёплое (близкое, телесное) — тело, холодное (даль, дух) — разум, охра (земля, золото) — материальное
+  static const body = Color(0xFFE2704F);
+  static const mind = Color(0xFF7E9BFF);
+  static const material = Color(0xFFD8AE4A);
+  // заливки графиков: те же тона темнее и одной светлоты (контраст на плитке 5.4:1)
+  static const bodyChart = Color(0xFFD46E4E);
+  static const mindChart = Color(0xFF6C85E6);
+  static const materialChart = Color(0xFFA8863A);
+  // восстановление мышц (оценка): ступени светлоты тела — терракота на 78 % и 45 % пути от плитки
+  static const recoveryMid = Color(0xFFB55C42);
+  static const recoveryLow = Color(0xFF713D30);
 
   // поверхности
   static const background = Color(0xFF000000);

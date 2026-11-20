@@ -32,7 +32,7 @@ List<String> resourceLines(ResourceSummary s) {
 }
 
 Color processStatusColor(String s) => switch (s) {
-      ProcessStatus.active => AppColors.green,
+      ProcessStatus.active => AppColors.accent,
       ProcessStatus.paused => AppColors.amber,
       ProcessStatus.completed => AppColors.violet,
       _ => AppColors.muted,

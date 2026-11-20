@@ -8,17 +8,16 @@ import '../../models/life_process.dart';
 import '../../models/models.dart';
 
 Color dimensionColor(String d) => switch (d) {
-      LifeDimension.body => AppColors.green,
-      LifeDimension.mind => AppColors.violet,
-      _ => AppColors.gold,
+      LifeDimension.body => AppColors.body,
+      LifeDimension.mind => AppColors.mind,
+      _ => AppColors.material,
     };
 
-/// Заливка столбиков графиков по измерению: приглушённые шаги тех же оттенков
-/// (яркие [dimensionColor] на тёмной поверхности выходят из полосы светлоты; проверено валидатором палитры).
+/// Заливка столбиков графиков по измерению: приглушённые шаги тех же оттенков одной светлоты.
 Color dimensionChartColor(String d) => switch (d) {
-      LifeDimension.body => const Color(0xFF00A653),
-      LifeDimension.mind => const Color(0xFF8B63FF),
-      _ => const Color(0xFFB08A00),
+      LifeDimension.body => AppColors.bodyChart,
+      LifeDimension.mind => AppColors.mindChart,
+      _ => AppColors.materialChart,
     };
 
 /// Что ввёл пользователь в диалоге события.

@@ -102,7 +102,9 @@ void main() {
       'green': AppColors.green,
       'red': AppColors.red,
       'amber': AppColors.amber,
-      'gold': AppColors.gold,
+      'body': AppColors.body,
+      'mind': AppColors.mind,
+      'material': AppColors.material,
       'violetText': AppColors.violetText,
     };
     const surfaces = {'background': AppColors.background, 'card': AppColors.card, 'raised': AppColors.raised, 'field': AppColors.field};

@@ -55,10 +55,10 @@ class _HealthCardState extends State<HealthCard> {
             children: [
               const Expanded(child: Text('HEALTH & ACTIVITY (7 ДНЕЙ)', style: TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold))),
               if (c.healthSyncing)
-                const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.green))
+                const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent))
               else if (c.healthSupported)
                 IconButton(
-                  icon: const Icon(Icons.sync, color: AppColors.green, size: 20),
+                  icon: const Icon(Icons.sync, color: AppColors.accent, size: 20),
                   tooltip: c.healthEnabled ? 'Синхронизировать' : 'Подключить Health Connect',
                   onPressed: () => syncHealthWithToast(context, c),
                   padding: EdgeInsets.zero,

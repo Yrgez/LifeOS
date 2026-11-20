@@ -444,8 +444,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               'Health Connect',
               healthStatusLine(c),
               trailing: c.healthSyncing
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.green))
-                  : Text(c.healthEnabled ? 'Синхр.' : 'Подключить', style: const TextStyle(color: AppColors.green, fontSize: 12, fontWeight: FontWeight.bold)),
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent))
+                  : Text(c.healthEnabled ? 'Синхр.' : 'Подключить', style: const TextStyle(color: AppColors.accent, fontSize: 12, fontWeight: FontWeight.bold)),
               onTap: c.healthSyncing ? null : () => syncHealthWithToast(context, c),
             ),
             if (c.healthEnabled) _tile(Icons.link_off, 'Отключить синхронизацию', 'Разрешение в системе останется', onTap: c.disconnectHealth),
@@ -565,7 +565,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
       subtitle: Text(subtitle, style: const TextStyle(color: AppColors.muted, fontSize: 11)),
       value: value,
-      activeThumbColor: AppColors.green,
+      activeThumbColor: AppColors.accent,
       onChanged: onChanged,
     );
   }

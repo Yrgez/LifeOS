@@ -70,8 +70,8 @@ class _LockScreenState extends State<LockScreen> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(color: AppColors.green.withValues(alpha: 0.12), shape: BoxShape.circle),
-                  child: const Icon(Icons.lock, color: AppColors.green, size: 36),
+                  decoration: BoxDecoration(color: AppColors.accent.withValues(alpha: 0.12), shape: BoxShape.circle),
+                  child: const Icon(Icons.lock, color: AppColors.accent, size: 36),
                 ),
                 const SizedBox(height: 20),
                 const Text('Life OS заблокирован', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),

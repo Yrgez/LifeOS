@@ -120,7 +120,7 @@ class GoalCard extends StatelessWidget {
         color: AppColors.card,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.tile),
-          side: BorderSide(color: goal.isComplete ? AppColors.green.withValues(alpha: 0.5) : AppColors.border),
+          side: BorderSide(color: goal.isComplete ? AppColors.accent.withValues(alpha: 0.5) : AppColors.border),
         ),
         clipBehavior: Clip.antiAlias,
         child: Padding(
@@ -176,7 +176,7 @@ class GoalCard extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: goal.progress,
                   backgroundColor: const Color(0xFF222834),
-                  valueColor: AlwaysStoppedAnimation(goal.isComplete ? AppColors.green : AppColors.text),
+                  valueColor: AlwaysStoppedAnimation(goal.isComplete ? AppColors.accent : AppColors.muted),
                   minHeight: 6,
                   borderRadius: BorderRadius.circular(4),
                 ),
