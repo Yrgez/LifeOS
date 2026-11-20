@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../core/theme.dart';
 import '../models/models.dart';
 
 /// Создаёт демо-мышцу. Время последней тренировки задаётся и как текущее ([lastTrainedAt]),
@@ -88,13 +87,13 @@ List<SalaryStep> defaultSalary() => [
     ];
 
 List<GraphNode> defaultGraphNodes() => [
-      GraphNode(id: 'n_goal_salary', label: 'Цель: 500к', category: 'mind', position: const Offset(0.22, 0.20), color: AppColors.violet),
-      GraphNode(id: 'n_salary', label: 'ЗП: 380к', category: 'wealth', position: const Offset(0.53, 0.33), color: AppColors.green),
-      GraphNode(id: 'n_capital', label: 'Капитал 2.45М', category: 'wealth', position: const Offset(0.78, 0.20), color: AppColors.gold),
-      GraphNode(id: 'n_cushion', label: 'Подушка 1М', category: 'wealth', position: const Offset(0.84, 0.46), color: AppColors.gold),
+      GraphNode(id: 'n_goal_salary', label: 'Цель: 500к', category: 'mind', position: const Offset(0.22, 0.20)),
+      GraphNode(id: 'n_salary', label: 'ЗП: 380к', category: 'wealth', position: const Offset(0.53, 0.33)),
+      GraphNode(id: 'n_capital', label: 'Капитал 2.45М', category: 'wealth', position: const Offset(0.78, 0.20)),
+      GraphNode(id: 'n_cushion', label: 'Подушка 1М', category: 'wealth', position: const Offset(0.84, 0.46)),
       GraphNode(id: 'n_sleep', label: 'Сон / Отдых', category: 'health', position: const Offset(0.53, 0.56), color: Colors.cyanAccent),
-      GraphNode(id: 'n_goal_bench', label: 'Цель: Жим 100', category: 'mind', position: const Offset(0.19, 0.75), color: AppColors.violet),
-      GraphNode(id: 'n_chest', label: 'Грудь (1RM 120)', category: 'gym', position: const Offset(0.44, 0.86), color: AppColors.green),
+      GraphNode(id: 'n_goal_bench', label: 'Цель: Жим 100', category: 'mind', position: const Offset(0.19, 0.75)),
+      GraphNode(id: 'n_chest', label: 'Грудь (1RM 120)', category: 'gym', position: const Offset(0.44, 0.86)),
       GraphNode(id: 'n_protein', label: 'Белок: 145г', category: 'health', position: const Offset(0.72, 0.74), color: Colors.cyanAccent),
       GraphNode(id: 'n_activity', label: 'Шаги: 8.4k', category: 'health', position: const Offset(0.84, 0.90), color: Colors.cyanAccent),
     ];

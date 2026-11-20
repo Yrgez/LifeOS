@@ -167,7 +167,7 @@ class _JournalScreenState extends State<JournalScreen> {
             child: SizedBox(
               height: 130,
               width: double.infinity,
-              child: CustomPaint(painter: VolumeBarsPainter(values: values, labels: labels, color: AppColors.green)),
+              child: CustomPaint(painter: VolumeBarsPainter(values: values, labels: labels, color: AppColors.bodyChart)),
             ),
           ),
         ],

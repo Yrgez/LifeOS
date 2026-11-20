@@ -198,7 +198,7 @@ void main() {
     expect(c.edgeEvidence(c.graphEdges.last), isNull);
   });
 
-  test('старые неоновые цвета по умолчанию читаются как «цвет по сфере», выбранный цвет сохраняется', () {
+  test('старые цвета по умолчанию читаются как «цвет по сфере», выбранный цвет сохраняется', () {
     final old = GraphNode.fromJson({'id': 'a', 'label': 'A', 'category': 'wealth', 'fx': 0.5, 'fy': 0.5, 'color': 0xFFFFD700});
     expect(old.color, nodeColorFor('wealth'));
     old.category = 'mind';
@@ -206,5 +206,9 @@ void main() {
     final custom = GraphNode.fromJson({'id': 'b', 'label': 'B', 'category': 'mind', 'fx': 0.5, 'fy': 0.5, 'color': 0xFF123456});
     expect(custom.color.toARGB32(), 0xFF123456);
     expect(nodeColorFor('gym'), nodeColorFor('health')); // обе сферы — измерение «Тело»
+    // приглушённые цвета до палитры Иттена — тоже прежний «цвет по сфере», а не выбор пользователя
+    for (final legacy in [0xFFB08A00, 0xFF00A653, 0xFF8B63FF]) {
+      expect(GraphNode.fromJson({'id': 'c', 'label': 'C', 'category': 'gym', 'fx': 0.5, 'fy': 0.5, 'color': legacy}).color, nodeColorFor('gym'));
+    }
   });
 }

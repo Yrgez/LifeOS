@@ -35,7 +35,7 @@ Future<void> showTransactionDialog(BuildContext context, AppController c, {Money
     context,
     title: existing == null ? 'Новая операция' : 'Изменить операцию',
     actionLabel: 'Сохранить',
-    accent: AppColors.gold,
+    accent: AppColors.material,
     fields: [
       FieldSpec('c', 'Категория', initial: existing?.categoryId ?? 'food', options: _allCategoryOptions(keep: existing?.categoryId)),
       FieldSpec('a', 'Сумма ($cur)', numeric: true, initial: existing == null ? '' : '${existing.amount}'),
@@ -76,7 +76,7 @@ Future<void> showBudgetDialog(BuildContext context, AppController c, {String? ca
     context,
     title: 'Лимит на месяц',
     actionLabel: 'Сохранить',
-    accent: AppColors.gold,
+    accent: AppColors.material,
     fields: [
       FieldSpec('c', 'Категория расходов', initial: cat, options: expenseOptions),
       FieldSpec('l', 'Лимит ($cur в месяц, пусто — без лимита)', numeric: true, initial: current == null ? '' : '$current'),
@@ -93,7 +93,7 @@ Future<void> showRecurringDialog(BuildContext context, AppController c, {Recurri
     context,
     title: existing == null ? 'Повторяющаяся операция' : 'Изменить правило',
     actionLabel: existing == null ? 'Создать' : 'Сохранить',
-    accent: AppColors.gold,
+    accent: AppColors.material,
     fields: [
       FieldSpec('c', 'Категория', initial: existing?.categoryId ?? 'housing', options: _allCategoryOptions(keep: existing?.categoryId)),
       FieldSpec('a', 'Сумма ($cur)', numeric: true, initial: existing == null ? '' : '${existing.amount}'),
@@ -137,8 +137,8 @@ Future<void> showRecurringSheet(BuildContext context, AppController c) {
                     const Text('ПОВТОРЯЮЩИЕСЯ ОПЕРАЦИИ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.6)),
                     TextButton.icon(
                       onPressed: () => showRecurringDialog(sheetContext, c),
-                      icon: const Icon(Icons.add, size: 16, color: AppColors.gold),
-                      label: const Text('Добавить', style: TextStyle(color: AppColors.gold, fontSize: 12)),
+                      icon: const Icon(Icons.add, size: 16, color: AppColors.material),
+                      label: const Text('Добавить', style: TextStyle(color: AppColors.material, fontSize: 12)),
                     ),
                   ],
                 ),
@@ -219,7 +219,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: AppColors.gold,
+        backgroundColor: AppColors.material,
         foregroundColor: Colors.black,
         icon: const Icon(Icons.add),
         label: const Text('Операция', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -249,7 +249,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
             _tile(
               'БАЛАНС',
               '${totals.saldo >= 0 ? '+' : '−'}${fmtCur(totals.saldo.abs())}',
-              totals.saldo >= 0 ? AppColors.gold : AppColors.red,
+              totals.saldo >= 0 ? AppColors.material : AppColors.red,
               totals.savingsRate == null ? 'нет дохода' : 'сбережения ${totals.savingsRate!.round()}%',
             ),
           ],
@@ -367,8 +367,8 @@ class _FinanceScreenState extends State<FinanceScreen> {
               TextButton.icon(
                 onPressed: () => showBudgetDialog(context, c),
                 style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 24)),
-                icon: const Icon(Icons.speed, size: 14, color: AppColors.gold),
-                label: const Text('Лимиты', style: TextStyle(color: AppColors.gold, fontSize: 11)),
+                icon: const Icon(Icons.speed, size: 14, color: AppColors.material),
+                label: const Text('Лимиты', style: TextStyle(color: AppColors.material, fontSize: 11)),
               ),
             ],
           ),

@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Значок: три пересекающихся кольца — BODY, MIND, MATERIAL — измерения одной жизни (цвета dimensionColor). -->
+<!-- Значок: три пересекающихся кольца — BODY, MIND, MATERIAL — измерения одной жизни (цвета AppColors.body / mind / material). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:strokeColor="#00E676" android:strokeWidth="3.5"
+    <path android:strokeColor="#E2704F" android:strokeWidth="3.5"
         android:pathData="M32.21,58.5 a14,14 0 1,0 28,0 a14,14 0 1,0 -28,0" />
-    <path android:strokeColor="#7C4DFF" android:strokeWidth="3.5"
+    <path android:strokeColor="#7E9BFF" android:strokeWidth="3.5"
         android:pathData="M40,45 a14,14 0 1,0 28,0 a14,14 0 1,0 -28,0" />
-    <path android:strokeColor="#FFD700" android:strokeWidth="3.5"
+    <path android:strokeColor="#D8AE4A" android:strokeWidth="3.5"
         android:pathData="M47.79,58.5 a14,14 0 1,0 28,0 a14,14 0 1,0 -28,0" />
 </vector>

@@ -50,8 +50,8 @@ void main() {
       expect(icon, contains(l));
     }
     final fg = read('android/app/src/main/res/drawable/ic_launcher_foreground.xml');
-    for (final c in ['#00E676', '#7C4DFF', '#FFD700']) {
-      expect(fg, contains(c)); // как AppColors.green / violet / gold (dimensionColor)
+    for (final c in ['#E2704F', '#7E9BFF', '#D8AE4A']) {
+      expect(fg, contains(c)); // как AppColors.body / mind / material (dimensionColor)
     }
     expect(File('android/app/src/main/res/mipmap-hdpi/ic_launcher.png').existsSync(), isFalse);
   });
