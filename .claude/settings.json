@@ -5,9 +5,16 @@
         "source": "github",
         "repo": "DietrichGebert/ponytail"
       }
+    },
+    "dart-flutter": {
+      "source": {
+        "source": "github",
+        "repo": "flutter/agent-plugins"
+      }
     }
   },
   "enabledPlugins": {
-    "ponytail@ponytail": true
+    "ponytail@ponytail": true,
+    "dart-flutter@dart-flutter": true
   }
 }
