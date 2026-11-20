@@ -19,7 +19,8 @@ class StatTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(color: AppColors.muted, fontSize: 9, fontWeight: FontWeight.bold)),
+            // заголовок в одну строку: иначе числа соседних плиток встают на разной высоте
+            FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: Text(title, maxLines: 1, style: const TextStyle(color: AppColors.muted, fontSize: 9, fontWeight: FontWeight.bold))),
             const SizedBox(height: 4),
             FittedBox(fit: BoxFit.scaleDown, child: Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: valueColor))),
             const SizedBox(height: 2),
