@@ -11,6 +11,7 @@ import '../widgets/chart_semantics.dart';
 import '../widgets/log_set_dialog.dart';
 import '../widgets/segment_pill.dart';
 import '../widgets/adaptive_pair.dart';
+import '../widgets/stat_tile.dart';
 
 /// Журнал тренировок: история подходов, прогрессия и объём нагрузки.
 /// Без упражнений, шаблонов и таймеров — только то, что нужно для отслеживания прогресса.
@@ -67,9 +68,14 @@ class _JournalScreenState extends State<JournalScreen> {
         AdaptivePair(
           spacing: 8,
           children: [
-            _statTile('ОБЪЁМ 7 ДН', '${fmtVolume(vol7)} кг', change == null ? 'нет данных за прошлую' : '${change >= 0 ? '+' : '−'}${change.abs().toStringAsFixed(0)}% к прошлой', change == null ? AppColors.muted : (change >= 0 ? AppColors.green : AppColors.red)),
-            _statTile('ПОДХОДОВ 7 ДН', '${setsInWindow(sets, now, 7)}', 'всего: ${sets.length}', AppColors.muted),
-            _statTile('ДНЕЙ / 28', '${trainingDaysInWindow(sets, now, 28)}', 'с тренировками', AppColors.muted),
+            StatTile(
+              'ОБЪЁМ 7 ДН',
+              '${fmtVolume(vol7)} кг',
+              sub: change == null ? 'нет данных за прошлую' : '${change >= 0 ? '+' : '−'}${change.abs().toStringAsFixed(0)}% к прошлой',
+              subColor: change == null ? AppColors.muted : (change >= 0 ? AppColors.green : AppColors.red),
+            ),
+            StatTile('ПОДХОДОВ 7 ДН', '${setsInWindow(sets, now, 7)}', sub: 'всего: ${sets.length}'),
+            StatTile('ДНЕЙ / 28', '${trainingDaysInWindow(sets, now, 28)}', sub: 'с тренировками'),
           ],
         ),
         const SizedBox(height: 12),
@@ -118,23 +124,6 @@ class _JournalScreenState extends State<JournalScreen> {
     );
   }
 
-  Widget _statTile(String title, String value, String sub, Color subColor) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.white10)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: const TextStyle(color: AppColors.muted, fontSize: 9, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          FittedBox(fit: BoxFit.scaleDown, child: Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
-          const SizedBox(height: 2),
-          Text(sub, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(color: subColor, fontSize: 9)),
-        ],
-      ),
-    );
-  }
-
   Widget _volumeCard(List<WorkoutSet> sets, DateTime now) {
     final values = _weekly ? volumeLastWeeks(sets, now, 8) : volumeLastDays(sets, now, 7);
     final labels = _weekly
@@ -142,7 +131,7 @@ class _JournalScreenState extends State<JournalScreen> {
         : List.generate(7, (i) => dayNames[now.subtract(Duration(days: 6 - i)).weekday - 1]);
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
+      decoration: tileDecoration(radius: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -180,7 +169,7 @@ class _JournalScreenState extends State<JournalScreen> {
     final total = byMuscle.fold(0.0, (a, e) => a + e.value);
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
+      decoration: tileDecoration(radius: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -222,7 +211,7 @@ class _JournalScreenState extends State<JournalScreen> {
     final delta = series.length > 1 ? series.last - series.first : 0.0;
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
+      decoration: tileDecoration(radius: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

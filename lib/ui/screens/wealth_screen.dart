@@ -367,7 +367,7 @@ class _WealthScreenState extends State<WealthScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           height: 200,
-          decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
+          decoration: tileDecoration(radius: 20),
           child: ChartSemantics(
             label: 'График зарплаты: ${c.salaryHistory.isEmpty ? 'нет данных' : [for (final st in c.salaryHistory) '${st.year} — ${fmtCur(st.salary)}'].join(', ')}',
             child: CustomPaint(size: Size.infinite, painter: SalaryLineChartPainter(steps: c.salaryHistory)),

@@ -102,11 +102,6 @@ class _ProcessDialogState extends State<_ProcessDialog> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
       );
 
-  Widget _label(String t) => Padding(
-        padding: const EdgeInsets.only(top: 12, bottom: 6),
-        child: Text(t, style: const TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
-      );
-
   @override
   Widget build(BuildContext context) {
     final editing = widget.initial != null;
@@ -135,7 +130,7 @@ class _ProcessDialogState extends State<_ProcessDialog> {
                 decoration: _dec('Название'),
                 onChanged: (_) => setState(() {}),
               ),
-              _label('ИЗМЕРЕНИЯ'),
+              fieldLabel('ИЗМЕРЕНИЯ'),
               Wrap(
                 spacing: 8,
                 children: [
@@ -150,7 +145,7 @@ class _ProcessDialogState extends State<_ProcessDialog> {
                 ],
               ),
               if (!editing) ...[
-                _label('НАЧАЛО'),
+                fieldLabel('НАЧАЛО'),
                 OutlinedButton.icon(
                   onPressed: () async {
                     final d = await showDatePicker(context: context, initialDate: _start, firstDate: DateTime(1900), lastDate: widget.now);
@@ -161,7 +156,7 @@ class _ProcessDialogState extends State<_ProcessDialog> {
                 ),
               ],
               if (widget.goals.isNotEmpty) ...[
-                _label('СЛУЖИТ ЦЕЛЯМ'),
+                fieldLabel('СЛУЖИТ ЦЕЛЯМ'),
                 Wrap(
                   spacing: 6,
                   runSpacing: 4,
@@ -175,7 +170,7 @@ class _ProcessDialogState extends State<_ProcessDialog> {
                   ],
                 ),
               ],
-              _label('ОПИСАНИЕ'),
+              fieldLabel('ОПИСАНИЕ'),
               TextField(controller: _desc, maxLines: 3, maxLength: LifeProcess.maxDescription, decoration: _dec('Зачем, что считается результатом')),
               const SizedBox(height: 4),
               TextField(
@@ -190,7 +185,7 @@ class _ProcessDialogState extends State<_ProcessDialog> {
                 ),
                 onChanged: (_) => setState(() {}),
               ),
-              _label('РИТМ (НЕОБЯЗАТЕЛЬНО)'),
+              fieldLabel('РИТМ (НЕОБЯЗАТЕЛЬНО)'),
               Wrap(
                 crossAxisAlignment: WrapCrossAlignment.center,
                 spacing: 6,

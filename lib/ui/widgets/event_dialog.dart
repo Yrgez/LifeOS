@@ -20,6 +20,12 @@ Color dimensionChartColor(String d) => switch (d) {
       _ => AppColors.materialChart,
     };
 
+/// Подпись группы полей в диалогах события и процесса («ИЗМЕРЕНИЯ», «РЕСУРСЫ»).
+Widget fieldLabel(String t) => Padding(
+      padding: const EdgeInsets.only(top: 12, bottom: 6),
+      child: Text(t, style: const TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
+    );
+
 /// Что ввёл пользователь в диалоге события.
 class EventDraft {
   final String title;
@@ -182,11 +188,6 @@ class _EventDialogState extends State<_EventDialog> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
       );
 
-  Widget _label(String t) => Padding(
-        padding: const EdgeInsets.only(top: 12, bottom: 6),
-        child: Text(t, style: const TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
-      );
-
   @override
   Widget build(BuildContext context) {
     final editing = widget.initial != null;
@@ -226,7 +227,7 @@ class _EventDialogState extends State<_EventDialog> {
               decoration: _dec('Что произошло?'),
               onChanged: (_) => setState(() {}),
             ),
-            _label('ИЗМЕРЕНИЯ'),
+            fieldLabel('ИЗМЕРЕНИЯ'),
             Wrap(
               spacing: 8,
               children: [
@@ -240,7 +241,7 @@ class _EventDialogState extends State<_EventDialog> {
                   ),
               ],
             ),
-            _label('ВИД'),
+            fieldLabel('ВИД'),
             DropdownButtonFormField<String>(
               initialValue: _kind,
               isExpanded: true, // длинное название вида при крупном шрифте обрезается, а не вылезает за край
@@ -252,13 +253,13 @@ class _EventDialogState extends State<_EventDialog> {
               ],
               onChanged: (v) => setState(() => _kind = v ?? _kind),
             ),
-            _label('КОГДА'),
+            fieldLabel('КОГДА'),
             OutlinedButton.icon(
               onPressed: _pickDate,
               icon: const Icon(Icons.event, size: 16),
               label: Text('${dayKey(_at)} ${_at.hour.toString().padLeft(2, '0')}:${_at.minute.toString().padLeft(2, '0')}'),
             ),
-            _label('РЕСУРСЫ (НЕОБЯЗАТЕЛЬНО)'),
+            fieldLabel('РЕСУРСЫ (НЕОБЯЗАТЕЛЬНО)'),
             Row(
               children: [
                 Expanded(
@@ -310,7 +311,7 @@ class _EventDialogState extends State<_EventDialog> {
               ],
             ),
             if (widget.goals.isNotEmpty) ...[
-              _label('ВЕДЁТ К ЦЕЛЯМ'),
+              fieldLabel('ВЕДЁТ К ЦЕЛЯМ'),
               Wrap(
                 spacing: 6,
                 runSpacing: 4,
@@ -325,7 +326,7 @@ class _EventDialogState extends State<_EventDialog> {
               ),
             ],
             if (_processOptions.isNotEmpty) ...[
-              _label('В ПРОЦЕССЕ'),
+              fieldLabel('В ПРОЦЕССЕ'),
               Wrap(
                 spacing: 6,
                 runSpacing: 4,
@@ -340,7 +341,7 @@ class _EventDialogState extends State<_EventDialog> {
                 ],
               ),
             ],
-            _label('ЗАМЕТКА'),
+            fieldLabel('ЗАМЕТКА'),
             TextField(controller: _note, maxLines: 3, maxLength: LifeEvent.maxNote, decoration: _dec('Подробности, контекст')),
             const SizedBox(height: 20),
             ElevatedButton(

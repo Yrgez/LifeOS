@@ -16,6 +16,7 @@ import '../widgets/form_dialog.dart';
 import 'categories_screen.dart';
 import 'statement_import_screen.dart';
 import '../widgets/adaptive_pair.dart';
+import '../widgets/stat_tile.dart';
 
 /// Категории для выбора: встроенные и свои; архивная остаётся, только если её уже выбрала правимая запись.
 Map<String, String> _allCategoryOptions({String? keep}) =>
@@ -64,8 +65,6 @@ Future<void> showTransactionDialog(BuildContext context, AppController c, {Money
       : c.updateTransaction(existing.id, categoryId: r['c']!, amount: amount, at: at, note: r['n']!, affectsNetWorth: r['w'] == '1');
   if (ok) _toast(context, existing == null ? 'Операция добавлена' : 'Операция изменена');
 }
-
-Future<void> showAddTransactionDialog(BuildContext context, AppController c) => showTransactionDialog(context, c);
 
 /// Лимит расходов на месяц по категории. Пустое значение или 0 снимает лимит.
 Future<void> showBudgetDialog(BuildContext context, AppController c, {String? categoryId}) async {
@@ -244,13 +243,13 @@ class _FinanceScreenState extends State<FinanceScreen> {
         AdaptivePair(
           spacing: 8,
           children: [
-            _tile('ДОХОД', '+${fmtCur(totals.income)}', AppColors.green, ''),
-            _tile('РАСХОД', '−${fmtCur(totals.expense)}', AppColors.red, ''),
-            _tile(
+            StatTile('ДОХОД', '+${fmtCur(totals.income)}', valueColor: AppColors.green),
+            StatTile('РАСХОД', '−${fmtCur(totals.expense)}', valueColor: AppColors.red),
+            StatTile(
               'БАЛАНС',
               '${totals.saldo >= 0 ? '+' : '−'}${fmtCur(totals.saldo.abs())}',
-              totals.saldo >= 0 ? AppColors.material : AppColors.red,
-              totals.savingsRate == null ? 'нет дохода' : 'сбережения ${totals.savingsRate!.round()}%',
+              valueColor: totals.saldo >= 0 ? AppColors.material : AppColors.red,
+              sub: totals.savingsRate == null ? 'нет дохода' : 'сбережения ${totals.savingsRate!.round()}%',
             ),
           ],
         ),
@@ -281,29 +280,12 @@ class _FinanceScreenState extends State<FinanceScreen> {
     );
   }
 
-  Widget _tile(String title, String value, Color color, String sub) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.white10)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: const TextStyle(color: AppColors.muted, fontSize: 9, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          FittedBox(fit: BoxFit.scaleDown, child: Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color))),
-          const SizedBox(height: 2),
-          Text(sub.isEmpty ? ' ' : sub, style: const TextStyle(color: AppColors.muted, fontSize: 9)),
-        ],
-      ),
-    );
-  }
-
   Widget _trendCard() {
     final months = lastMonthsTotals(c.transactions, _month, 6);
     final labels = List.generate(6, (i) => monthShortName(addMonths(_month, i - 5).month));
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
+      decoration: tileDecoration(radius: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -355,7 +337,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
     final exceeded = statuses.where((s) => s.exceeded).length;
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: AppColors.card, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white10)),
+      decoration: tileDecoration(radius: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
