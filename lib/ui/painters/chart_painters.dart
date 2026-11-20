@@ -179,7 +179,7 @@ class SalaryLineChartPainter extends CustomPainter {
     if (steps.length == 1) {
       final x = size.width / 2, y = size.height / 2;
       canvas.drawCircle(Offset(x, y), 6, dot);
-      drawText(canvas, '${steps[0].year}\n${steps[0].salary ~/ 1000}к', Offset(x, y - 32), labelStyle, anchor: 0.5, align: TextAlign.center);
+      drawText(canvas, '${steps[0].year}\n${fmtCompact(steps[0].salary)}', Offset(x, y - 32), labelStyle, anchor: 0.5, align: TextAlign.center);
       return;
     }
 
@@ -207,7 +207,7 @@ class SalaryLineChartPainter extends CustomPainter {
 
       canvas.drawCircle(Offset(x, y), 5, dot);
       canvas.drawCircle(Offset(x, y), 2, Paint()..color = Colors.black);
-      drawText(canvas, '${steps[i].year}\n${steps[i].salary ~/ 1000}к', Offset(x, y - 30), labelStyle, anchor: 0.5, align: TextAlign.center);
+      drawText(canvas, '${steps[i].year}\n${fmtCompact(steps[i].salary)}', Offset(x, y - 30), labelStyle, anchor: 0.5, align: TextAlign.center);
     }
 
     fillPath.lineTo(padX + plotW, size.height);

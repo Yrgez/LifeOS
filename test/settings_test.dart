@@ -63,7 +63,7 @@ void main() {
     test('подписи «живых» узлов (старые установки) подстраиваются под данные', () async {
       final c = await make();
       c.updateWealth(netWorth: 1500000, income: 200000);
-      expect(c.nodeById('n_capital')!.label, 'Капитал 1.50М');
+      expect(c.nodeById('n_capital')!.label, 'Капитал 1,5М');
       expect(c.nodeById('n_salary')!.label, 'ЗП: 200к');
     });
 

@@ -186,7 +186,12 @@ class _ProcessDialogState extends State<_ProcessDialog> {
                 key: const ValueKey('process_minutes'),
                 controller: _minutes,
                 keyboardType: TextInputType.number,
-                decoration: _dec('Обычная длительность события, мин (необязательно)'),
+                // не цель и не план: только подсказка в форме события; время считается по записанным событиям
+                decoration: _dec('Обычно длится, мин').copyWith(
+                  helperText: 'Необязательно. Подставится в запись события — время можно изменить. '
+                      'Учитывается только то, что записано.',
+                  helperMaxLines: 3,
+                ),
                 onChanged: (_) => setState(() {}),
               ),
               _label('РИТМ (НЕОБЯЗАТЕЛЬНО)'),

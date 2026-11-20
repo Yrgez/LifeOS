@@ -71,4 +71,20 @@ void main() {
     });
     test('fmtDate', () => expect(fmtDate(DateTime(2026, 3, 5)), '05.03.2026'));
   });
+
+  test('fmtCompact: меньше тысячи — как есть, а не «0к»; дальше — к и М с запятой', () {
+    expect(fmtCompact(0), '0');
+    expect(fmtCompact(850), '850');
+    expect(fmtCompact(999), '999');
+    expect(fmtCompact(1000), '1к');
+    expect(fmtCompact(1500), '1,5к');
+    expect(fmtCompact(8420), '8,4к');
+    expect(fmtCompact(12400), '12к');
+    expect(fmtCompact(380000), '380к');
+    expect(fmtCompact(999600), '1М'); // не «1000к»
+    expect(fmtCompact(1250000), '1,25М');
+    expect(fmtCompact(2450000), '2,45М');
+    expect(fmtCompact(15300000), '15,3М');
+    expect(fmtCompact(-1500), '−1,5к');
+  });
 }
