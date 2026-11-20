@@ -58,6 +58,20 @@
 flutter pub get && flutter analyze --no-fatal-infos && flutter test
 ```
 Тесты SQLite используют `sqflite_common_ffi` и системную `libsqlite3`. CI: `.github/workflows/ci.yml`.
+В облачной сессии Flutter заранее не установлен — поставить ту же версию, что в CI, до любой проверки:
+```
+git clone -q --depth 1 --branch 3.50.0 https://github.com/flutter/flutter.git /opt/flutter
+ln -sf /opt/flutter/bin/flutter /usr/local/bin/flutter && ln -sf /opt/flutter/bin/dart /usr/local/bin/dart
+```
+
+## Инструменты агента (`.claude/`)
+- Плагины **ponytail** и **Dart and Flutter** встроены в репозиторий, а не ставятся через `/plugin`: облачные сессии
+  плагины из сторонних каталогов не ставят. ponytail — хуки `.claude/hooks/ponytail-*.js` (в `.claude/settings.json`)
+  и навыки `.claude/skills/ponytail*`; Dart and Flutter — навыки `.claude/skills/dart-*`, `flutter-*` и Dart MCP server
+  в `.mcp.json` (стартует, только если Flutter установлен до начала сессии). Устанавливать их ещё и через `/plugin`
+  не нужно — будет двойная загрузка. Обновление — `.claude/hooks/PONYTAIL.md`, `.claude/skills/DART-FLUTTER.md`.
+- Правила этого файла главнее советов плагинов: архитектура — `AppController`/`ChangeNotifier` (не BLoC/Riverpod),
+  ширина строки 160 (`dart format -l 160` переформатирует чужие строки — не применять к целому файлу).
 
 ## Ветки и PR
 - PR вливается **только обычным merge** — не squash и не rebase: номер сборки (versionCode) = число коммитов в истории.
