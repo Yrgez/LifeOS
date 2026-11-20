@@ -128,7 +128,7 @@ class MuscleGroup {
     if (t == null) return 'Не тренировалась';
     final h = now.difference(t).inHours;
     if (h < 1) return 'Только что';
-    if (h < 24) return '${h}ч назад';
+    if (h < 24) return '$hч назад';
     return '${h ~/ 24} дн. назад';
   }
 
@@ -137,10 +137,10 @@ class MuscleGroup {
   /// Детерминированный цвет для тестов.
   Color colorAt(DateTime now) {
     final r = recoveryAt(now);
-    // ступени светлоты одного тона, а не светофор: восстановление — оценка, а не приговор «плохо»
-    if (r >= 0.8) return AppColors.body;
+    // ступени одного тона, а не светофор (оценка, а не приговор): ярче всего — мышца, которой нужен отдых
+    if (r >= 0.8) return AppColors.recoveryFull;
     if (r >= 0.45) return AppColors.recoveryMid;
-    return AppColors.recoveryLow;
+    return AppColors.body;
   }
 
   Map<String, dynamic> toJson() => {

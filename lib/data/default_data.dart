@@ -99,14 +99,14 @@ List<GraphNode> defaultGraphNodes() => [
     ];
 
 List<GraphEdge> defaultGraphEdges() => [
-      GraphEdge('n_goal_salary', 'n_salary', kind: EdgeKind.supports, weight: 2),
-      GraphEdge('n_salary', 'n_capital', kind: EdgeKind.supports, weight: 3),
-      GraphEdge('n_capital', 'n_cushion', kind: EdgeKind.supports, weight: 2),
-      GraphEdge('n_goal_bench', 'n_chest', kind: EdgeKind.supports, weight: 2),
-      GraphEdge('n_chest', 'n_protein'),
-      GraphEdge('n_protein', 'n_activity'),
-      GraphEdge('n_sleep', 'n_chest', kind: EdgeKind.supports, weight: 2),
-      GraphEdge('n_sleep', 'n_salary', kind: EdgeKind.supports),
+      const GraphEdge('n_goal_salary', 'n_salary', kind: EdgeKind.supports, weight: 2),
+      const GraphEdge('n_salary', 'n_capital', kind: EdgeKind.supports, weight: 3),
+      const GraphEdge('n_capital', 'n_cushion', kind: EdgeKind.supports, weight: 2),
+      const GraphEdge('n_goal_bench', 'n_chest', kind: EdgeKind.supports, weight: 2),
+      const GraphEdge('n_chest', 'n_protein'),
+      const GraphEdge('n_protein', 'n_activity'),
+      const GraphEdge('n_sleep', 'n_chest', kind: EdgeKind.supports, weight: 2),
+      const GraphEdge('n_sleep', 'n_salary', kind: EdgeKind.supports),
     ];
 
 // ---------------- чистый старт (новая установка) ----------------

@@ -268,7 +268,7 @@ class _EventTile extends StatelessWidget {
     final versions = e.supersedesId == null ? 1 : controller.eventRevisions(e.id).length;
     final cost = [
       if (e.cost.minutes != null) '${e.cost.minutes} мин',
-      if (e.cost.money != null) '${fmtCur(e.cost.money!)}',
+      if (e.cost.money != null) fmtCur(e.cost.money!),
       if (e.cost.energy != null) 'энергия ${e.cost.energy}/5',
     ];
     return Container(

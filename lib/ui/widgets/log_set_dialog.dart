@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme.dart';
 import '../../core/utils.dart';
 import '../../state/app_controller.dart';
 import 'form_dialog.dart';
@@ -46,6 +45,5 @@ Future<void> showLogSetDialog(BuildContext context, AppController c, {String? mu
     ..hideCurrentSnackBar()
     ..showSnackBar(SnackBar(
       content: Text(text),
-      backgroundColor: res.isRecord ? AppColors.green : null,
     ));
 }

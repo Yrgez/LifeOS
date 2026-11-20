@@ -78,7 +78,7 @@ class _HealthCardState extends State<HealthCard> {
               Expanded(
                 child: Text(
                   healthStatusLine(c),
-                  style: TextStyle(color: c.healthMessage != null ? AppColors.red : AppColors.muted, fontSize: 10),
+                  style: TextStyle(color: c.healthMessage != null ? AppColors.text : AppColors.muted, fontSize: 10),
                 ),
               ),
               if (c.healthEnabled)
@@ -94,9 +94,9 @@ class _HealthCardState extends State<HealthCard> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // равные доли ширины: на узком экране колонки переносят текст, а не вылезают за край
-              Expanded(child: _MetricCol('Шаги', fmtMoney(c.dailySteps), 'Цель: ${fmtMoney(c.stepsGoal)}', AppColors.body)),
-              Expanded(child: _MetricCol('Активность', '${c.activeCalories} ккал', 'Калории', AppColors.body)),
-              Expanded(child: _MetricCol('Белок', '${c.proteinGrams}г', 'Норма: ${c.proteinGoal}г', AppColors.body)),
+              Expanded(child: _MetricCol('Шаги', fmtMoney(c.dailySteps), 'Цель: ${fmtMoney(c.stepsGoal)}')),
+              Expanded(child: _MetricCol('Активность', '${c.activeCalories} ккал', 'Калории')),
+              Expanded(child: _MetricCol('Белок', '${c.proteinGrams}г', 'Норма: ${c.proteinGoal}г')),
             ],
           ),
           const SizedBox(height: 14),
@@ -128,8 +128,7 @@ class _MetricCol extends StatelessWidget {
   final String title;
   final String val;
   final String sub;
-  final Color col;
-  const _MetricCol(this.title, this.val, this.sub, this.col);
+  const _MetricCol(this.title, this.val, this.sub);
 
   @override
   Widget build(BuildContext context) {
@@ -138,7 +137,7 @@ class _MetricCol extends StatelessWidget {
       children: [
         Text(title, style: const TextStyle(color: Colors.white60, fontSize: 12)),
         const SizedBox(height: 4),
-        Text(val, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: col)),
+        Text(val, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.body)),
         const SizedBox(height: 2),
         Text(sub, style: const TextStyle(color: AppColors.muted, fontSize: 10)),
       ],

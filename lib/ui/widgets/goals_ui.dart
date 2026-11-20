@@ -198,21 +198,15 @@ class GoalCard extends StatelessWidget {
   Widget _deadline() {
     final d = goal.deadline!;
     final left = dayIndex(d) - dayIndex(c.now);
-    String text;
-    Color color;
-    if (goal.isComplete) {
-      text = 'Срок: ${fmtDate(d)}';
-      color = AppColors.muted;
-    } else if (left < 0) {
-      text = 'Просрочено на ${-left} дн. • ${fmtDate(d)}';
-      color = AppColors.red;
-    } else if (left == 0) {
-      text = 'Срок — сегодня';
-      color = AppColors.text;
-    } else {
-      text = 'Осталось $left дн. • ${fmtDate(d)}';
-      color = left <= 7 ? AppColors.text : AppColors.muted;
-    }
+    final text = goal.isComplete
+        ? 'Срок: ${fmtDate(d)}'
+        : left < 0
+            ? 'Просрочено на ${-left} дн. • ${fmtDate(d)}'
+            : left == 0
+                ? 'Срок — сегодня'
+                : 'Осталось $left дн. • ${fmtDate(d)}';
+    // близкий или прошедший срок — белым, остальное серым: смысл несут слова, а не цвет
+    final color = !goal.isComplete && left <= 7 ? AppColors.text : AppColors.muted;
     return Padding(
       padding: const EdgeInsets.only(top: 4),
       child: Row(
@@ -336,8 +330,8 @@ class GoalResources extends StatelessWidget {
           if (plan?.money != null || r.moneyKnown > 0)
             _PlanRow(
               label: 'Деньги',
-              fact: r.moneyKnown == 0 ? 'не указано' : known(r.moneyKnown, '${fmtCur(r.money)}'),
-              plan: plan?.money == null ? null : '${fmtCur(plan!.money!)}',
+              fact: r.moneyKnown == 0 ? 'не указано' : known(r.moneyKnown, fmtCur(r.money)),
+              plan: plan?.money == null ? null : fmtCur(plan!.money!),
               ratio: plan?.money == null ? null : r.money / plan!.money!,
             ),
           if (r.events > 0)

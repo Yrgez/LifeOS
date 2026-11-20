@@ -137,6 +137,6 @@ class AnatomicalSilhouettePainter extends CustomPainter {
   static Rect _focusRect(Rect r) => Rect.fromCenter(center: r.center, width: max(r.width, 48), height: max(r.height, 48));
 
   @override
-  bool shouldRebuildSemantics(covariant AnatomicalSilhouettePainter old) =>
-      old.isFront != isFront || old.selectedMuscleId != selectedMuscleId || !mapEquals(old.semanticLabels, semanticLabels);
+  bool shouldRebuildSemantics(covariant AnatomicalSilhouettePainter oldDelegate) =>
+      oldDelegate.isFront != isFront || oldDelegate.selectedMuscleId != selectedMuscleId || !mapEquals(oldDelegate.semanticLabels, semanticLabels);
 }

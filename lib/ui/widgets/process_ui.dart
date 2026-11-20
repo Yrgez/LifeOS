@@ -22,7 +22,7 @@ List<String> resourceLines(ResourceSummary s) {
   String part(int known, String value) => known == 0 ? 'не указано' : known == s.events ? value : '$value (указано в $known из ${s.events})';
   return [
     'Время: ${part(s.minutesKnown, fmtMinutes(s.minutes))}',
-    'Деньги: ${part(s.moneyKnown, '${fmtCur(s.money)}')}',
+    'Деньги: ${part(s.moneyKnown, fmtCur(s.money))}',
     'Энергия: ${s.energyKnown == 0 ? 'не указано' : [for (var i = 1; i <= 5; i++) if (s.energy[i] != null) '$i×${s.energy[i]}'].join(', ')}',
     // внимание показываем, только если его отмечали: пустая строка «не указано» здесь — шум
     if (s.attentionKnown > 0)
@@ -31,12 +31,8 @@ List<String> resourceLines(ResourceSummary s) {
   ];
 }
 
-Color processStatusColor(String s) => switch (s) {
-      ProcessStatus.active => AppColors.accent,
-      ProcessStatus.paused => AppColors.muted,
-      ProcessStatus.completed => AppColors.muted,
-      _ => AppColors.muted,
-    };
+/// Статус называет подпись; цветом выделен только идущий процесс.
+Color processStatusColor(String s) => s == ProcessStatus.active ? AppColors.accent : AppColors.muted;
 
 // ---------------- диалог процесса ----------------
 

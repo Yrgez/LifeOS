@@ -288,7 +288,7 @@ extension EventOps on AppController {
     final now = _clock();
     if (reviewDue(events, now)) return now;
     final last = lastReview(events);
-    return last == null ? null : last.at.add(const Duration(days: reviewEveryDays));
+    return last?.at.add(const Duration(days: reviewEveryDays));
   }
 
   /// Сохраняет обзор событием вида «обзор» и применяет решения по процессам (новый статус с пометкой).

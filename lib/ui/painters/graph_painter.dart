@@ -205,5 +205,5 @@ class LifeGraphPainter extends CustomPainter {
       };
 
   @override
-  bool shouldRebuildSemantics(covariant LifeGraphPainter old) => true;
+  bool shouldRebuildSemantics(covariant LifeGraphPainter oldDelegate) => true;
 }

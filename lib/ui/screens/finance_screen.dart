@@ -308,21 +308,21 @@ class _FinanceScreenState extends State<FinanceScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Wrap: при крупном шрифте легенда уходит под заголовок
-          Wrap(
+          const Wrap(
             alignment: WrapAlignment.spaceBetween,
             crossAxisAlignment: WrapCrossAlignment.center,
             spacing: 8,
             runSpacing: 4,
             children: [
-              const Text('ДИНАМИКА ЗА 6 МЕСЯЦЕВ', style: TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold)),
+              Text('ДИНАМИКА ЗА 6 МЕСЯЦЕВ', style: TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold)),
               Row(mainAxisSize: MainAxisSize.min, children: [
-                const CircleAvatar(radius: 4, backgroundColor: AppColors.green),
-                const SizedBox(width: 4),
-                const Text('доход', style: TextStyle(color: AppColors.muted, fontSize: 10)),
-                const SizedBox(width: 8),
-                const CircleAvatar(radius: 4, backgroundColor: AppColors.red),
-                const SizedBox(width: 4),
-                const Text('расход', style: TextStyle(color: AppColors.muted, fontSize: 10)),
+                CircleAvatar(radius: 4, backgroundColor: AppColors.green),
+                SizedBox(width: 4),
+                Text('доход', style: TextStyle(color: AppColors.muted, fontSize: 10)),
+                SizedBox(width: 8),
+                CircleAvatar(radius: 4, backgroundColor: AppColors.red),
+                SizedBox(width: 4),
+                Text('расход', style: TextStyle(color: AppColors.muted, fontSize: 10)),
               ]),
             ],
           ),
@@ -363,7 +363,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // на узком экране заголовок переносится, а не выталкивает соседей за край
-              Flexible(child: Text('РАСХОДЫ ПО КАТЕГОРИЯМ', style: const TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold))),
+              const Flexible(child: Text('РАСХОДЫ ПО КАТЕГОРИЯМ', style: TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold))),
               TextButton.icon(
                 onPressed: () => showBudgetDialog(context, c),
                 style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 24)),
@@ -393,7 +393,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
 
   Widget _categoryRow(BudgetStatus st, int total, int maxSum) {
     final cat = finCategory(st.categoryId);
-    final color = st.exceeded ? AppColors.red : (cat?.color ?? AppColors.muted);
+    final color = st.exceeded ? AppColors.text : AppColors.materialChart; // превышение — белым и знаком ⚠, не цветом
     final pct = total <= 0 ? 0 : (st.spent / total * 100).round();
     final double value = st.hasLimit ? min(1.0, st.ratio) : (maxSum <= 0 ? 0.0 : st.spent / maxSum);
     final label = st.hasLimit
@@ -421,7 +421,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
             child: Text(
               st.exceeded ? '$label ⚠' : label,
               textAlign: TextAlign.right,
-              style: TextStyle(color: st.exceeded ? AppColors.red : AppColors.muted, fontSize: 10, fontWeight: st.exceeded ? FontWeight.bold : FontWeight.normal),
+              style: TextStyle(color: st.exceeded ? AppColors.text : AppColors.muted, fontSize: 10, fontWeight: st.exceeded ? FontWeight.bold : FontWeight.normal),
             ),
           ),
         ],

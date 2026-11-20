@@ -150,7 +150,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
               value: b.byDimension[d]!.money,
               max: total.money,
               color: dimensionChartColor(d),
-              text: _known(b.byDimension[d]!, b.byDimension[d]!.moneyKnown, '${fmtCur(b.byDimension[d]!.money)}'),
+              text: _known(b.byDimension[d]!, b.byDimension[d]!.moneyKnown, fmtCur(b.byDimension[d]!.money)),
             ),
         ],
         const _Sub('События и энергия'),
@@ -181,7 +181,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
     String detail(ResourceSummary s) => [
           'событий ${s.events}',
           if (s.minutesKnown > 0) fmtMinutes(s.minutes),
-          if (s.moneyKnown > 0) '${fmtCur(s.money)}',
+          if (s.moneyKnown > 0) fmtCur(s.money),
         ].join(' · ');
     return _Card(
       title: 'ПО ПРОЦЕССАМ',
@@ -197,7 +197,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
               label: titles[s.processId] ?? 'процесс удалён',
               value: s.summary.minutes,
               max: maxMin,
-              color: const Color(0xFF8A8A90), // одна нейтральная заливка: процесс опознаётся подписью, а не цветом
+              color: AppColors.muted, // одна нейтральная заливка: процесс опознаётся подписью, а не цветом
               text: detail(s.summary),
             ),
           ),

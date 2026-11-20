@@ -16,9 +16,10 @@ class AppColors {
   static const bodyChart = Color(0xFFD46E4E);
   static const mindChart = Color(0xFF6C85E6);
   static const materialChart = Color(0xFFA8863A);
-  // восстановление мышц (оценка): ступени светлоты тела — терракота на 78 % и 45 % пути от плитки
-  static const recoveryMid = Color(0xFFB55C42);
-  static const recoveryLow = Color(0xFF713D30);
+  // восстановление мышц (оценка): нагрузка «остывает» — свежая в полном тоне тела, дальше ступени темнее,
+  // но не ниже 3:1 на плитке, чтобы восстановленная мышца не пропадала с фигуры
+  static const recoveryMid = Color(0xFFBD5F45);
+  static const recoveryFull = Color(0xFF984F3A);
 
   // поверхности
   static const background = Color(0xFF000000);

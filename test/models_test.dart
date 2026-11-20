@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:life_os/core/theme.dart';
 import 'package:life_os/models/models.dart';
 
 MuscleGroup muscle({DateTime? at, double rh = 48}) => MuscleGroup(
@@ -20,6 +20,11 @@ void main() {
     test('середина периода — линейно', () => expect(muscle(at: t0).recoveryAt(t0.add(const Duration(hours: 24))), closeTo(0.575, 1e-9)));
     test('не тренировалась — 100%', () => expect(muscle().recoveryAt(t0), 1.0));
     test('не превышает 100%', () => expect(muscle(at: t0).recoveryAt(t0.add(const Duration(days: 30))), 1.0));
+    test('цвет: свежая нагрузка ярче всего, дальше гаснет', () {
+      expect(muscle(at: t0).colorAt(t0), AppColors.body);
+      expect(muscle(at: t0).colorAt(t0.add(const Duration(hours: 24))), AppColors.recoveryMid);
+      expect(muscle().colorAt(t0), AppColors.recoveryFull);
+    });
   });
 
   group('MuscleGroup JSON', () {
