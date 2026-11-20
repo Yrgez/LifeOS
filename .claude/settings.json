@@ -1,20 +1,41 @@
 {
-  "extraKnownMarketplaces": {
-    "ponytail": {
-      "source": {
-        "source": "github",
-        "repo": "DietrichGebert/ponytail"
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/ponytail-activate.js\"",
+            "timeout": 15
+          }
+        ]
       }
-    },
-    "dart-flutter": {
-      "source": {
-        "source": "github",
-        "repo": "flutter/agent-plugins"
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/ponytail-subagent.js\"",
+            "timeout": 15
+          }
+        ]
       }
-    }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/ponytail-mode-tracker.js\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
   },
-  "enabledPlugins": {
-    "ponytail@ponytail": true,
-    "dart-flutter@dart-flutter": true
-  }
+  "enabledMcpjsonServers": [
+    "dart"
+  ]
 }
