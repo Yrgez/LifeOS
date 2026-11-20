@@ -374,7 +374,7 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
             const SizedBox(height: 8),
             const Text(
               'Меньше $kExperimentMinDays дней с данными в периоде — по таким числам сравнивать рано.',
-              style: TextStyle(color: AppColors.amber, fontSize: 12),
+              style: TextStyle(color: AppColors.text, fontSize: 12),
             ),
           ],
         ],

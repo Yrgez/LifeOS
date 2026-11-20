@@ -77,7 +77,7 @@ class DualLineComparisonPainter extends CustomPainter {
 
     final pathA = Path(), pathB = Path();
     final dotA = Paint()..color = colorA, dotB = Paint()..color = colorB;
-    final labelStyle = const TextStyle(color: AppColors.muted, fontSize: 9);
+    const labelStyle = TextStyle(color: AppColors.muted, fontSize: 9);
 
     for (int i = 0; i < n; i++) {
       final x = padX + i * stepX;

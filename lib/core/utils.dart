@@ -1,5 +1,3 @@
-import 'dart:math';
-
 double clampD(double v, double lo, double hi) => v < lo ? lo : (v > hi ? hi : v);
 
 /// Поддержка запятой как десятичного разделителя (русская клавиатура).
@@ -48,41 +46,6 @@ double oneRM(double weight, int reps) {
   if (reps <= 1) return weight;
   if (reps <= 10) return weight * (36 / (37 - reps));
   return weight * (1 + reps / 30.0);
-}
-
-/// Корреляция Пирсона по выровненным хвостам рядов.
-double? pearson(List<double> a, List<double> b) {
-  final n = min(a.length, b.length);
-  if (n < 3) return null;
-  final x = a.sublist(a.length - n);
-  final y = b.sublist(b.length - n);
-  final mx = x.reduce((p, c) => p + c) / n;
-  final my = y.reduce((p, c) => p + c) / n;
-  double sxy = 0, sxx = 0, syy = 0;
-  for (int i = 0; i < n; i++) {
-    sxy += (x[i] - mx) * (y[i] - my);
-    sxx += (x[i] - mx) * (x[i] - mx);
-    syy += (y[i] - my) * (y[i] - my);
-  }
-  if (sxx == 0 || syy == 0) return null;
-  return sxy / sqrt(sxx * syy);
-}
-
-/// Приводит ряд к ровно 7 точкам (дополняет слева / обрезает слева).
-List<double> fit7(List<double> l) {
-  final r = List<double>.from(l);
-  while (r.length < 7) {
-    r.insert(0, r.isEmpty ? 0 : r.first);
-  }
-  return r.length > 7 ? r.sublist(r.length - 7) : r;
-}
-
-/// Добавляет точку в конец, держа длину ряда не больше 7.
-void push7(List<double> l, double v) {
-  l.add(v);
-  while (l.length > 7) {
-    l.removeAt(0);
-  }
 }
 
 /// Объём нагрузки для подписей: 850 → «850», 12 400 → «12.4 т».

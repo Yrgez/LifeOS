@@ -74,7 +74,7 @@ class AnatomicalSilhouettePainter extends CustomPainter {
   }
 
   void _paintMannequinBody(Canvas canvas) {
-    final framePaint = Paint()..color = const Color(0xFF13171F)..style = PaintingStyle.fill;
+    final framePaint = Paint()..color = AppColors.card..style = PaintingStyle.fill;
     final strokePaint = Paint()..color = Colors.white10..style = PaintingStyle.stroke..strokeWidth = 1.0;
 
     const headRect = Rect.fromLTWH(135, 12, 30, 38);
@@ -137,6 +137,6 @@ class AnatomicalSilhouettePainter extends CustomPainter {
   static Rect _focusRect(Rect r) => Rect.fromCenter(center: r.center, width: max(r.width, 48), height: max(r.height, 48));
 
   @override
-  bool shouldRebuildSemantics(covariant AnatomicalSilhouettePainter old) =>
-      old.isFront != isFront || old.selectedMuscleId != selectedMuscleId || !mapEquals(old.semanticLabels, semanticLabels);
+  bool shouldRebuildSemantics(covariant AnatomicalSilhouettePainter oldDelegate) =>
+      oldDelegate.isFront != isFront || oldDelegate.selectedMuscleId != selectedMuscleId || !mapEquals(oldDelegate.semanticLabels, semanticLabels);
 }

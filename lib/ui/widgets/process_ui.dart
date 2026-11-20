@@ -22,7 +22,7 @@ List<String> resourceLines(ResourceSummary s) {
   String part(int known, String value) => known == 0 ? 'не указано' : known == s.events ? value : '$value (указано в $known из ${s.events})';
   return [
     'Время: ${part(s.minutesKnown, fmtMinutes(s.minutes))}',
-    'Деньги: ${part(s.moneyKnown, '${fmtCur(s.money)}')}',
+    'Деньги: ${part(s.moneyKnown, fmtCur(s.money))}',
     'Энергия: ${s.energyKnown == 0 ? 'не указано' : [for (var i = 1; i <= 5; i++) if (s.energy[i] != null) '$i×${s.energy[i]}'].join(', ')}',
     // внимание показываем, только если его отмечали: пустая строка «не указано» здесь — шум
     if (s.attentionKnown > 0)
@@ -31,12 +31,8 @@ List<String> resourceLines(ResourceSummary s) {
   ];
 }
 
-Color processStatusColor(String s) => switch (s) {
-      ProcessStatus.active => AppColors.accent,
-      ProcessStatus.paused => AppColors.amber,
-      ProcessStatus.completed => AppColors.violet,
-      _ => AppColors.muted,
-    };
+/// Статус называет подпись; цветом выделен только идущий процесс.
+Color processStatusColor(String s) => s == ProcessStatus.active ? AppColors.accent : AppColors.muted;
 
 // ---------------- диалог процесса ----------------
 
@@ -106,11 +102,6 @@ class _ProcessDialogState extends State<_ProcessDialog> {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
       );
 
-  Widget _label(String t) => Padding(
-        padding: const EdgeInsets.only(top: 12, bottom: 6),
-        child: Text(t, style: const TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
-      );
-
   @override
   Widget build(BuildContext context) {
     final editing = widget.initial != null;
@@ -139,7 +130,7 @@ class _ProcessDialogState extends State<_ProcessDialog> {
                 decoration: _dec('Название'),
                 onChanged: (_) => setState(() {}),
               ),
-              _label('ИЗМЕРЕНИЯ'),
+              fieldLabel('ИЗМЕРЕНИЯ'),
               Wrap(
                 spacing: 8,
                 children: [
@@ -154,7 +145,7 @@ class _ProcessDialogState extends State<_ProcessDialog> {
                 ],
               ),
               if (!editing) ...[
-                _label('НАЧАЛО'),
+                fieldLabel('НАЧАЛО'),
                 OutlinedButton.icon(
                   onPressed: () async {
                     final d = await showDatePicker(context: context, initialDate: _start, firstDate: DateTime(1900), lastDate: widget.now);
@@ -165,7 +156,7 @@ class _ProcessDialogState extends State<_ProcessDialog> {
                 ),
               ],
               if (widget.goals.isNotEmpty) ...[
-                _label('СЛУЖИТ ЦЕЛЯМ'),
+                fieldLabel('СЛУЖИТ ЦЕЛЯМ'),
                 Wrap(
                   spacing: 6,
                   runSpacing: 4,
@@ -179,7 +170,7 @@ class _ProcessDialogState extends State<_ProcessDialog> {
                   ],
                 ),
               ],
-              _label('ОПИСАНИЕ'),
+              fieldLabel('ОПИСАНИЕ'),
               TextField(controller: _desc, maxLines: 3, maxLength: LifeProcess.maxDescription, decoration: _dec('Зачем, что считается результатом')),
               const SizedBox(height: 4),
               TextField(
@@ -194,7 +185,7 @@ class _ProcessDialogState extends State<_ProcessDialog> {
                 ),
                 onChanged: (_) => setState(() {}),
               ),
-              _label('РИТМ (НЕОБЯЗАТЕЛЬНО)'),
+              fieldLabel('РИТМ (НЕОБЯЗАТЕЛЬНО)'),
               Wrap(
                 crossAxisAlignment: WrapCrossAlignment.center,
                 spacing: 6,
@@ -395,7 +386,7 @@ class ProcessHeader extends StatelessWidget {
           if (p.goalIds.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: Text('→ ${p.goalIds.map((id) => goalTitles[id] ?? 'цель удалена').join(', ')}', style: const TextStyle(color: AppColors.violetText, fontSize: 11)),
+              child: Text('→ ${p.goalIds.map((id) => goalTitles[id] ?? 'цель удалена').join(', ')}', style: const TextStyle(color: AppColors.text, fontSize: 11)),
             ),
           if (p.rhythm != null) ...[
             const SizedBox(height: 10),

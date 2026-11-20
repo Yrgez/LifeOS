@@ -32,7 +32,7 @@ class ShieldCover extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Material(
-      color: Color(0xFF090B0E),
+      color: AppColors.background,
       child: Center(child: Icon(Icons.lock_outline, size: 48, color: Colors.white24)),
     );
   }
@@ -60,7 +60,7 @@ class _LockScreenState extends State<LockScreen> {
   Widget build(BuildContext context) {
     final lock = widget.lock;
     return Material(
-      color: const Color(0xFF090B0E),
+      color: AppColors.background,
       child: SafeArea(
         child: Center(
           child: Padding(
@@ -79,7 +79,7 @@ class _LockScreenState extends State<LockScreen> {
                 const Text('Подтвердите личность, чтобы продолжить', textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted, fontSize: 13)),
                 if (lock.message != null) ...[
                   const SizedBox(height: 14),
-                  Text(lock.message!, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.amber, fontSize: 12)),
+                  Text(lock.message!, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.text, fontSize: 12)),
                 ],
                 const SizedBox(height: 24),
                 ElevatedButton.icon(

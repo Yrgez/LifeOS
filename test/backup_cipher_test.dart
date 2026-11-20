@@ -43,7 +43,7 @@ void main() {
     });
 
     test('в отдельном изоляте', () async {
-      final iso = const BackupCipher(iterations: 1000, useIsolate: true);
+      const iso = BackupCipher(iterations: 1000, useIsolate: true);
       final enc = await iso.encrypt('в изоляте', pass);
       expect(await iso.decrypt(enc, pass), 'в изоляте');
     });

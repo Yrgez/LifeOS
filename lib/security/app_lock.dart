@@ -48,7 +48,6 @@ class AppLock extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   void attach() => WidgetsBinding.instance.addObserver(this);
-  void detach() => WidgetsBinding.instance.removeObserver(this);
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) => onLifecycle(state);
@@ -157,12 +156,6 @@ class AppLock extends ChangeNotifier with WidgetsBindingObserver {
     settings.screenProtection = value;
     await settings.save();
     await screen?.setSecure(value);
-    notifyListeners();
-  }
-
-  void clearMessage() {
-    if (_message == null) return;
-    _message = null;
     notifyListeners();
   }
 }

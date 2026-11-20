@@ -48,7 +48,7 @@ void main() {
     });
 
     test('обзор: одно напоминание в день, когда пора; нет обзоров — нет напоминаний', () {
-      ReminderPrefs on = const ReminderPrefs(review: true);
+      const ReminderPrefs on = ReminderPrefs(review: true);
       expect(planReminders(now: now, prefs: on, checkedDays: {}, bills: const [], reviewDueAt: now).single.at, DateTime(2026, 11, 18, 19));
       expect(planReminders(now: DateTime(2026, 11, 18, 20), prefs: on, checkedDays: {}, bills: const [], reviewDueAt: now).single.at,
           DateTime(2026, 11, 19, 19));

@@ -79,8 +79,8 @@ class _ComparisonCardState extends State<ComparisonCard> {
             children: [
               Expanded(
                 child: LabeledDropdown(
-                  label: 'Метрика A (Зеленый)',
-                  labelColor: AppColors.green,
+                  label: 'Метрика A (белая)',
+                  labelColor: AppColors.text,
                   value: _compareMetricA,
                   items: _metricNames,
                   onChanged: (v) => setState(() => _compareMetricA = v),
@@ -89,8 +89,8 @@ class _ComparisonCardState extends State<ComparisonCard> {
               const SizedBox(width: 12),
               Expanded(
                 child: LabeledDropdown(
-                  label: 'Метрика B (Бирюзовый)',
-                  labelColor: Colors.cyanAccent,
+                  label: 'Метрика B (серая)',
+                  labelColor: AppColors.muted,
                   value: _compareMetricB,
                   items: _metricNames,
                   onChanged: (v) => setState(() => _compareMetricB = v),
@@ -111,8 +111,8 @@ class _ComparisonCardState extends State<ComparisonCard> {
                     dataA: seriesA,
                     dataB: seriesB,
                     labels: labels,
-                    colorA: AppColors.green,
-                    colorB: Colors.cyanAccent,
+                    colorA: AppColors.text,
+                    colorB: AppColors.muted,
                     unitA: _metricUnits[_compareMetricA] ?? '',
                     unitB: _metricUnits[_compareMetricB] ?? '',
                   ),

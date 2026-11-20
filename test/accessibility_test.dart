@@ -90,7 +90,7 @@ void main() {
     });
   }
 
-  test('цвета текста контрастны (WCAG AA, 4.5:1) на всех поверхностях', () {
+  test('цвета контрастны: текст 4.5:1 на всех поверхностях, нарисованное 3:1 на плитке', () {
     double ratio(Color a, Color b) {
       final la = a.computeLuminance(), lb = b.computeLuminance();
       return (la > lb ? la + 0.05 : lb + 0.05) / (la > lb ? lb + 0.05 : la + 0.05);
@@ -101,17 +101,19 @@ void main() {
       'muted': AppColors.muted,
       'green': AppColors.green,
       'red': AppColors.red,
-      'amber': AppColors.amber,
       'body': AppColors.body,
       'mind': AppColors.mind,
       'material': AppColors.material,
-      'violetText': AppColors.violetText,
     };
     const surfaces = {'background': AppColors.background, 'card': AppColors.card, 'raised': AppColors.raised, 'field': AppColors.field};
     for (final t in texts.entries) {
       for (final s in surfaces.entries) {
         expect(ratio(t.value, s.value), greaterThanOrEqualTo(4.5), reason: '${t.key} на ${s.key}');
       }
+    }
+    // заливки графиков и ступени восстановления мышц (WCAG 1.4.11)
+    for (final g in [AppColors.bodyChart, AppColors.mindChart, AppColors.materialChart, AppColors.recoveryMid, AppColors.recoveryFull]) {
+      expect(ratio(g, AppColors.card), greaterThanOrEqualTo(3.0), reason: '$g');
     }
   });
 

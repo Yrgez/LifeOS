@@ -91,22 +91,22 @@ List<GraphNode> defaultGraphNodes() => [
       GraphNode(id: 'n_salary', label: 'ЗП: 380к', category: 'wealth', position: const Offset(0.53, 0.33)),
       GraphNode(id: 'n_capital', label: 'Капитал 2.45М', category: 'wealth', position: const Offset(0.78, 0.20)),
       GraphNode(id: 'n_cushion', label: 'Подушка 1М', category: 'wealth', position: const Offset(0.84, 0.46)),
-      GraphNode(id: 'n_sleep', label: 'Сон / Отдых', category: 'health', position: const Offset(0.53, 0.56), color: Colors.cyanAccent),
+      GraphNode(id: 'n_sleep', label: 'Сон / Отдых', category: 'health', position: const Offset(0.53, 0.56)),
       GraphNode(id: 'n_goal_bench', label: 'Цель: Жим 100', category: 'mind', position: const Offset(0.19, 0.75)),
       GraphNode(id: 'n_chest', label: 'Грудь (1RM 120)', category: 'gym', position: const Offset(0.44, 0.86)),
-      GraphNode(id: 'n_protein', label: 'Белок: 145г', category: 'health', position: const Offset(0.72, 0.74), color: Colors.cyanAccent),
-      GraphNode(id: 'n_activity', label: 'Шаги: 8.4k', category: 'health', position: const Offset(0.84, 0.90), color: Colors.cyanAccent),
+      GraphNode(id: 'n_protein', label: 'Белок: 145г', category: 'health', position: const Offset(0.72, 0.74)),
+      GraphNode(id: 'n_activity', label: 'Шаги: 8.4k', category: 'health', position: const Offset(0.84, 0.90)),
     ];
 
 List<GraphEdge> defaultGraphEdges() => [
-      GraphEdge('n_goal_salary', 'n_salary', kind: EdgeKind.supports, weight: 2),
-      GraphEdge('n_salary', 'n_capital', kind: EdgeKind.supports, weight: 3),
-      GraphEdge('n_capital', 'n_cushion', kind: EdgeKind.supports, weight: 2),
-      GraphEdge('n_goal_bench', 'n_chest', kind: EdgeKind.supports, weight: 2),
-      GraphEdge('n_chest', 'n_protein'),
-      GraphEdge('n_protein', 'n_activity'),
-      GraphEdge('n_sleep', 'n_chest', kind: EdgeKind.supports, weight: 2),
-      GraphEdge('n_sleep', 'n_salary', kind: EdgeKind.supports),
+      const GraphEdge('n_goal_salary', 'n_salary', kind: EdgeKind.supports, weight: 2),
+      const GraphEdge('n_salary', 'n_capital', kind: EdgeKind.supports, weight: 3),
+      const GraphEdge('n_capital', 'n_cushion', kind: EdgeKind.supports, weight: 2),
+      const GraphEdge('n_goal_bench', 'n_chest', kind: EdgeKind.supports, weight: 2),
+      const GraphEdge('n_chest', 'n_protein'),
+      const GraphEdge('n_protein', 'n_activity'),
+      const GraphEdge('n_sleep', 'n_chest', kind: EdgeKind.supports, weight: 2),
+      const GraphEdge('n_sleep', 'n_salary', kind: EdgeKind.supports),
     ];
 
 // ---------------- чистый старт (новая установка) ----------------

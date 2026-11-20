@@ -268,7 +268,7 @@ class _EventTile extends StatelessWidget {
     final versions = e.supersedesId == null ? 1 : controller.eventRevisions(e.id).length;
     final cost = [
       if (e.cost.minutes != null) '${e.cost.minutes} мин',
-      if (e.cost.money != null) '${fmtCur(e.cost.money!)}',
+      if (e.cost.money != null) fmtCur(e.cost.money!),
       if (e.cost.energy != null) 'энергия ${e.cost.energy}/5',
     ];
     return Container(
@@ -297,12 +297,12 @@ class _EventTile extends StatelessWidget {
                 if (e.goalIds.isNotEmpty)
                   Text(
                     '→ ${e.goalIds.map((id) => goalTitles[id] ?? 'цель удалена').join(', ')}',
-                    style: const TextStyle(color: AppColors.violetText, fontSize: 11),
+                    style: const TextStyle(color: AppColors.text, fontSize: 11),
                   ),
                 if (e.processIds.isNotEmpty)
                   Text(
                     '⟳ ${e.processIds.map((id) => processTitles[id] ?? 'процесс удалён').join(', ')}',
-                    style: const TextStyle(color: AppColors.amber, fontSize: 11),
+                    style: const TextStyle(color: AppColors.muted, fontSize: 11),
                   ),
                 if (e.note.isNotEmpty)
                   Padding(

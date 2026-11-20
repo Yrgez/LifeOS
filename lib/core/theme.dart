@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 
 /// Палитра: практичный минимализм — чёрный фон, тёмно-серые плитки, белые акценты.
-/// Цвет остаётся только там, где несёт смысл: измерения жизни, доход/расход, предупреждения.
+/// Цвет остаётся только там, где несёт смысл: измерения жизни и «плюс / минус» (доход/расход, рост/падение).
 class AppColors {
   // смысловые цвета (не для украшения)
   static const green = Color(0xFF00E676);
-  static const violet = Color(0xFF7C4DFF);
-  static const violetText = Color(0xFFA78BFF); // фиолетовый для текста: контраст на плитке 6.8:1 (violet — лишь 3.8:1)
   static const red = Color(0xFFFF3D71);
-  static const amber = Color(0xFFFFB300);
 
   // измерения жизни — на круге Иттена синий против расщеплённого оранжевого (красно- и жёлто-оранжевый), приглушены и выровнены по светлоте:
   // тёплое (близкое, телесное) — тело, холодное (даль, дух) — разум, охра (земля, золото) — материальное
@@ -19,9 +16,10 @@ class AppColors {
   static const bodyChart = Color(0xFFD46E4E);
   static const mindChart = Color(0xFF6C85E6);
   static const materialChart = Color(0xFFA8863A);
-  // восстановление мышц (оценка): ступени светлоты тела — терракота на 78 % и 45 % пути от плитки
-  static const recoveryMid = Color(0xFFB55C42);
-  static const recoveryLow = Color(0xFF713D30);
+  // восстановление мышц (оценка): нагрузка «остывает» — свежая в полном тоне тела, дальше ступени темнее,
+  // но не ниже 3:1 на плитке, чтобы восстановленная мышца не пропадала с фигуры
+  static const recoveryMid = Color(0xFFBD5F45);
+  static const recoveryFull = Color(0xFF984F3A);
 
   // поверхности
   static const background = Color(0xFF000000);
@@ -30,6 +28,7 @@ class AppColors {
   static const raised = Color(0xFF1C1C1E); // плавающая панель, меню, тосты
   static const field = Color(0xFF0B0B0C); // поля ввода
   static const border = Color(0x14FFFFFF); // 8% белого — тонкая рамка плиток
+  static const track = Color(0xFF2A2A2E); // дорожка прогресса, пустое кольцо — нейтральный серый, без синевы
 
   // текст и акцент
   static const text = Color(0xFFF2F2F2);
@@ -55,7 +54,7 @@ ThemeData buildAppTheme() {
   const scheme = ColorScheme.dark(
     primary: AppColors.accent,
     onPrimary: Colors.black,
-    secondary: AppColors.violet,
+    secondary: AppColors.accent,
     surface: AppColors.card,
     onSurface: AppColors.text,
     error: AppColors.red,
@@ -152,10 +151,10 @@ ThemeData buildAppTheme() {
       actionTextColor: AppColors.text,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16))),
     ),
-    progressIndicatorTheme: const ProgressIndicatorThemeData(color: AppColors.accent, linearTrackColor: Color(0xFF2A2A2E)),
+    progressIndicatorTheme: const ProgressIndicatorThemeData(color: AppColors.accent, linearTrackColor: AppColors.track),
     switchTheme: SwitchThemeData(
       thumbColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? Colors.black : AppColors.muted),
-      trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? AppColors.accent : const Color(0xFF2A2A2E)),
+      trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? AppColors.accent : AppColors.track),
     ),
   );
 }

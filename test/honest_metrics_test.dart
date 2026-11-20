@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_os/core/recovery_stats.dart';
 import 'package:life_os/data/app_data.dart';

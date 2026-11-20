@@ -49,10 +49,6 @@ extension EventOps on AppController {
   /// Что уже вложено в цель: ресурсы, число событий (напрямую / через процессы), затронутые измерения.
   GoalFact goalFactOf(String goalId) => goalFact(goalId, events, _d.processes);
 
-  /// Сводка ресурсов за период [from, to) по актуальным событиям.
-  ResourceSummary resourceSummary({required DateTime from, required DateTime to, String? dimension}) =>
-      summarizeResources(events, from: from, to: to, dimension: dimension);
-
   /// Распределение ресурсов за [days] дней, заканчивающихся сегодня: по измерениям, процессам, с прошлым периодом.
   ResourceBreakdown resourceBreakdownFor(int days) =>
       resourceBreakdown(current: events, transactions: _d.transactions, now: _clock(), days: days);
@@ -288,7 +284,7 @@ extension EventOps on AppController {
     final now = _clock();
     if (reviewDue(events, now)) return now;
     final last = lastReview(events);
-    return last == null ? null : last.at.add(const Duration(days: reviewEveryDays));
+    return last?.at.add(const Duration(days: reviewEveryDays));
   }
 
   /// Сохраняет обзор событием вида «обзор» и применяет решения по процессам (новый статус с пометкой).

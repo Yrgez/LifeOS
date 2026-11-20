@@ -30,7 +30,7 @@ class BodyMetrics extends StatelessWidget {
       actionLabel: 'Записать',
       fields: [
         FieldSpec('w', 'Вес, кг', numeric: true, initial: last == null ? '' : trimNum(last.kg)),
-        FieldSpec('d', 'Дата (дд.мм.гггг, пусто — сегодня)', initial: ''),
+        const FieldSpec('d', 'Дата (дд.мм.гггг, пусто — сегодня)', initial: ''),
       ],
       validate: (v) {
         final kg = parseNum(v['w']!);

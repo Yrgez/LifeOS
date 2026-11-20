@@ -24,9 +24,6 @@ class BodyMapSelection extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Повернуть спиной/лицом; выбирается мышца по умолчанию для ракурса.
-  void flip() => setFront(!showFront);
-
   void setFront(bool front) {
     showFront = front;
     muscleId = front ? 'chest' : 'lats';

@@ -8,7 +8,6 @@ import '../../models/life_event.dart';
 import '../../models/models.dart';
 import '../../state/app_controller.dart';
 import '../screens/events_screen.dart';
-import 'event_dialog.dart';
 import 'form_dialog.dart';
 import 'process_ui.dart';
 
@@ -175,7 +174,7 @@ class GoalCard extends StatelessWidget {
                 padding: const EdgeInsets.only(right: 12),
                 child: LinearProgressIndicator(
                   value: goal.progress,
-                  backgroundColor: const Color(0xFF222834),
+                  backgroundColor: AppColors.track,
                   valueColor: AlwaysStoppedAnimation(goal.isComplete ? AppColors.accent : AppColors.muted),
                   minHeight: 6,
                   borderRadius: BorderRadius.circular(4),
@@ -199,21 +198,15 @@ class GoalCard extends StatelessWidget {
   Widget _deadline() {
     final d = goal.deadline!;
     final left = dayIndex(d) - dayIndex(c.now);
-    String text;
-    Color color;
-    if (goal.isComplete) {
-      text = 'Срок: ${fmtDate(d)}';
-      color = AppColors.muted;
-    } else if (left < 0) {
-      text = 'Просрочено на ${-left} дн. • ${fmtDate(d)}';
-      color = AppColors.red;
-    } else if (left == 0) {
-      text = 'Срок — сегодня';
-      color = AppColors.amber;
-    } else {
-      text = 'Осталось $left дн. • ${fmtDate(d)}';
-      color = left <= 7 ? AppColors.amber : AppColors.muted;
-    }
+    final text = goal.isComplete
+        ? 'Срок: ${fmtDate(d)}'
+        : left < 0
+            ? 'Просрочено на ${-left} дн. • ${fmtDate(d)}'
+            : left == 0
+                ? 'Срок — сегодня'
+                : 'Осталось $left дн. • ${fmtDate(d)}';
+    // близкий или прошедший срок — белым, остальное серым: смысл несут слова, а не цвет
+    final color = !goal.isComplete && left <= 7 ? AppColors.text : AppColors.muted;
     return Padding(
       padding: const EdgeInsets.only(top: 4),
       child: Row(
@@ -276,7 +269,7 @@ class GoalCard extends StatelessWidget {
                       value: (current / link.target).clamp(0.0, 1.0),
                       minHeight: 3,
                       borderRadius: BorderRadius.circular(2),
-                      backgroundColor: const Color(0xFF222834),
+                      backgroundColor: AppColors.track,
                       valueColor: const AlwaysStoppedAnimation(AppColors.text),
                     ),
                   ],
@@ -326,7 +319,7 @@ class GoalResources extends StatelessWidget {
           if (f.dimensions.isNotEmpty)
             Text('Затрагивает: ${f.dimensions.map((d) => LifeDimension.labels[d]).join(' + ')}', style: const TextStyle(color: AppColors.muted, fontSize: 11)),
           if (f.processIds.isNotEmpty)
-            Text('Процессы: ${f.processIds.map((id) => titles[id]).join(', ')}', style: const TextStyle(color: AppColors.amber, fontSize: 11)),
+            Text('Процессы: ${f.processIds.map((id) => titles[id]).join(', ')}', style: const TextStyle(color: AppColors.muted, fontSize: 11)),
           if (plan?.minutes != null || r.minutesKnown > 0)
             _PlanRow(
               label: 'Время',
@@ -337,8 +330,8 @@ class GoalResources extends StatelessWidget {
           if (plan?.money != null || r.moneyKnown > 0)
             _PlanRow(
               label: 'Деньги',
-              fact: r.moneyKnown == 0 ? 'не указано' : known(r.moneyKnown, '${fmtCur(r.money)}'),
-              plan: plan?.money == null ? null : '${fmtCur(plan!.money!)}',
+              fact: r.moneyKnown == 0 ? 'не указано' : known(r.moneyKnown, fmtCur(r.money)),
+              plan: plan?.money == null ? null : fmtCur(plan!.money!),
               ratio: plan?.money == null ? null : r.money / plan!.money!,
             ),
           if (r.events > 0)
@@ -384,7 +377,7 @@ class _PlanRow extends StatelessWidget {
                 minHeight: 6,
                 borderRadius: BorderRadius.circular(4),
                 backgroundColor: Colors.white.withValues(alpha: 0.05),
-                valueColor: AlwaysStoppedAnimation(dimensionChartColor(LifeDimension.mind)),
+                valueColor: const AlwaysStoppedAnimation(AppColors.text),
               ),
             ),
         ],
