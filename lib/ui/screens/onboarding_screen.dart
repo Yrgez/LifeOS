@@ -97,7 +97,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             margin: const EdgeInsets.symmetric(horizontal: 3),
                             width: i == _page ? 18 : 6,
                             height: 6,
-                            decoration: BoxDecoration(color: i == _page ? AppColors.green : Colors.white24, borderRadius: BorderRadius.circular(3)),
+                            decoration: BoxDecoration(color: i == _page ? AppColors.accent : Colors.white24, borderRadius: BorderRadius.circular(3)),
                           ),
                       ],
                     ),
@@ -126,8 +126,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: AppColors.green.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(16)),
-            child: Icon(icon, color: AppColors.green, size: 28),
+            decoration: BoxDecoration(color: AppColors.accent.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(16)),
+            child: Icon(icon, color: AppColors.accent, size: 28),
           ),
           const SizedBox(height: 18),
           Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
@@ -189,7 +189,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           if (c.healthSupported) ...[
             OutlinedButton.icon(
               onPressed: c.healthSyncing ? null : () => syncHealthWithToast(context, c),
-              style: OutlinedButton.styleFrom(foregroundColor: AppColors.green, side: const BorderSide(color: AppColors.green), minimumSize: const Size(double.infinity, 44)),
+              style: OutlinedButton.styleFrom(foregroundColor: AppColors.accent, side: const BorderSide(color: AppColors.accent), minimumSize: const Size(double.infinity, 44)),
               icon: Icon(c.healthEnabled ? Icons.check_circle : Icons.monitor_heart, size: 18),
               label: Text(c.healthEnabled ? 'Health Connect подключён' : 'Подключить Health Connect'),
             ),
@@ -204,8 +204,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Wrap(
               spacing: 8,
               children: [
-                ChoiceChip(label: const Text('Чистый старт'), selected: !_demo, selectedColor: AppColors.green.withValues(alpha: 0.3), onSelected: (_) => setState(() => _demo = false)),
-                ChoiceChip(label: const Text('Примеры данных'), selected: _demo, selectedColor: AppColors.green.withValues(alpha: 0.3), onSelected: (_) => setState(() => _demo = true)),
+                ChoiceChip(label: const Text('Чистый старт'), selected: !_demo, selectedColor: AppColors.accent.withValues(alpha: 0.3), onSelected: (_) => setState(() => _demo = false)),
+                ChoiceChip(label: const Text('Примеры данных'), selected: _demo, selectedColor: AppColors.accent.withValues(alpha: 0.3), onSelected: (_) => setState(() => _demo = true)),
               ],
             ),
             const SizedBox(height: 8),

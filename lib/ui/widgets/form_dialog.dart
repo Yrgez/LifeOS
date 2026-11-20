@@ -18,7 +18,7 @@ Future<Map<String, String>?> showFormDialog(
   required String title,
   required List<FieldSpec> fields,
   required String actionLabel,
-  Color accent = AppColors.green,
+  Color accent = AppColors.accent,
   Color actionTextColor = Colors.black,
   bool Function(Map<String, String>)? validate,
 }) {

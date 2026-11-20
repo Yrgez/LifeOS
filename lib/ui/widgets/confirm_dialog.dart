@@ -19,7 +19,7 @@ Future<bool> confirmDialog(
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена', style: TextStyle(color: AppColors.muted))),
         ElevatedButton(
-          style: ElevatedButton.styleFrom(backgroundColor: danger ? AppColors.red : AppColors.green),
+          style: ElevatedButton.styleFrom(backgroundColor: danger ? AppColors.red : AppColors.accent),
           onPressed: () => Navigator.pop(ctx, true),
           child: Text(confirmLabel, style: TextStyle(color: danger ? Colors.white : Colors.black, fontWeight: FontWeight.bold)),
         ),

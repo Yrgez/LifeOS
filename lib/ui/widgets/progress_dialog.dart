@@ -16,7 +16,7 @@ Future<T> runWithProgress<T>(BuildContext context, String message, Future<T> Fun
         backgroundColor: AppColors.card,
         content: Row(
           children: [
-            const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.green)),
+            const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.accent)),
             const SizedBox(width: 16),
             Expanded(child: Text(message, style: const TextStyle(fontSize: 14))),
           ],

@@ -109,11 +109,11 @@ class _JournalScreenState extends State<JournalScreen> {
         margin: const EdgeInsets.only(right: 8),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: active ? AppColors.green.withValues(alpha: 0.18) : AppColors.card,
+          color: active ? AppColors.accent.withValues(alpha: 0.18) : AppColors.card,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: active ? AppColors.green : Colors.white12),
+          border: Border.all(color: active ? AppColors.accent : Colors.white12),
         ),
-        child: Text(label, style: TextStyle(color: active ? AppColors.green : Colors.white60, fontSize: 11, fontWeight: active ? FontWeight.bold : FontWeight.normal)),
+        child: Text(label, style: TextStyle(color: active ? AppColors.accent : Colors.white60, fontSize: 11, fontWeight: active ? FontWeight.bold : FontWeight.normal)),
       ),
     );
   }
@@ -155,7 +155,7 @@ class _JournalScreenState extends State<JournalScreen> {
                 options: const {false: '7 дн', true: '8 нед'},
                 value: _weekly,
                 onChanged: (v) => setState(() => _weekly = v),
-                activeColor: AppColors.green,
+                activeColor: AppColors.accent,
                 fontSize: 10,
                 segmentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               ),
@@ -201,7 +201,7 @@ class _JournalScreenState extends State<JournalScreen> {
                         minHeight: 6,
                         borderRadius: BorderRadius.circular(3),
                         backgroundColor: const Color(0xFF222834),
-                        valueColor: const AlwaysStoppedAnimation(AppColors.green),
+                        valueColor: const AlwaysStoppedAnimation(AppColors.bodyChart),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -236,7 +236,7 @@ class _JournalScreenState extends State<JournalScreen> {
           const SizedBox(height: 8),
           ChartSemantics(
             label: 'Прогрессия 1RM, кг: ${describeSeries(series)}',
-            child: SizedBox(height: 70, width: double.infinity, child: CustomPaint(painter: MiniSparklinePainter(data: series, color: m?.color ?? AppColors.green))),
+            child: SizedBox(height: 70, width: double.infinity, child: CustomPaint(painter: MiniSparklinePainter(data: series, color: AppColors.bodyChart))),
           ),
           const SizedBox(height: 8),
           Text(

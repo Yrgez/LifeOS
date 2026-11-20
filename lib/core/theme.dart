@@ -10,7 +10,7 @@ class AppColors {
   static const red = Color(0xFFFF3D71);
   static const amber = Color(0xFFFFB300);
 
-  // измерения жизни — основная триада Иттена, приглушённая и выровненная по светлоте:
+  // измерения жизни — на круге Иттена синий против расщеплённого оранжевого (красно- и жёлто-оранжевый), приглушены и выровнены по светлоте:
   // тёплое (близкое, телесное) — тело, холодное (даль, дух) — разум, охра (земля, золото) — материальное
   static const body = Color(0xFFE2704F);
   static const mind = Color(0xFF7E9BFF);
@@ -19,6 +19,9 @@ class AppColors {
   static const bodyChart = Color(0xFFD46E4E);
   static const mindChart = Color(0xFF6C85E6);
   static const materialChart = Color(0xFFA8863A);
+  // восстановление мышц (оценка): ступени светлоты тела — терракота на 78 % и 45 % пути от плитки
+  static const recoveryMid = Color(0xFFB55C42);
+  static const recoveryLow = Color(0xFF713D30);
 
   // поверхности
   static const background = Color(0xFF000000);

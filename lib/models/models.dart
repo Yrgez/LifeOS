@@ -137,9 +137,10 @@ class MuscleGroup {
   /// Детерминированный цвет для тестов.
   Color colorAt(DateTime now) {
     final r = recoveryAt(now);
-    if (r >= 0.8) return AppColors.green;
-    if (r >= 0.45) return AppColors.amber;
-    return AppColors.red;
+    // ступени светлоты одного тона, а не светофор: восстановление — оценка, а не приговор «плохо»
+    if (r >= 0.8) return AppColors.body;
+    if (r >= 0.45) return AppColors.recoveryMid;
+    return AppColors.recoveryLow;
   }
 
   Map<String, dynamic> toJson() => {

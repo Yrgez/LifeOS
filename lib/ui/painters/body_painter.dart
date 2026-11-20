@@ -42,7 +42,7 @@ class AnatomicalSilhouettePainter extends CustomPainter {
       final key = entry.key;
       final path = entry.value;
       final isSelected = key == selectedMuscleId;
-      final color = muscles[key]?.color ?? AppColors.green;
+      final color = muscles[key]?.color ?? AppColors.muted;
 
       canvas.drawPath(
         path,
