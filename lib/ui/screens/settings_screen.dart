@@ -170,8 +170,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (p.any && !r.permitted)
         ListTile(
           key: const ValueKey('reminders_denied'),
-          leading: const Icon(Icons.notifications_off_outlined, color: AppColors.amber, size: 20),
-          title: const Text('Уведомления запрещены', style: TextStyle(fontSize: 14, color: AppColors.amber)),
+          leading: const Icon(Icons.notifications_off_outlined, color: AppColors.text, size: 20),
+          title: const Text('Уведомления запрещены', style: TextStyle(fontSize: 14, color: AppColors.text)),
           subtitle: const Text('Разрешите их — или в настройках Android для LIFE OS', style: TextStyle(color: AppColors.muted, fontSize: 11)),
           trailing: TextButton(onPressed: r.requestPermission, child: const Text('Разрешить')),
         )
@@ -248,7 +248,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 8),
             Text(status, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-            if (b.error != null) Text('Не получилось: ${b.error}', style: const TextStyle(color: AppColors.amber, fontSize: 12)),
+            if (b.error != null) Text('Не получилось: ${b.error}', style: const TextStyle(color: AppColors.text, fontSize: 12)),
           ],
         ),
       ),

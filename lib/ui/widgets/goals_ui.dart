@@ -8,7 +8,6 @@ import '../../models/life_event.dart';
 import '../../models/models.dart';
 import '../../state/app_controller.dart';
 import '../screens/events_screen.dart';
-import 'event_dialog.dart';
 import 'form_dialog.dart';
 import 'process_ui.dart';
 
@@ -175,7 +174,7 @@ class GoalCard extends StatelessWidget {
                 padding: const EdgeInsets.only(right: 12),
                 child: LinearProgressIndicator(
                   value: goal.progress,
-                  backgroundColor: const Color(0xFF222834),
+                  backgroundColor: AppColors.track,
                   valueColor: AlwaysStoppedAnimation(goal.isComplete ? AppColors.accent : AppColors.muted),
                   minHeight: 6,
                   borderRadius: BorderRadius.circular(4),
@@ -209,10 +208,10 @@ class GoalCard extends StatelessWidget {
       color = AppColors.red;
     } else if (left == 0) {
       text = 'Срок — сегодня';
-      color = AppColors.amber;
+      color = AppColors.text;
     } else {
       text = 'Осталось $left дн. • ${fmtDate(d)}';
-      color = left <= 7 ? AppColors.amber : AppColors.muted;
+      color = left <= 7 ? AppColors.text : AppColors.muted;
     }
     return Padding(
       padding: const EdgeInsets.only(top: 4),
@@ -276,7 +275,7 @@ class GoalCard extends StatelessWidget {
                       value: (current / link.target).clamp(0.0, 1.0),
                       minHeight: 3,
                       borderRadius: BorderRadius.circular(2),
-                      backgroundColor: const Color(0xFF222834),
+                      backgroundColor: AppColors.track,
                       valueColor: const AlwaysStoppedAnimation(AppColors.text),
                     ),
                   ],
@@ -326,7 +325,7 @@ class GoalResources extends StatelessWidget {
           if (f.dimensions.isNotEmpty)
             Text('Затрагивает: ${f.dimensions.map((d) => LifeDimension.labels[d]).join(' + ')}', style: const TextStyle(color: AppColors.muted, fontSize: 11)),
           if (f.processIds.isNotEmpty)
-            Text('Процессы: ${f.processIds.map((id) => titles[id]).join(', ')}', style: const TextStyle(color: AppColors.amber, fontSize: 11)),
+            Text('Процессы: ${f.processIds.map((id) => titles[id]).join(', ')}', style: const TextStyle(color: AppColors.muted, fontSize: 11)),
           if (plan?.minutes != null || r.minutesKnown > 0)
             _PlanRow(
               label: 'Время',
@@ -384,7 +383,7 @@ class _PlanRow extends StatelessWidget {
                 minHeight: 6,
                 borderRadius: BorderRadius.circular(4),
                 backgroundColor: Colors.white.withValues(alpha: 0.05),
-                valueColor: AlwaysStoppedAnimation(dimensionChartColor(LifeDimension.mind)),
+                valueColor: const AlwaysStoppedAnimation(AppColors.text),
               ),
             ),
         ],

@@ -609,7 +609,7 @@ class _GraphScreenState extends State<GraphScreen> {
     final title = c.refTitle(ref);
     final kind = ref.type == NodeRef.process ? 'Процесс' : 'Цель';
     if (title == null) {
-      return Text('$kind удалён(а) — узел хранит последнее название', style: const TextStyle(color: AppColors.amber, fontSize: 12));
+      return Text('$kind удалён(а) — узел хранит последнее название', style: const TextStyle(color: AppColors.muted, fontSize: 12));
     }
     final open = ref.type == NodeRef.process
         ? EventsScreen(controller: c, processId: ref.id)

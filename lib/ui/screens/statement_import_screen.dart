@@ -242,7 +242,7 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
         if (!_mapping.isComplete)
           const Padding(
             padding: EdgeInsets.only(top: 4),
-            child: Text('Выберите колонку даты и суммы.', style: TextStyle(color: AppColors.amber, fontSize: 12)),
+            child: Text('Выберите колонку даты и суммы.', style: TextStyle(color: AppColors.text, fontSize: 12)),
           ),
       ];
 
@@ -275,7 +275,7 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
               Text('Уже загружены раньше — пропускаются: ${p.duplicates.length}', style: const TextStyle(color: AppColors.muted, fontSize: 13)),
             if (p.parsed.rejected.isNotEmpty) ...[
               const SizedBox(height: 6),
-              Text('Не распознано строк: ${p.parsed.rejected.length}', style: const TextStyle(color: AppColors.amber, fontSize: 13)),
+              Text('Не распознано строк: ${p.parsed.rejected.length}', style: const TextStyle(color: AppColors.text, fontSize: 13)),
               for (final r in p.parsed.rejected.take(5))
                 Text('строка ${r.line}: ${r.reason}', style: const TextStyle(color: AppColors.muted, fontSize: 12)),
               if (p.parsed.rejected.length > 5) Text('…и ещё ${p.parsed.rejected.length - 5}', style: const TextStyle(color: AppColors.muted, fontSize: 12)),
@@ -351,7 +351,7 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
           onChanged: (_) => setState(() {}),
         ),
         if (!fits)
-          Text('Не помещается в журнал: свободно ${c.transactionCapacityLeft}', style: const TextStyle(color: AppColors.amber, fontSize: 12)),
+          Text('Не помещается в журнал: свободно ${c.transactionCapacityLeft}', style: const TextStyle(color: AppColors.text, fontSize: 12)),
         const SizedBox(height: 12),
         FilledButton(
           key: const ValueKey('import_run'),

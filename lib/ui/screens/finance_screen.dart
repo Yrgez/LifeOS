@@ -411,7 +411,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
               value: value,
               minHeight: 6,
               borderRadius: BorderRadius.circular(3),
-              backgroundColor: const Color(0xFF222834),
+              backgroundColor: AppColors.track,
               valueColor: AlwaysStoppedAnimation(color),
             ),
           ),

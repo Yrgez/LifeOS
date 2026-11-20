@@ -197,12 +197,12 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
               label: titles[s.processId] ?? 'процесс удалён',
               value: s.summary.minutes,
               max: maxMin,
-              color: const Color(0xFF7A8699), // одна нейтральная заливка: процесс опознаётся подписью, а не цветом
+              color: const Color(0xFF8A8A90), // одна нейтральная заливка: процесс опознаётся подписью, а не цветом
               text: detail(s.summary),
             ),
           ),
         if (b.withoutProcess.events > 0 && b.byProcess.isNotEmpty)
-          _Bar(label: 'Вне процессов', value: b.withoutProcess.minutes, max: maxMin, color: const Color(0xFF4A5261), text: detail(b.withoutProcess)),
+          _Bar(label: 'Вне процессов', value: b.withoutProcess.minutes, max: maxMin, color: const Color(0xFF4C4C52), text: detail(b.withoutProcess)),
         if (b.byProcess.isNotEmpty)
           const Padding(
             padding: EdgeInsets.only(top: 6),

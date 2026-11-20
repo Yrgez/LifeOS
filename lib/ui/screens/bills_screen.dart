@@ -12,12 +12,12 @@ import '../widgets/confirm_dialog.dart';
 import '../widgets/form_dialog.dart';
 import '../widgets/toast.dart';
 
-/// Строка срока: «Интернет · 650 ₽ · завтра». Просрочка — цветом предупреждения и словами.
+/// Строка срока: «Интернет · 650 ₽ · завтра». Просрочка — словами и белым текстом вместо серого.
 Widget billDueLine(Bill b, DateTime due, DateTime now, {TextStyle? style}) {
   final overdue = daysUntil(due, now) < 0;
   return Text(
     [if (b.amount != null) fmtCur(b.amount!), '${fmtDate(due)} · ${dueLabel(due, now)}'].join(' · '),
-    style: (style ?? const TextStyle(fontSize: 13)).copyWith(color: overdue ? AppColors.amber : AppColors.muted),
+    style: (style ?? const TextStyle(fontSize: 13)).copyWith(color: overdue ? AppColors.text : AppColors.muted),
   );
 }
 

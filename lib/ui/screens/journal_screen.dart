@@ -200,7 +200,7 @@ class _JournalScreenState extends State<JournalScreen> {
                         value: total <= 0 ? 0 : e.value / byMuscle.first.value,
                         minHeight: 6,
                         borderRadius: BorderRadius.circular(3),
-                        backgroundColor: const Color(0xFF222834),
+                        backgroundColor: AppColors.track,
                         valueColor: const AlwaysStoppedAnimation(AppColors.bodyChart),
                       ),
                     ),

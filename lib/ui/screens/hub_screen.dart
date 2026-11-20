@@ -338,7 +338,7 @@ class _RingPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 3
       ..strokeCap = StrokeCap.round;
-    canvas.drawArc(rect.deflate(2), 0, 6.2832, false, p..color = const Color(0xFF2A2A2E));
+    canvas.drawArc(rect.deflate(2), 0, 6.2832, false, p..color = AppColors.track);
     if (fraction > 0) canvas.drawArc(rect.deflate(2), -1.5708, 6.2832 * fraction.clamp(0.0, 1.0), false, p..color = AppColors.text);
   }
 
@@ -689,7 +689,7 @@ class _BackupReminder extends StatelessWidget {
               onTap: open,
               child: Row(
                 children: [
-                  const Icon(Icons.backup_outlined, color: AppColors.amber),
+                  const Icon(Icons.backup_outlined, color: AppColors.text),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(

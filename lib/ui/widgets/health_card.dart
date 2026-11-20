@@ -94,9 +94,9 @@ class _HealthCardState extends State<HealthCard> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // равные доли ширины: на узком экране колонки переносят текст, а не вылезают за край
-              Expanded(child: _MetricCol('Шаги', fmtMoney(c.dailySteps), 'Цель: ${fmtMoney(c.stepsGoal)}', Colors.cyanAccent)),
-              Expanded(child: _MetricCol('Активность', '${c.activeCalories} ккал', 'Калории', Colors.orangeAccent)),
-              Expanded(child: _MetricCol('Белок', '${c.proteinGrams}г', 'Норма: ${c.proteinGoal}г', Colors.greenAccent)),
+              Expanded(child: _MetricCol('Шаги', fmtMoney(c.dailySteps), 'Цель: ${fmtMoney(c.stepsGoal)}', AppColors.body)),
+              Expanded(child: _MetricCol('Активность', '${c.activeCalories} ккал', 'Калории', AppColors.body)),
+              Expanded(child: _MetricCol('Белок', '${c.proteinGrams}г', 'Норма: ${c.proteinGoal}г', AppColors.body)),
             ],
           ),
           const SizedBox(height: 14),
@@ -115,7 +115,7 @@ class _HealthCardState extends State<HealthCard> {
             child: SizedBox(
               height: 48,
               width: double.infinity,
-              child: CustomPaint(painter: MiniSparklinePainter(data: c.stepsWeekHistory, color: Colors.cyanAccent)),
+              child: CustomPaint(painter: MiniSparklinePainter(data: c.stepsWeekHistory, color: AppColors.bodyChart)),
             ),
           ),
         ],

@@ -33,8 +33,8 @@ List<String> resourceLines(ResourceSummary s) {
 
 Color processStatusColor(String s) => switch (s) {
       ProcessStatus.active => AppColors.accent,
-      ProcessStatus.paused => AppColors.amber,
-      ProcessStatus.completed => AppColors.violet,
+      ProcessStatus.paused => AppColors.muted,
+      ProcessStatus.completed => AppColors.muted,
       _ => AppColors.muted,
     };
 
@@ -395,7 +395,7 @@ class ProcessHeader extends StatelessWidget {
           if (p.goalIds.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: Text('→ ${p.goalIds.map((id) => goalTitles[id] ?? 'цель удалена').join(', ')}', style: const TextStyle(color: AppColors.violetText, fontSize: 11)),
+              child: Text('→ ${p.goalIds.map((id) => goalTitles[id] ?? 'цель удалена').join(', ')}', style: const TextStyle(color: AppColors.text, fontSize: 11)),
             ),
           if (p.rhythm != null) ...[
             const SizedBox(height: 10),

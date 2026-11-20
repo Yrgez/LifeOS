@@ -74,7 +74,7 @@ class AnatomicalSilhouettePainter extends CustomPainter {
   }
 
   void _paintMannequinBody(Canvas canvas) {
-    final framePaint = Paint()..color = const Color(0xFF13171F)..style = PaintingStyle.fill;
+    final framePaint = Paint()..color = AppColors.card..style = PaintingStyle.fill;
     final strokePaint = Paint()..color = Colors.white10..style = PaintingStyle.stroke..strokeWidth = 1.0;
 
     const headRect = Rect.fromLTWH(135, 12, 30, 38);
