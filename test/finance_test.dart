@@ -153,7 +153,7 @@ void main() {
       expect(c.transactions.map((t) => t.amount), [2, 3, 1]);
     });
 
-    test('лимит операций: старейшие удаляются, капитал не трогается', () async {
+    test('лимит операций: сверх предела операция не принимается, старые и капитал не трогаются', () async {
       final data = AppData.defaults(now: now);
       for (int i = 0; i < kMaxTransactions; i++) {
         data.transactions.add(tx(DateTime(2020, 1, 1).add(Duration(minutes: i)), 1, id: 'old$i'));
@@ -162,10 +162,10 @@ void main() {
       final c = AppController(repo, clock: () => now, saveDelay: Duration.zero);
       await c.load();
       final w0 = c.netWorth;
-      c.addTransaction(categoryId: 'food', amount: 10);
+      expect(c.addTransaction(categoryId: 'food', amount: 10), isFalse);
       expect(c.transactions.length, kMaxTransactions);
-      expect(c.transactions.any((t) => t.id == 'old0'), isFalse);
-      expect(c.netWorth, w0 - 10);
+      expect(c.transactions.any((t) => t.id == 'old0'), isTrue);
+      expect(c.netWorth, w0);
     });
 
     test('операции переживают сохранение и загрузку', () async {

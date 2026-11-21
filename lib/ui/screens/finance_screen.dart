@@ -17,18 +17,13 @@ import 'categories_screen.dart';
 import 'statement_import_screen.dart';
 import '../widgets/adaptive_pair.dart';
 import '../widgets/stat_tile.dart';
+import '../widgets/toast.dart';
 
 /// Категории для выбора: встроенные и свои; архивная остаётся, только если её уже выбрала правимая запись.
 Map<String, String> _allCategoryOptions({String? keep}) =>
     {for (final k in pickableFinCategories(keep: keep)) k.id: '${k.isIncome ? 'Доход' : 'Расход'} • ${k.name}'};
 
 const _capitalOptions = {'1': 'Да — изменит чистый капитал', '0': 'Нет — только учёт'};
-
-void _toast(BuildContext context, String text) {
-  ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(text)));
-}
 
 /// Диалог добавления (или правки, если задан [existing]) операции. Тип определяется категорией.
 Future<void> showTransactionDialog(BuildContext context, AppController c, {MoneyTx? existing}) async {
@@ -63,7 +58,11 @@ Future<void> showTransactionDialog(BuildContext context, AppController c, {Money
   final ok = existing == null
       ? c.addTransaction(categoryId: r['c']!, amount: amount, at: at, note: r['n']!, affectsNetWorth: r['w'] == '1')
       : c.updateTransaction(existing.id, categoryId: r['c']!, amount: amount, at: at, note: r['n']!, affectsNetWorth: r['w'] == '1');
-  if (ok) _toast(context, existing == null ? 'Операция добавлена' : 'Операция изменена');
+  if (ok) {
+    showToast(context, existing == null ? 'Операция добавлена' : 'Операция изменена');
+  } else if (existing == null && c.transactionsFull) {
+    showToast(context, 'Журнал операций заполнен — новые операции не принимаются');
+  }
 }
 
 /// Лимит расходов на месяц по категории. Пустое значение или 0 снимает лимит.

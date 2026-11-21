@@ -74,7 +74,11 @@ class BillsScreen extends StatelessWidget {
       amount = r['a']!.trim().isEmpty ? null : parseInt(r['a']!);
     }
     final due = c.payBill(b.id, amount: amount, createTransaction: amount != null);
-    if (due == null || !context.mounted) return;
+    if (!context.mounted) return;
+    if (due == null) {
+      if (amount != null && c.transactionsFull) showToast(context, 'Журнал операций заполнен — новые операции не принимаются');
+      return;
+    }
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(

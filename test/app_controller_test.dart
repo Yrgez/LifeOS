@@ -175,17 +175,17 @@ void main() {
       expect(c2.muscles['chest']!.lastSets.first, '100кг × 5');
     });
 
-    test('журнал ограничен kMaxWorkoutSets (самые старые удаляются)', () async {
+    test('журнал ограничен kMaxWorkoutSets: сверх предела подход не принимается, старые на месте', () async {
       final data = AppData.defaults(now: now);
       for (int i = 0; i < kMaxWorkoutSets; i++) {
         data.workoutSets.add(WorkoutSet(id: 's$i', muscleId: 'abs', at: now.subtract(Duration(days: 30, minutes: kMaxWorkoutSets - i)), weight: 10, reps: 10));
       }
       final c = make(data: data);
       await c.load();
-      c.logWorkout('abs', 20, 10);
+      expect(c.logWorkout('abs', 20, 10).ok, isFalse);
       expect(c.sets.length, kMaxWorkoutSets);
-      expect(c.sets.any((s) => s.id == 's0'), isFalse);
-      expect(c.sets.last.weight, 20);
+      expect(c.sets.any((s) => s.id == 's0'), isTrue);
+      expect(c.sets.last.weight, 10);
     });
   });
 

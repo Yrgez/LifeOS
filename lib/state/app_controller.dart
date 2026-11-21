@@ -100,6 +100,11 @@ class AppController extends ChangeNotifier {
   String? _healthMessage;
   Timer? _saveTimer;
 
+  /// Актуальные события (без отменённых и заменённых версий) — считаются один раз после изменения, а не при
+  /// каждом чтении: экраны читают их много раз за кадр. Внутри [_commit] — всегда заново (журнал мог измениться).
+  List<LifeEvent>? _currentEvents;
+  bool _committing = false;
+
   // ---------------- чтение ----------------
 
   /// false — данные не прочитаны (ошибка хранилища / схема новее). Пока false, запись отключена,
@@ -327,7 +332,12 @@ class AppController extends ChangeNotifier {
 
   /// Единая точка мутации: изменить → пересчитать производное → уведомить → сохранить.
   void _commit(void Function() fn) {
-    fn();
+    _committing = true;
+    try {
+      fn();
+    } finally {
+      _committing = false;
+    }
     _syncDerived();
     _notify();
     _scheduleSave();
@@ -358,6 +368,7 @@ class AppController extends ChangeNotifier {
 
   /// Подписи «системных» узлов графа и снимок текущего дня всегда отражают реальные цифры.
   void _syncDerived() {
+    _currentEvents = null;
     currentCurrency = currencyByCode(_d.currency) ?? currencies.first;
     setCustomFinCategories([for (final x in _d.categories) customFinCategory(x.id, x.name, x.isIncome, x.icon)],
         archived: {for (final x in _d.categories) if (x.archivedAt != null) x.id});
@@ -655,7 +666,7 @@ class AppController extends ChangeNotifier {
       _notify();
       return HealthSyncStatus.failed;
     }
-    _d.healthEnabled = true;
+    _commit(() => _d.healthEnabled = true); // сохраняется сразу: даже если первая синхронизация не удастся
     return syncHealth();
   }
 

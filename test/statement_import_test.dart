@@ -94,6 +94,10 @@ void main() {
       final id = c.importStatement(tinkoffLike, m, name: 'Банк, ноябрь')!;
       expect(c.transactions.length, 3);
       expect(c.transactions.every((t) => t.importId == id), isTrue);
+      // строки выписки идут не по порядку, а журнал сортируется один раз в конце импорта
+      for (var i = 1; i < c.transactions.length; i++) {
+        expect(c.transactions[i - 1].at.isAfter(c.transactions[i].at), isFalse);
+      }
       expect(c.transactions.where((t) => !t.isIncome).every((t) => t.categoryId == 'other_exp'), isTrue);
       expect(c.netWorth, before); // по умолчанию капитал не меняется
 

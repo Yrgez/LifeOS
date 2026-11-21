@@ -173,6 +173,7 @@ void main() {
       expect(c.reviseEvent(v2, title: 'x', dimensions: [LifeDimension.body], kind: LifeEventKind.action, at: now), isNull);
       expect(c.unvoidEvent(v2), isTrue);
       expect(c.events.single.id, v2);
+      expect(identical(c.events, c.events), isTrue); // без изменений журнал не пересчитывается
 
       final other = c.addEvent(title: 'Другое', dimensions: [LifeDimension.mind])!;
       expect(c.purgeEvent(v2), 2);

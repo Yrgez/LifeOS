@@ -12,7 +12,7 @@ extension EventOps on AppController {
   List<LifeEvent> get allEvents => List.unmodifiable(_d.events);
 
   /// Актуальные события (последние версии, не отменённые), по возрастанию времени.
-  List<LifeEvent> get events => currentEvents(_d.events);
+  List<LifeEvent> get events => _committing ? currentEvents(_d.events) : (_currentEvents ??= List.unmodifiable(currentEvents(_d.events)));
 
   /// Поиск по всем записям: последние версии событий (отменённые — тоже, с пометкой), операции, отметки,
   /// процессы, цели, достижения, счета.
