@@ -147,7 +147,7 @@ class BillsScreen extends StatelessWidget {
     final info = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(b.title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: b.archivedAt == null ? AppColors.text : AppColors.muted)),
+        Text(b.title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: b.archivedAt == null ? AppColors.text : AppColors.muted)),
         if (due != null) billDueLine(b, due, now) else Text(b.archivedAt != null ? 'в архиве' : 'оплачен', style: const TextStyle(color: AppColors.muted, fontSize: 13)),
         Text(
           [BillRepeat.labels[b.repeat]!, if (last != null) 'последняя оплата ${fmtDate(last.paidAt)}'].join(' · '),
@@ -173,7 +173,7 @@ class BillsScreen extends StatelessWidget {
       key: ValueKey('bill_${b.id}'),
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
-      decoration: tileDecoration(radius: 20),
+      decoration: tileDecoration(radius: AppRadii.card),
       // при крупном шрифте кнопки — под описанием: иначе название и срок рвутся посередине слова
       child: largeText(context)
           ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [info, Row(mainAxisAlignment: MainAxisAlignment.end, children: actions)])

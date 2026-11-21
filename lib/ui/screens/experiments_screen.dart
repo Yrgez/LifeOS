@@ -60,7 +60,7 @@ class ExperimentsScreen extends StatelessWidget {
                     child: ListTile(
                       key: ValueKey('exp_${x.id}'),
                       title: Text(x.title),
-                      subtitle: Text('${ExperimentMetric.labels[x.metric]} · ${experimentStage(x, c.now)}', style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                      subtitle: Text('${ExperimentMetric.labels[x.metric]} · ${experimentStage(x, c.now)}', style: const TextStyle(color: AppColors.muted, fontSize: 13)),
                       trailing: const Icon(Icons.chevron_right, color: AppColors.muted),
                       onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => ExperimentScreen(controller: c, id: x.id))),
                     ),
@@ -174,7 +174,7 @@ class _NewExperimentScreenState extends State<NewExperimentScreen> {
             decoration: const InputDecoration(labelText: 'Чего жду (необязательно)', hintText: 'Буду спать дольше'),
           ),
           const SizedBox(height: 8),
-          const Text('ЗА ЧЕМ СЛЕДИТЬ', style: _caption),
+          const Text('ЗА ЧЕМ СЛЕДИТЬ', style: AppText.caption),
           const SizedBox(height: 6),
           Wrap(
             spacing: 6,
@@ -204,7 +204,7 @@ class _NewExperimentScreenState extends State<NewExperimentScreen> {
               ),
           ],
           const SizedBox(height: 16),
-          const Text('СРОКИ', style: _caption),
+          const Text('СРОКИ', style: AppText.caption),
           const SizedBox(height: 6),
           Row(
             children: [
@@ -227,7 +227,7 @@ class _NewExperimentScreenState extends State<NewExperimentScreen> {
           Text(
             'Сравнение: $_days дней до ${fmtDate(_start)} и $_days дней с этой даты. '
             'Показатель и даты потом не меняются — так сравнение нельзя незаметно подогнать.',
-            style: const TextStyle(color: AppColors.muted, fontSize: 12),
+            style: const TextStyle(color: AppColors.muted, fontSize: 13),
           ),
           const SizedBox(height: 20),
           FilledButton(
@@ -242,7 +242,6 @@ class _NewExperimentScreenState extends State<NewExperimentScreen> {
   }
 }
 
-const _caption = TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 0.8);
 
 // ---------------- карточка эксперимента ----------------
 
@@ -306,7 +305,7 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
               const SizedBox(height: 16),
               _comparison(x, r),
               const SizedBox(height: 16),
-              const Text('ВАШ ВЫВОД', style: _caption),
+              const Text('ВАШ ВЫВОД', style: AppText.caption),
               TextField(
                 key: const ValueKey('exp_conclusion'),
                 controller: _conclusion,
@@ -355,7 +354,7 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
               ],
               if (r.after == null) ...[
                 const SizedBox(width: 12),
-                Expanded(child: Text('ПОСЛЕ\nначнётся ${fmtDate(x.startedAt)}', style: const TextStyle(color: AppColors.muted, fontSize: 12))),
+                Expanded(child: Text('ПОСЛЕ\nначнётся ${fmtDate(x.startedAt)}', style: const TextStyle(color: AppColors.muted, fontSize: 13))),
               ],
             ],
           ),
@@ -374,7 +373,7 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
             const SizedBox(height: 8),
             const Text(
               'Меньше $kExperimentMinDays дней с данными в периоде — по таким числам сравнивать рано.',
-              style: TextStyle(color: AppColors.text, fontSize: 12),
+              style: TextStyle(color: AppColors.text, fontSize: 13),
             ),
           ],
         ],
@@ -383,16 +382,16 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
   }
 
   Widget _side(Experiment x, String label, ExperimentSide s) {
-    const muted = TextStyle(color: AppColors.muted, fontSize: 12);
+    const muted = TextStyle(color: AppColors.muted, fontSize: 13);
     final range = '${fmtDate(s.from)} – ${fmtDate(s.to.subtract(const Duration(hours: 12)))}';
     if (ExperimentMetric.isDaily(x.metric)) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: _caption),
+          Text(label, style: AppText.caption),
           Text(range, style: muted),
           const SizedBox(height: 6),
-          Text(s.median == null ? '—' : fmtExperimentValue(x.metric, s.median!), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
+          Text(s.median == null ? '—' : fmtExperimentValue(x.metric, s.median!), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
           const Text('медиана по дням', style: muted),
           if (s.min != null && s.min != s.max) Text('от ${fmtExperimentValue(x.metric, s.min!)} до ${fmtExperimentValue(x.metric, s.max!)}', style: muted),
           Text('дней с данными: ${s.values.length} из ${s.days}', style: muted),
@@ -403,10 +402,10 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: _caption),
+          Text(label, style: AppText.caption),
           Text(range, style: muted),
           const SizedBox(height: 6),
-          Text(s.ratedDays == 0 ? '—' : ratingDistribution(s.ratings!), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+          Text(s.ratedDays == 0 ? '—' : ratingDistribution(s.ratings!), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           Text('дней с оценкой: ${s.ratedDays} из ${s.days}', style: muted),
         ],
       );
@@ -415,7 +414,7 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: _caption),
+        Text(label, style: AppText.caption),
         Text(range, style: muted),
         const SizedBox(height: 6),
         if (x.metric == ExperimentMetric.energy) ...[
@@ -423,7 +422,7 @@ class _ExperimentScreenState extends State<ExperimentScreen> {
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           Text('оценок: ${e.energyKnown} из ${e.events} событий', style: muted),
         ] else ...[
-          Text('${e.events} событий', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
+          Text('${e.events} событий', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
           Text('дней с событиями: ${s.daysWithEvents} из ${s.days}', style: muted),
           if (e.minutesKnown > 0) Text('время ${fmtMinutes(e.minutes)}${e.minutesKnown == e.events ? '' : ' (указано в ${e.minutesKnown})'}', style: muted),
         ],

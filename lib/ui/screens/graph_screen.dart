@@ -29,7 +29,6 @@ const _filterCategories = {
   'material': {'wealth'},
 };
 
-const _caption = TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 0.8);
 
 const _weightNames = {'1': 'Слабая', '2': 'Средняя', '3': 'Сильная'};
 
@@ -317,7 +316,7 @@ class _GraphScreenState extends State<GraphScreen> {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
             // переключатель измерений — как выбор цели по весу на «Теле»
             child: Container(
-              decoration: BoxDecoration(color: AppColors.field, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppColors.border)),
+              decoration: BoxDecoration(color: AppColors.field, borderRadius: BorderRadius.circular(AppRadii.pill), border: Border.all(color: AppColors.border)),
               child: Row(
                 children: [
                   for (final f in _filters.entries)
@@ -342,7 +341,7 @@ class _GraphScreenState extends State<GraphScreen> {
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
                                 color: _filter == f.key ? AppColors.accent : Colors.transparent,
-                                borderRadius: BorderRadius.circular(21),
+                                borderRadius: BorderRadius.circular(AppRadii.pill),
                               ),
                               child: FittedBox(
                                 fit: BoxFit.scaleDown,
@@ -547,7 +546,7 @@ class _GraphScreenState extends State<GraphScreen> {
         _panelTitle(node.label, dot: node.color),
         Text(
           '${_categoryNames[node.category] ?? node.category}${auto ? ' · значение подставляется из данных' : ''}',
-          style: const TextStyle(color: AppColors.muted, fontSize: 12),
+          style: const TextStyle(color: AppColors.muted, fontSize: 13),
         ),
         if (node.ref != null) _refLine(node.ref!),
         const SizedBox(height: 10),
@@ -564,7 +563,7 @@ class _GraphScreenState extends State<GraphScreen> {
                   label: Text(
                     '${EdgeKind.isDirected(l.edge.kind) ? (l.outgoing ? '→ ' : '← ') : '— '}'
                     '${l.edge.kind == EdgeKind.conflicts ? 'мешает: ' : ''}${l.other.label}',
-                    style: const TextStyle(fontSize: 12),
+                    style: const TextStyle(fontSize: 13),
                   ),
                   onPressed: () => setState(() {
                     _selectedEdgeKey = l.edge.key;
@@ -577,7 +576,7 @@ class _GraphScreenState extends State<GraphScreen> {
           const SizedBox(height: 8),
           Text(
             'По цепочке связей ведёт к ${reachNames.length}: ${reachNames.take(4).join(', ')}${reachNames.length > 4 ? '…' : ''}',
-            style: const TextStyle(color: AppColors.muted, fontSize: 12),
+            style: const TextStyle(color: AppColors.muted, fontSize: 13),
           ),
         ],
         const SizedBox(height: 8),
@@ -609,7 +608,7 @@ class _GraphScreenState extends State<GraphScreen> {
     final title = c.refTitle(ref);
     final kind = ref.type == NodeRef.process ? 'Процесс' : 'Цель';
     if (title == null) {
-      return Text('$kind удалён(а) — узел хранит последнее название', style: const TextStyle(color: AppColors.muted, fontSize: 12));
+      return Text('$kind удалён(а) — узел хранит последнее название', style: const TextStyle(color: AppColors.muted, fontSize: 13));
     }
     final open = ref.type == NodeRef.process
         ? EventsScreen(controller: c, processId: ref.id)
@@ -635,9 +634,9 @@ class _GraphScreenState extends State<GraphScreen> {
       children: [
         _panelTitle('$from $arrow $to'),
         if (c.edgeEvidence(edge) case final ev?)
-          Text('По журналу: $ev', key: const ValueKey('edge_evidence'), style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+          Text('По журналу: $ev', key: const ValueKey('edge_evidence'), style: const TextStyle(color: AppColors.muted, fontSize: 13)),
         const SizedBox(height: 12),
-        const Text('ТИП СВЯЗИ', style: _caption),
+        const Text('ТИП СВЯЗИ', style: AppText.caption),
         const SizedBox(height: 6),
         Wrap(
           spacing: 6,
@@ -653,7 +652,7 @@ class _GraphScreenState extends State<GraphScreen> {
           ],
         ),
         const SizedBox(height: 12),
-        const Text('СИЛА СВЯЗИ', style: _caption),
+        const Text('СИЛА СВЯЗИ', style: AppText.caption),
         const SizedBox(height: 6),
         Wrap(
           spacing: 6,

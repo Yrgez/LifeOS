@@ -47,7 +47,7 @@ class _HealthCardState extends State<HealthCard> {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: tileDecoration(radius: 20),
+      decoration: tileDecoration(radius: AppRadii.card),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -78,14 +78,14 @@ class _HealthCardState extends State<HealthCard> {
               Expanded(
                 child: Text(
                   healthStatusLine(c),
-                  style: TextStyle(color: c.healthMessage != null ? AppColors.text : AppColors.muted, fontSize: 10),
+                  style: TextStyle(color: c.healthMessage != null ? AppColors.text : AppColors.muted, fontSize: 11),
                 ),
               ),
               if (c.healthEnabled)
                 TextButton(
                   onPressed: c.disconnectHealth,
                   style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 24)),
-                  child: const Text('Отключить', style: TextStyle(fontSize: 10, color: AppColors.muted)),
+                  child: const Text('Отключить', style: TextStyle(fontSize: 11, color: AppColors.muted)),
                 ),
             ],
           ),
@@ -108,7 +108,7 @@ class _HealthCardState extends State<HealthCard> {
             ),
             const SizedBox(height: 10),
           ],
-          const Text('ДИНАМИКА ШАГОВ ЗА НЕДЕЛЮ:', style: TextStyle(color: AppColors.muted, fontSize: 10, fontWeight: FontWeight.bold)),
+          const Text('ДИНАМИКА ШАГОВ ЗА НЕДЕЛЮ', style: AppText.caption),
           const SizedBox(height: 6),
           ChartSemantics(
             label: 'Шаги за неделю: ${describeSeries(c.stepsWeekHistory, labels: c.weekLabels)}',
@@ -135,11 +135,11 @@ class _MetricCol extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(color: Colors.white60, fontSize: 12)),
+        Text(title, style: const TextStyle(color: AppColors.muted, fontSize: 13)),
         const SizedBox(height: 4),
         Text(val, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.body)),
         const SizedBox(height: 2),
-        Text(sub, style: const TextStyle(color: AppColors.muted, fontSize: 10)),
+        Text(sub, style: const TextStyle(color: AppColors.muted, fontSize: 11)),
       ],
     );
   }

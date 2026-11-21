@@ -76,7 +76,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       child: const Text(
         'Хранилище недоступно или данные от более новой версии — изменения не сохраняются.',
-        style: TextStyle(fontSize: 11, color: Colors.white70),
+        style: TextStyle(fontSize: 11, color: AppColors.text),
       ),
     );
   }
@@ -139,7 +139,7 @@ class _FloatingNav extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           decoration: BoxDecoration(
             color: AppColors.raised,
-            borderRadius: BorderRadius.circular(34),
+            borderRadius: BorderRadius.circular(AppRadii.sheet),
             border: Border.all(color: const Color(0x1AFFFFFF)),
           ),
           child: Row(

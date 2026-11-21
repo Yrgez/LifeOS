@@ -152,7 +152,7 @@ class _SearchScreenState extends State<SearchScreen> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
         color: AppColors.card,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: const BorderSide(color: AppColors.border)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.field), side: const BorderSide(color: AppColors.border)),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           key: ValueKey('hit_${h.kind}_${h.refId}'),
@@ -162,9 +162,9 @@ class _SearchScreenState extends State<SearchScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(meta, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                Text(meta, style: const TextStyle(color: AppColors.muted, fontSize: 13)),
                 const SizedBox(height: 2),
-                _highlighted(h.title.isEmpty ? '—' : h.title, tokens, const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                _highlighted(h.title.isEmpty ? '—' : h.title, tokens, const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                 if (h.snippet.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   _highlighted(h.snippet, tokens, const TextStyle(color: AppColors.muted, fontSize: 13), maxLines: 2),

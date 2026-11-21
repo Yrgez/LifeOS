@@ -90,7 +90,7 @@ class CategoriesScreen extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Expanded(child: Text('СВОИ КАТЕГОРИИ', style: _caption)),
+                  const Expanded(child: Text('СВОИ КАТЕГОРИИ', style: AppText.caption)),
                   TextButton.icon(
                       key: const ValueKey('add_category'),
                       onPressed: () => _editCategory(context),
@@ -105,7 +105,7 @@ class CategoriesScreen extends StatelessWidget {
               const SizedBox(height: 20),
               Row(
                 children: [
-                  const Expanded(child: Text('ПРАВИЛА РАЗБОРА ВЫПИСКИ', style: _caption)),
+                  const Expanded(child: Text('ПРАВИЛА РАЗБОРА ВЫПИСКИ', style: AppText.caption)),
                   TextButton.icon(
                       key: const ValueKey('add_rule'),
                       onPressed: () => _addRule(context),
@@ -116,7 +116,7 @@ class CategoriesScreen extends StatelessWidget {
               const Text(
                 'При импорте выписки описание сверяется с правилами по порядку: первое подходящее задаёт категорию. '
                 'Не подошло ни одно — операция идёт в категорию по умолчанию.',
-                style: TextStyle(color: AppColors.muted, fontSize: 12),
+                style: TextStyle(color: AppColors.muted, fontSize: 13),
               ),
               const SizedBox(height: 8),
               for (final r in rules)
@@ -124,12 +124,12 @@ class CategoriesScreen extends StatelessWidget {
                   key: ValueKey('rule_${r.id}'),
                   margin: const EdgeInsets.only(bottom: 6),
                   padding: const EdgeInsets.fromLTRB(14, 6, 4, 6),
-                  decoration: tileDecoration(radius: 18),
+                  decoration: tileDecoration(radius: AppRadii.card),
                   child: Row(
                     children: [
                       Expanded(
                         child: Text('«${r.pattern}» → ${finCategory(r.categoryId)?.name ?? 'категория удалена'}',
-                            maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14)),
+                            maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)),
                       ),
                       IconButton(
                         tooltip: 'Удалить правило',
@@ -162,13 +162,13 @@ class CategoriesScreen extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 6),
       child: Material(
         color: AppColors.card,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: const BorderSide(color: AppColors.border)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadii.field), side: const BorderSide(color: AppColors.border)),
         clipBehavior: Clip.antiAlias,
         child: ListTile(
           leading: Icon(customCategoryIcons[x.icon] ?? Icons.sell_outlined, color: archived ? AppColors.muted : AppColors.text),
           title: Text(x.name, style: TextStyle(color: archived ? AppColors.muted : AppColors.text)),
           subtitle: Text('${x.isIncome ? 'доход' : 'расход'} · операций $n${archived ? ' · в архиве' : ''}',
-              style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+              style: const TextStyle(color: AppColors.muted, fontSize: 13)),
           onTap: () => _editCategory(context, x),
           trailing: TextButton(
             onPressed: () => c.archiveCategory(x.id, archived: !archived),
@@ -180,4 +180,3 @@ class CategoriesScreen extends StatelessWidget {
   }
 }
 
-const _caption = TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 0.8);

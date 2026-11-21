@@ -146,7 +146,7 @@ class _WealthScreenState extends State<WealthScreen> {
           const SizedBox(height: 4),
           Text(
             'Норма сбережений ${isFact ? 'за месяц (по операциям)' : '(по плану)'}: $savingsRate%',
-            style: TextStyle(color: savingsRate >= 0 ? AppColors.green : AppColors.red, fontSize: 12, fontWeight: FontWeight.bold),
+            style: TextStyle(color: savingsRate >= 0 ? AppColors.green : AppColors.red, fontSize: 13, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 10),
           for (final a in accounts)
@@ -157,11 +157,11 @@ class _WealthScreenState extends State<WealthScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 child: Row(
                   children: [
-                    Expanded(child: Text(a.name, style: const TextStyle(fontSize: 14))),
+                    Expanded(child: Text(a.name, style: const TextStyle(fontSize: 13))),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(fmtCur(a.latest.amount), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                        Text(fmtCur(a.latest.amount), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                         Text('снимок ${fmtDate(a.latest.at)}', style: const TextStyle(color: AppColors.muted, fontSize: 11)),
                       ],
                     ),
@@ -170,7 +170,7 @@ class _WealthScreenState extends State<WealthScreen> {
               ),
             ),
           if (accounts.isEmpty)
-            const Text('Добавьте счета — капитал будет считаться по их остаткам, с датой каждого.', style: TextStyle(color: AppColors.muted, fontSize: 12)),
+            const Text('Добавьте счета — капитал будет считаться по их остаткам, с датой каждого.', style: TextStyle(color: AppColors.muted, fontSize: 13)),
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
@@ -212,7 +212,7 @@ class _WealthScreenState extends State<WealthScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.fromLTRB(12, 2, 0, 2),
-      decoration: tileDecoration(radius: 20),
+      decoration: tileDecoration(radius: AppRadii.card),
       child: Row(
         children: [
           // год и сумма — строкой, должность — под ними: при крупном шрифте строка переносится, а не вылезает за край
@@ -220,8 +220,8 @@ class _WealthScreenState extends State<WealthScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${st.year} · ${fmtCur(st.salary)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                if (st.role.isNotEmpty) Text(st.role, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                Text('${st.year} · ${fmtCur(st.salary)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                if (st.role.isNotEmpty) Text(st.role, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted, fontSize: 13)),
               ],
             ),
           ),
@@ -248,14 +248,14 @@ class _WealthScreenState extends State<WealthScreen> {
   /// Поток месяца: факт по журналу операций; план — подписью ниже. Операций нет — так и сказано.
   Widget _flowTile(String title, int fact, int plan, bool noTx, Color color) => Container(
         padding: const EdgeInsets.all(16),
-        decoration: tileDecoration(radius: 20),
+        decoration: tileDecoration(radius: AppRadii.card),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('$title · ${monthNames[c.now.month - 1].toLowerCase()}', style: const TextStyle(color: AppColors.muted, fontSize: 13)),
             const SizedBox(height: 6),
             Text(noTx ? 'нет операций' : fmtCur(fact), style: TextStyle(fontSize: noTx ? 15 : 18, fontWeight: FontWeight.w600, color: noTx ? AppColors.muted : color)),
-            if (plan > 0) Text('план ${fmtCur(plan)}', style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+            if (plan > 0) Text('план ${fmtCur(plan)}', style: const TextStyle(color: AppColors.muted, fontSize: 13)),
           ],
         ),
       );
@@ -341,7 +341,7 @@ class _WealthScreenState extends State<WealthScreen> {
                     padding: const EdgeInsets.only(top: 6),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [Text(b.title, style: const TextStyle(fontSize: 14)), billDueLine(b, due, c.now)],
+                      children: [Text(b.title, style: const TextStyle(fontSize: 13)), billDueLine(b, due, c.now)],
                     ),
                   ),
             ],
@@ -356,7 +356,7 @@ class _WealthScreenState extends State<WealthScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Flexible(child: Text('Рост зарплаты', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600))),
+            const Flexible(child: Text('Рост зарплаты', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
             IconButton(
                 tooltip: 'Добавить точку зарплаты',
                 onPressed: _addSalaryStepDialog,
@@ -367,7 +367,7 @@ class _WealthScreenState extends State<WealthScreen> {
         Container(
           padding: const EdgeInsets.all(16),
           height: 200,
-          decoration: tileDecoration(radius: 20),
+          decoration: tileDecoration(radius: AppRadii.card),
           child: ChartSemantics(
             label: 'График зарплаты: ${c.salaryHistory.isEmpty ? 'нет данных' : [for (final st in c.salaryHistory) '${st.year} — ${fmtCur(st.salary)}'].join(', ')}',
             child: CustomPaint(size: Size.infinite, painter: SalaryLineChartPainter(steps: c.salaryHistory)),

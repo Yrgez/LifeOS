@@ -23,7 +23,7 @@ Color dimensionChartColor(String d) => switch (d) {
 /// Подпись группы полей в диалогах события и процесса («ИЗМЕРЕНИЯ», «РЕСУРСЫ»).
 Widget fieldLabel(String t) => Padding(
       padding: const EdgeInsets.only(top: 12, bottom: 6),
-      child: Text(t, style: const TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
+      child: Text(t, style: AppText.caption),
     );
 
 /// Что ввёл пользователь в диалоге события.
@@ -185,7 +185,7 @@ class _EventDialogState extends State<_EventDialog> {
         filled: true,
         fillColor: AppColors.field,
         isDense: true,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.small), borderSide: BorderSide.none),
       );
 
   @override
@@ -203,7 +203,7 @@ class _EventDialogState extends State<_EventDialog> {
                 Expanded(
                   child: Text(
                     editing ? 'Новая версия события' : 'Новое событие',
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600, letterSpacing: -0.4),
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600, letterSpacing: -0.4),
                   ),
                 ),
                 IconButton(

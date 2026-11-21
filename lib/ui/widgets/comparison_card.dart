@@ -121,9 +121,9 @@ class _ComparisonCardState extends State<ComparisonCard> {
             ),
           ),
           const SizedBox(height: 8),
-          Text(corrText, style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600)),
+          Text(corrText, style: const TextStyle(color: AppColors.text, fontSize: 11, fontWeight: FontWeight.w600)),
           const SizedBox(height: 2),
-          const Text('Каждая кривая приведена к своему диапазону (от минимума до максимума), чтобы сравнить форму.', style: TextStyle(color: AppColors.muted, fontSize: 10)),
+          const Text('Каждая кривая приведена к своему диапазону (от минимума до максимума), чтобы сравнить форму.', style: TextStyle(color: AppColors.muted, fontSize: 11)),
         ],
       ),
     );

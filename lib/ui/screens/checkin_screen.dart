@@ -46,7 +46,7 @@ class RatingPicker extends StatelessWidget {
                     child: SizedBox(
                       height: 48,
                       child: Center(
-                        child: Text('$r', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: value == r ? Colors.black : AppColors.text)),
+                        child: Text('$r', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: value == r ? Colors.black : AppColors.text)),
                       ),
                     ),
                   ),
@@ -124,11 +124,11 @@ class _CheckInScreenState extends State<CheckInScreen> {
           const SizedBox(height: 12),
           RatingPicker(value: _rating, onSelected: (r) => setState(() => _rating = _rating == r ? null : r)),
           const SizedBox(height: 6),
-          const Text(DayCheckIn.ratingHint, style: TextStyle(color: AppColors.muted, fontSize: 12)),
+          const Text(DayCheckIn.ratingHint, style: TextStyle(color: AppColors.muted, fontSize: 13)),
           const SizedBox(height: 24),
-          const Text('МЕТКИ', style: _caption),
+          const Text('МЕТКИ', style: AppText.caption),
           const SizedBox(height: 4),
-          const Text('Что было в этот день: «кофе после обеда», «прогулка», «плохо спал»', style: TextStyle(color: AppColors.muted, fontSize: 12)),
+          const Text('Что было в этот день: «кофе после обеда», «прогулка», «плохо спал»', style: TextStyle(color: AppColors.muted, fontSize: 13)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 6,
@@ -152,7 +152,7 @@ class _CheckInScreenState extends State<CheckInScreen> {
             onSubmitted: _addTag,
           ),
           const SizedBox(height: 12),
-          const Text('ЗАМЕТКА', style: _caption),
+          const Text('ЗАМЕТКА', style: AppText.caption),
           TextField(
             key: const ValueKey('checkin_note'),
             controller: _note,
@@ -169,7 +169,7 @@ class _CheckInScreenState extends State<CheckInScreen> {
                 'Записано ${fmtDate(versions.first.recordedAt)} ${fmtTime(versions.first.recordedAt)}'
                 '${versions.length > 1 ? ' · правок: ${versions.length - 1}, последняя ${fmtTime(versions.last.recordedAt)}' : ''}. '
                 'Правка сохранится новой версией.',
-                style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                style: const TextStyle(color: AppColors.muted, fontSize: 13),
               ),
             ),
           const SizedBox(height: 20),
@@ -185,4 +185,3 @@ class _CheckInScreenState extends State<CheckInScreen> {
   }
 }
 
-const _caption = TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 0.8);

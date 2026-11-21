@@ -116,7 +116,7 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(top: 16, bottom: 6),
-        child: Text(text, style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
+        child: Text(text, style: const TextStyle(color: AppColors.muted, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
       );
 }
 
@@ -136,11 +136,11 @@ class _MonthSection extends StatelessWidget {
           Container(
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.all(10),
-            decoration: tileDecoration(radius: 20),
+            decoration: tileDecoration(radius: AppRadii.card),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_dayTitle(d.day), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                Text(_dayTitle(d.day), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 if (d.snapshot != null && _snapshotLine(d.snapshot!).isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
@@ -189,9 +189,9 @@ class _MonthSection extends StatelessWidget {
             if (ch.rating != null || ch.tags.isNotEmpty)
               Text(
                 [if (ch.rating != null) 'день ${ch.rating} из ${DayCheckIn.maxRating}', ...ch.tags].join(' · '),
-                style: const TextStyle(fontSize: 12),
+                style: const TextStyle(fontSize: 13),
               ),
-            if (ch.note.isNotEmpty) Text('«${ch.note}»', style: const TextStyle(color: AppColors.muted, fontSize: 12, fontStyle: FontStyle.italic)),
+            if (ch.note.isNotEmpty) Text('«${ch.note}»', style: const TextStyle(color: AppColors.muted, fontSize: 13, fontStyle: FontStyle.italic)),
           ],
         ),
       );

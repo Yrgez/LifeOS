@@ -15,7 +15,7 @@ Future<bool> confirmDialog(
     builder: (ctx) => AlertDialog(
       backgroundColor: AppColors.card,
       title: Text(title, style: const TextStyle(fontSize: 16)),
-      content: Text(message, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+      content: Text(message, style: const TextStyle(color: AppColors.text, fontSize: 13)),
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена', style: TextStyle(color: AppColors.muted))),
         ElevatedButton(
