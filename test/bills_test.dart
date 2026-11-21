@@ -2,14 +2,14 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/app.dart';
-import 'package:life_os/core/bills.dart';
-import 'package:life_os/data/app_data.dart';
-import 'package:life_os/data/app_repository.dart';
-import 'package:life_os/data/sqlite_app_repository.dart';
-import 'package:life_os/models/bill.dart';
-import 'package:life_os/state/app_controller.dart';
-import 'package:life_os/ui/screens/bills_screen.dart';
+import 'package:catenna/app.dart';
+import 'package:catenna/core/bills.dart';
+import 'package:catenna/data/app_data.dart';
+import 'package:catenna/data/app_repository.dart';
+import 'package:catenna/data/sqlite_app_repository.dart';
+import 'package:catenna/models/bill.dart';
+import 'package:catenna/state/app_controller.dart';
+import 'package:catenna/ui/screens/bills_screen.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
@@ -99,7 +99,7 @@ void main() {
     await c.load();
     final id = c.addBill(title: 'Интернет', amount: 650, firstDue: DateTime(2026, 11, 19))!;
     c.addBill(title: 'Страховка', amount: 9000, firstDue: DateTime(2026, 11, 28), repeat: BillRepeat.year);
-    await tester.pumpWidget(LifeOSApp(controller: c));
+    await tester.pumpWidget(CatennaApp(controller: c));
     await tester.pumpAndSettle();
     expect(find.byKey(ValueKey('hub_bill_$id')), findsOneWidget); // завтра
     await tester.tap(find.byKey(const ValueKey('tab_material')));

@@ -1,9 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/data/app_repository.dart';
-import 'package:life_os/security/backup_cipher.dart';
-import 'package:life_os/state/app_controller.dart';
+import 'package:catenna/data/app_repository.dart';
+import 'package:catenna/security/backup_cipher.dart';
+import 'package:catenna/state/app_controller.dart';
 
 void main() {
   // небольшое число итераций — тесты быстрые; в приложении по умолчанию 150 000

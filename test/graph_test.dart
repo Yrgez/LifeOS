@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/core/graph_stats.dart';
-import 'package:life_os/data/app_data.dart';
-import 'package:life_os/data/app_repository.dart';
-import 'package:life_os/models/life_event.dart';
-import 'package:life_os/models/life_process.dart';
-import 'package:life_os/models/models.dart';
-import 'package:life_os/state/app_controller.dart';
+import 'package:catenna/core/graph_stats.dart';
+import 'package:catenna/data/app_data.dart';
+import 'package:catenna/data/app_repository.dart';
+import 'package:catenna/models/life_event.dart';
+import 'package:catenna/models/life_process.dart';
+import 'package:catenna/models/models.dart';
+import 'package:catenna/state/app_controller.dart';
 
 GraphNode node(String id) => GraphNode(id: id, label: id, category: 'mind', position: const Offset(0.5, 0.5), color: Colors.white);
 

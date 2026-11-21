@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/core/reminders.dart';
-import 'package:life_os/core/sections.dart';
-import 'package:life_os/data/app_data.dart';
-import 'package:life_os/data/app_repository.dart';
-import 'package:life_os/data/reminder_scheduler.dart';
-import 'package:life_os/models/bill.dart';
-import 'package:life_os/security/app_lock.dart';
-import 'package:life_os/security/biometric_authenticator.dart';
-import 'package:life_os/security/security_service.dart';
-import 'package:life_os/security/security_settings.dart';
-import 'package:life_os/state/app_controller.dart';
-import 'package:life_os/state/reminders.dart';
-import 'package:life_os/ui/screens/settings_screen.dart';
+import 'package:catenna/core/reminders.dart';
+import 'package:catenna/core/sections.dart';
+import 'package:catenna/data/app_data.dart';
+import 'package:catenna/data/app_repository.dart';
+import 'package:catenna/data/reminder_scheduler.dart';
+import 'package:catenna/models/bill.dart';
+import 'package:catenna/security/app_lock.dart';
+import 'package:catenna/security/biometric_authenticator.dart';
+import 'package:catenna/security/security_service.dart';
+import 'package:catenna/security/security_settings.dart';
+import 'package:catenna/state/app_controller.dart';
+import 'package:catenna/state/reminders.dart';
+import 'package:catenna/ui/screens/settings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {

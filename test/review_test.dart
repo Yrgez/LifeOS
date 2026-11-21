@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/app.dart';
-import 'package:life_os/core/review.dart';
-import 'package:life_os/data/app_data.dart';
-import 'package:life_os/data/app_repository.dart';
-import 'package:life_os/models/life_event.dart';
-import 'package:life_os/models/life_process.dart';
-import 'package:life_os/state/app_controller.dart';
+import 'package:catenna/app.dart';
+import 'package:catenna/core/review.dart';
+import 'package:catenna/data/app_data.dart';
+import 'package:catenna/data/app_repository.dart';
+import 'package:catenna/models/life_event.dart';
+import 'package:catenna/models/life_process.dart';
+import 'package:catenna/state/app_controller.dart';
 
 void main() {
   late DateTime now;
@@ -101,7 +101,7 @@ void main() {
     final c = AppController(MemoryAppRepository(), saveDelay: Duration.zero);
     await c.load();
     c.addEvent(title: 'Урок Java', dimensions: [LifeDimension.mind]);
-    await tester.pumpWidget(LifeOSApp(controller: c));
+    await tester.pumpWidget(CatennaApp(controller: c));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const ValueKey('review_tile')));

@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/data/app_data.dart';
-import 'package:life_os/data/app_repository.dart';
+import 'package:catenna/data/app_data.dart';
+import 'package:catenna/data/app_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -24,13 +24,13 @@ void main() {
 
   test('миграция со старого формата (отдельные ключи)', () async {
     SharedPreferences.setMockInitialValues({
-      'life_os_net_worth': 5000000,
-      'life_os_income': 400000,
-      'life_os_steps_hist': jsonEncode([1, 2, 3, 4, 5, 6, 7]),
-      'life_os_nodes_v2': jsonEncode([
+      'catenna_net_worth': 5000000,
+      'catenna_income': 400000,
+      'catenna_steps_hist': jsonEncode([1, 2, 3, 4, 5, 6, 7]),
+      'catenna_nodes_v2': jsonEncode([
         {'id': 'n1', 'label': 'N', 'category': 'mind', 'dx': 180.0, 'dy': 240.0, 'color': 0xFF7C4DFF}
       ]),
-      'life_os_muscles': jsonEncode({
+      'catenna_muscles': jsonEncode({
         'chest': {'id': 'chest', 'name': 'Грудь', 'recovery': 0.95, 'maxWeight': 120, 'lastSets': [], 'history1RM': [120], 'lastTrained': 'x', 'isFront': true}
       }),
     });

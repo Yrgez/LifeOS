@@ -2,18 +2,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/app.dart';
-import 'package:life_os/data/app_repository.dart';
-import 'package:life_os/data/sqlite_app_repository.dart';
-import 'package:life_os/security/app_lock.dart';
-import 'package:life_os/security/backup_cipher.dart';
-import 'package:life_os/security/biometric_authenticator.dart';
-import 'package:life_os/security/db_encryption.dart';
-import 'package:life_os/security/key_store.dart';
-import 'package:life_os/security/screen_security.dart';
-import 'package:life_os/security/security_service.dart';
-import 'package:life_os/security/security_settings.dart';
-import 'package:life_os/state/app_controller.dart';
+import 'package:catenna/app.dart';
+import 'package:catenna/data/app_repository.dart';
+import 'package:catenna/data/sqlite_app_repository.dart';
+import 'package:catenna/security/app_lock.dart';
+import 'package:catenna/security/backup_cipher.dart';
+import 'package:catenna/security/biometric_authenticator.dart';
+import 'package:catenna/security/db_encryption.dart';
+import 'package:catenna/security/key_store.dart';
+import 'package:catenna/security/screen_security.dart';
+import 'package:catenna/security/security_service.dart';
+import 'package:catenna/security/security_settings.dart';
+import 'package:catenna/state/app_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _FakeManager extends DbEncryptionManager {
@@ -86,7 +86,7 @@ void main() {
     await security.init();
     env = _Env(c, security, auth, screen, manager);
 
-    await tester.pumpWidget(LifeOSApp(controller: c, security: security));
+    await tester.pumpWidget(CatennaApp(controller: c, security: security));
     await tester.pumpAndSettle();
     return env;
   }

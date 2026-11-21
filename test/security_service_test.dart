@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/data/sqlite_app_repository.dart';
-import 'package:life_os/security/db_encryption.dart';
-import 'package:life_os/security/key_store.dart';
-import 'package:life_os/security/security_service.dart';
+import 'package:catenna/data/sqlite_app_repository.dart';
+import 'package:catenna/security/db_encryption.dart';
+import 'package:catenna/security/key_store.dart';
+import 'package:catenna/security/security_service.dart';
 
 /// Менеджер-заглушка: записывает вызовы, поведение настраивается.
 class _FakeManager extends DbEncryptionManager {

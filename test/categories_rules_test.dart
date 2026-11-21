@@ -2,16 +2,16 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/core/finance_categories.dart';
-import 'package:life_os/core/import_rules.dart';
-import 'package:life_os/core/statement_import.dart';
-import 'package:life_os/data/app_data.dart';
-import 'package:life_os/data/app_repository.dart';
-import 'package:life_os/data/sqlite_app_repository.dart';
-import 'package:life_os/models/finance_rules.dart';
-import 'package:life_os/state/app_controller.dart';
-import 'package:life_os/ui/screens/categories_screen.dart';
-import 'package:life_os/ui/screens/statement_import_screen.dart';
+import 'package:catenna/core/finance_categories.dart';
+import 'package:catenna/core/import_rules.dart';
+import 'package:catenna/core/statement_import.dart';
+import 'package:catenna/data/app_data.dart';
+import 'package:catenna/data/app_repository.dart';
+import 'package:catenna/data/sqlite_app_repository.dart';
+import 'package:catenna/models/finance_rules.dart';
+import 'package:catenna/state/app_controller.dart';
+import 'package:catenna/ui/screens/categories_screen.dart';
+import 'package:catenna/ui/screens/statement_import_screen.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'statement_import_test.dart' show tinkoffLike;

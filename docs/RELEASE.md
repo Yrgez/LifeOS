@@ -5,7 +5,7 @@ Android-проект хранится в репозитории (`android/`). В
 
 | Что | Где |
 |---|---|
-| Идентификатор приложения `io.github.yrgez.lifeos` | `android/app/build.gradle.kts` |
+| Идентификатор приложения `io.github.yrgez.catenna` | `android/app/build.gradle.kts` |
 | `minSdk 26` (Health Connect), `compileSdk 36` для приложения и плагинов | `android/app/build.gradle.kts`, `android/build.gradle.kts` |
 | Разрешения Health Connect, биометрии; **разрешения INTERNET нет** (удаляется, даже если его запросит плагин) | `android/app/src/main/AndroidManifest.xml` |
 | Запрет системной копии и переноса файлов (зашифрованная база без ключа устройства нечитаема) | `AndroidManifest.xml`, `res/xml/data_extraction_rules.xml` |
@@ -34,11 +34,11 @@ Android ставит обновление поверх установленно�
 (`<Android Studio>/jbr/bin/keytool`).
 
 ```
-keytool -genkeypair -v -keystore lifeos-release.jks -alias lifeos -keyalg RSA -keysize 4096 -validity 36500
+keytool -genkeypair -v -keystore catenna-release.jks -alias catenna -keyalg RSA -keysize 4096 -validity 36500
 ```
 
 Утилита спросит пароль хранилища и имя (можно указать только имя). Пароль ключа — тот же.
-Файл `lifeos-release.jks` **не кладите в репозиторий** (`.gitignore` его не пропустит).
+Файл `catenna-release.jks` **не кладите в репозиторий** (`.gitignore` его не пропустит).
 
 ## 2. Секреты репозитория для CI
 
@@ -46,10 +46,10 @@ GitHub → репозиторий → Settings → Secrets and variables → Act
 
 | Секрет | Значение |
 |---|---|
-| `LIFEOS_KEYSTORE_BASE64` | файл ключа в base64: `base64 -w0 lifeos-release.jks` (Linux), `base64 -i lifeos-release.jks` (macOS), `[Convert]::ToBase64String([IO.File]::ReadAllBytes("lifeos-release.jks"))` (PowerShell) |
-| `LIFEOS_KEYSTORE_PASSWORD` | пароль хранилища |
-| `LIFEOS_KEY_ALIAS` | `lifeos` |
-| `LIFEOS_KEY_PASSWORD` | пароль ключа (тот же) |
+| `CATENNA_KEYSTORE_BASE64` | файл ключа в base64: `base64 -w0 catenna-release.jks` (Linux), `base64 -i catenna-release.jks` (macOS), `[Convert]::ToBase64String([IO.File]::ReadAllBytes("catenna-release.jks"))` (PowerShell) |
+| `CATENNA_KEYSTORE_PASSWORD` | пароль хранилища |
+| `CATENNA_KEY_ALIAS` | `catenna` |
+| `CATENNA_KEY_PASSWORD` | пароль ключа (тот же) |
 
 После этого каждая сборка CI подписана вашим ключом. В сводке сборки виден отпечаток сертификата
 (`certificate SHA-256 digest`) — у всех ваших сборок он одинаковый. Без секретов CI собирает APK
@@ -59,9 +59,9 @@ GitHub → репозиторий → Settings → Secrets and variables → Act
 
 Файл `android/key.properties` (в `.gitignore`):
 ```
-storeFile=/полный/путь/lifeos-release.jks
+storeFile=/полный/путь/catenna-release.jks
 storePassword=…
-keyAlias=lifeos
+keyAlias=catenna
 keyPassword=…
 ```
 и `flutter build apk --release`.
@@ -106,16 +106,12 @@ Flutter предупреждает, что этот переключатель �
   «Приложение не установлено» или предлагает удалить старое — подписи разные (сборка без ключа или
   старый идентификатор). **Не удаляйте** приложение, пока не сделали копию.
 
-## Переход со сборок `com.example.life_os`
+## Тестовые сборки LIFE OS
 
-До этой версии приложение называлось внутри `com.example.life_os` и подписывалось случайным ключом.
-Для Android новая сборка — **другое приложение**: она встанет рядом, а данные не увидит. Перенос:
-
-1. В старом приложении: **Настройки → Данные → Копия в буфер обмена** (лучше с паролем)
-   или автокопия в папку (**Резервная копия → Сделать копию сейчас**).
-2. Установить новый APK (появится второй значок Catenna).
-3. В новом: **Настройки → Данные → Копия из буфера обмена** или **Резервная копия → Восстановить из файла**.
-4. Проверить данные в новом приложении, затем удалить старое.
+Catenna — новое приложение (`io.github.yrgez.catenna`). Тестовые сборки LIFE OS (`io.github.yrgez.lifeos`,
+`com.example.life_os`) Android считает другим приложением: Catenna встанет рядом, обновлением не станет, а копии LIFE OS
+(формат `lifeos-backup`) не прочитает. Данные тестовых сборок не переносятся — после установки Catenna старое приложение
+удалите вручную.
 
 Снова включите в новом приложении: блокировку, шифрование базы, автокопию (папку и пароль копий),
 напоминания и Health Connect — это настройки устройства, в копию данных они не входят.

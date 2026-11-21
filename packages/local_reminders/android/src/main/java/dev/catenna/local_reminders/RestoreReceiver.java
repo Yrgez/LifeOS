@@ -1,4 +1,4 @@
-package dev.lifeos.local_reminders;
+package dev.catenna.local_reminders;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

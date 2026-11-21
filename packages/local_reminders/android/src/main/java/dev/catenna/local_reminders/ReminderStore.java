@@ -1,4 +1,4 @@
-package dev.lifeos.local_reminders;
+package dev.catenna.local_reminders;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -17,7 +17,7 @@ import java.util.List;
  * перезагрузки, и ставится будильниками AlarmManager (setAndAllowWhileIdle — без разрешения на точные будильники).
  */
 final class ReminderStore {
-    private static final String PREFS = "lifeos_local_reminders";
+    private static final String PREFS = "catenna_local_reminders";
     private static final String KEY = "items";
 
     static final class Item {

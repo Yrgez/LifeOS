@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/core/app_version.dart';
+import 'package:catenna/core/app_version.dart';
 
 /// Настройки Android-проекта, от которых зависят обновление, приватность и безопасность (docs/RELEASE.md).
 /// Сам APK проверяет CI (`aapt2 dump badging`, `apksigner verify`).
@@ -10,13 +10,13 @@ void main() {
 
   test('идентификатор постоянный, minSdk для Health Connect, подпись из ключа, правила R8', () {
     final g = read('android/app/build.gradle.kts');
-    expect(g, contains('applicationId = "io.github.yrgez.lifeos"'));
-    expect(g, contains('namespace = "io.github.yrgez.lifeos"'));
+    expect(g, contains('applicationId = "io.github.yrgez.catenna"'));
+    expect(g, contains('namespace = "io.github.yrgez.catenna"'));
     expect(g, contains('minSdk = 26'));
-    expect(g, contains('LIFEOS_KEYSTORE_PATH'));
+    expect(g, contains('CATENNA_KEYSTORE_PATH'));
     expect(g, contains('"proguard-rules.pro"'));
     expect(read('android/app/proguard-rules.pro'), contains('-keep class net.sqlcipher.** { *; }'));
-    expect(File('android/app/src/main/kotlin/io/github/yrgez/lifeos/MainActivity.kt').existsSync(), isTrue);
+    expect(File('android/app/src/main/kotlin/io/github/yrgez/catenna/MainActivity.kt').existsSync(), isTrue);
   });
 
   test('манифест: без сети, без системной копии базы, биометрия и Health Connect', () {
@@ -36,10 +36,10 @@ void main() {
   });
 
   test('MainActivity: FlutterFragmentActivity и канал защиты экрана', () {
-    final a = read('android/app/src/main/kotlin/io/github/yrgez/lifeos/MainActivity.kt');
+    final a = read('android/app/src/main/kotlin/io/github/yrgez/catenna/MainActivity.kt');
     expect(a, contains('FlutterFragmentActivity()'));
-    expect(a, contains('"life_os/screen_security"')); // как в lib/security/screen_security.dart
-    expect(read('lib/security/screen_security.dart'), contains("'life_os/screen_security'"));
+    expect(a, contains('"catenna/screen_security"')); // как в lib/security/screen_security.dart
+    expect(read('lib/security/screen_security.dart'), contains("'catenna/screen_security'"));
     expect(read('android/app/src/main/res/values/styles.xml'), contains('Theme.AppCompat'));
   });
 

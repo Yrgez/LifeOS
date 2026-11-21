@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/app.dart';
-import 'package:life_os/data/app_data.dart';
-import 'package:life_os/data/app_repository.dart';
-import 'package:life_os/models/life_event.dart';
-import 'package:life_os/models/models.dart';
-import 'package:life_os/state/app_controller.dart';
+import 'package:catenna/app.dart';
+import 'package:catenna/data/app_data.dart';
+import 'package:catenna/data/app_repository.dart';
+import 'package:catenna/models/life_event.dart';
+import 'package:catenna/models/models.dart';
+import 'package:catenna/state/app_controller.dart';
 
 /// Дымовые тесты интерфейса: после разбиения на экраны проверяют, что каждая вкладка строится,
 /// а ключевые сценарии (запись подхода, добавление операции) доходят до контроллера.
@@ -22,7 +22,7 @@ void main() {
       initialData: blank ? (n) => AppData.blank(now: n) : null,
     );
     await c.load();
-    await tester.pumpWidget(LifeOSApp(controller: c));
+    await tester.pumpWidget(CatennaApp(controller: c));
     await tester.pumpAndSettle();
     return c;
   }

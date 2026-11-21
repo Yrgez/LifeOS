@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/core/theme.dart';
+import 'package:catenna/core/theme.dart';
 
 /// Оформление держится на токенах темы (CLAUDE.md, «Дизайн»): иначе разнобой возвращается с каждым новым экраном.
 void main() {

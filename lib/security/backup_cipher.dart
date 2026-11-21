@@ -17,7 +17,7 @@ class BackupDecryptException implements Exception {
 class BackupCipher {
   const BackupCipher({this.iterations = defaultIterations, this.useIsolate = false});
 
-  static const format = 'lifeos-backup';
+  static const format = 'catenna-backup';
   static const version = 1;
   static const kdfName = 'pbkdf2-sha256';
 

@@ -1,11 +1,11 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/core/open_export.dart';
-import 'package:life_os/data/app_repository.dart';
-import 'package:life_os/data/health_source.dart';
-import 'package:life_os/models/life_event.dart';
-import 'package:life_os/state/app_controller.dart';
+import 'package:catenna/core/open_export.dart';
+import 'package:catenna/data/app_repository.dart';
+import 'package:catenna/data/health_source.dart';
+import 'package:catenna/models/life_event.dart';
+import 'package:catenna/state/app_controller.dart';
 
 void main() {
   late DateTime now;

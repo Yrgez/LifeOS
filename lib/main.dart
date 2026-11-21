@@ -40,7 +40,7 @@ Future<void> main() async {
   };
 
   // ---- хранилище: SQLite (при включённом шифровании — SQLCipher с ключом из Keystore) ----
-  final dbPath = p.join(await getDatabasesPath(), 'life_os.db');
+  final dbPath = p.join(await getDatabasesPath(), 'catenna.db');
   final keys = SecureKeyStore();
   final encryption = DbEncryptionManager(open: openSqlCipher, keys: keys, path: dbPath, tables: SqliteAppRepository.tables);
   Object? recoveryError;
@@ -96,7 +96,7 @@ Future<void> main() async {
   );
   await security.init();
 
-  runApp(LifeOSApp(controller: controller, security: security));
+  runApp(CatennaApp(controller: controller, security: security));
   unawaited(backup.maybeRun());
   unawaited(reminders.resync()); // не ждём: копия пишется в фоне, ошибка запоминается и видна на «Сегодня»
 }

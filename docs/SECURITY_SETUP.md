@@ -23,7 +23,7 @@
 
 ### 2. `MainActivity.kt` — `FlutterFragmentActivity` + канал защиты экрана
 ```kotlin
-package io.github.yrgez.lifeos
+package io.github.yrgez.catenna
 
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterFragmentActivity
@@ -33,7 +33,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterFragmentActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "life_os/screen_security")
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "catenna/screen_security")
             .setMethodCallHandler { call, result ->
                 if (call.method == "setSecure") {
                     val secure = call.arguments as? Boolean ?: false
@@ -105,7 +105,7 @@ class MainActivity : FlutterFragmentActivity() {
 - Настройки защиты хранятся в SharedPreferences, а не в базе: они относятся к устройству и не переезжают в резервной копии.
 
 ## Резервные копии с паролем
-PBKDF2-HMAC-SHA256 (150 000 итераций) → AES-256-GCM, формат — JSON (`format: lifeos-backup`). Заголовок (формат, версия, число итераций)
+PBKDF2-HMAC-SHA256 (150 000 итераций) → AES-256-GCM, формат — JSON (`format: catenna-backup`). Заголовок (формат, версия, число итераций)
 аутентифицируется; число итераций хранится в копии, поэтому его можно повышать без потери совместимости.
 Минимальная длина пароля — 8 символов. Обычный экспорт остаётся доступным и явно помечен как незашифрованный.
 Буфер обмена на старых версиях Android доступен другим приложениям — предпочитайте шифрованную копию.

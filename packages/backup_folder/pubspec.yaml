@@ -15,5 +15,5 @@ flutter:
   plugin:
     platforms:
       android:
-        package: dev.lifeos.backup_folder
+        package: dev.catenna.backup_folder
         pluginClass: BackupFolderPlugin

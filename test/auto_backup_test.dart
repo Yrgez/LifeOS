@@ -3,23 +3,23 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/app.dart';
-import 'package:life_os/core/backup_schedule.dart';
-import 'package:life_os/data/app_data.dart';
-import 'package:life_os/data/app_repository.dart';
-import 'package:life_os/data/backup_storage.dart';
-import 'package:life_os/data/file_source.dart';
-import 'package:life_os/models/life_event.dart';
-import 'package:life_os/security/app_lock.dart';
-import 'package:life_os/security/auto_backup.dart';
-import 'package:life_os/security/backup_cipher.dart';
-import 'package:life_os/security/biometric_authenticator.dart';
-import 'package:life_os/security/key_store.dart';
-import 'package:life_os/security/security_service.dart';
-import 'package:life_os/security/security_settings.dart';
-import 'package:life_os/state/app_controller.dart';
-import 'package:life_os/ui/screens/settings_screen.dart';
-import 'package:life_os/ui/widgets/backup_actions.dart';
+import 'package:catenna/app.dart';
+import 'package:catenna/core/backup_schedule.dart';
+import 'package:catenna/data/app_data.dart';
+import 'package:catenna/data/app_repository.dart';
+import 'package:catenna/data/backup_storage.dart';
+import 'package:catenna/data/file_source.dart';
+import 'package:catenna/models/life_event.dart';
+import 'package:catenna/security/app_lock.dart';
+import 'package:catenna/security/auto_backup.dart';
+import 'package:catenna/security/backup_cipher.dart';
+import 'package:catenna/security/biometric_authenticator.dart';
+import 'package:catenna/security/key_store.dart';
+import 'package:catenna/security/security_service.dart';
+import 'package:catenna/security/security_settings.dart';
+import 'package:catenna/state/app_controller.dart';
+import 'package:catenna/ui/screens/settings_screen.dart';
+import 'package:catenna/ui/widgets/backup_actions.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const fastCipher = BackupCipher(iterations: 1000);
@@ -28,11 +28,11 @@ void main() {
   group('правила', () {
     test('имя файла несёт время; чужие файлы не наши', () {
       final t = DateTime(2026, 11, 18, 20, 31);
-      expect(backupFileName(t), 'lifeos-backup-2026-11-18-2031.lifeos');
-      expect(backupTimeOf('lifeos-backup-2026-11-18-2031.lifeos'), t);
-      expect(backupTimeOf('lifeos-backup-2026-11-18-2031-2.lifeos'), t);
+      expect(backupFileName(t), 'catenna-backup-2026-11-18-2031.catenna');
+      expect(backupTimeOf('catenna-backup-2026-11-18-2031.catenna'), t);
+      expect(backupTimeOf('catenna-backup-2026-11-18-2031-2.catenna'), t);
       expect(backupTimeOf('заметки.txt'), isNull);
-      expect(backupTimeOf('lifeos-backup-2026-11-18.lifeos'), isNull);
+      expect(backupTimeOf('catenna-backup-2026-11-18.catenna'), isNull);
     });
 
     test('срок копии — по календарным дням', () {
@@ -46,7 +46,7 @@ void main() {
     });
 
     test('очистка: остаются самые новые свои копии, чужие файлы не трогаются', () {
-      final names = [for (var d = 1; d <= 10; d++) backupFileName(DateTime(2026, 11, d, 12)), 'заметки.txt', 'lifeos-backup-old.json'];
+      final names = [for (var d = 1; d <= 10; d++) backupFileName(DateTime(2026, 11, d, 12)), 'заметки.txt', 'catenna-backup-old.json'];
       final drop = backupsToDelete(names, keep: 8);
       expect(drop, [backupFileName(DateTime(2026, 11, 2, 12)), backupFileName(DateTime(2026, 11, 1, 12))]);
       expect(backupsToDelete(names.take(3), keep: 8), isEmpty);
@@ -107,7 +107,7 @@ void main() {
       await b.setPassword('надёжный пароль');
       expect(await b.runNow(), BackupOutcome.done);
       final files = storage.folders[b.folder]!;
-      expect(files.keys.single, 'lifeos-backup-2026-11-18-1200.lifeos');
+      expect(files.keys.single, 'catenna-backup-2026-11-18-1200.catenna');
       final text = utf8.decode(files.values.single);
       expect(BackupCipher.looksEncrypted(text), isTrue);
       expect(text, isNot(contains('Пробежка'))); // без пароля не прочитать
@@ -236,7 +236,7 @@ void main() {
       await backup.runNow(); // ошибка — повод напомнить
       final lock = AppLock(authenticator: FakeAuthenticator(available: false), settings: SecuritySettings())..start();
       final security = SecurityService(lock: lock, backupCipher: fastCipher, backup: backup);
-      await tester.pumpWidget(LifeOSApp(controller: c, security: security));
+      await tester.pumpWidget(CatennaApp(controller: c, security: security));
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('backup_reminder')), findsOneWidget);
       expect(find.text('Автокопия не получилась'), findsOneWidget);
@@ -270,7 +270,7 @@ void main() {
       await backup.init();
       final lock = AppLock(authenticator: FakeAuthenticator(available: false), settings: SecuritySettings())..start();
       final security = SecurityService(lock: lock, backupCipher: fastCipher, backup: backup);
-      await tester.pumpWidget(LifeOSApp(controller: c, security: security));
+      await tester.pumpWidget(CatennaApp(controller: c, security: security));
       await tester.pumpAndSettle();
       tester.state<NavigatorState>(find.byType(Navigator).first).push(MaterialPageRoute(builder: (_) => SettingsScreen(controller: c, security: security)));
       await tester.pumpAndSettle();

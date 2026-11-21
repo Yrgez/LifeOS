@@ -2,15 +2,15 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/core/chronicle.dart';
-import 'package:life_os/data/app_data.dart';
-import 'package:life_os/data/app_repository.dart';
-import 'package:life_os/data/sqlite_app_repository.dart';
-import 'package:life_os/models/day_snapshot.dart';
-import 'package:life_os/models/life_event.dart';
-import 'package:life_os/models/life_process.dart';
-import 'package:life_os/models/models.dart';
-import 'package:life_os/state/app_controller.dart';
+import 'package:catenna/core/chronicle.dart';
+import 'package:catenna/data/app_data.dart';
+import 'package:catenna/data/app_repository.dart';
+import 'package:catenna/data/sqlite_app_repository.dart';
+import 'package:catenna/models/day_snapshot.dart';
+import 'package:catenna/models/life_event.dart';
+import 'package:catenna/models/life_process.dart';
+import 'package:catenna/models/models.dart';
+import 'package:catenna/state/app_controller.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
@@ -185,7 +185,7 @@ void main() {
     });
 
     test('миграция базы v2 → v3: недельные массивы из kv переезжают в снимки, ключи удаляются', () async {
-      final dir = await Directory.systemTemp.createTemp('life_os_snap');
+      final dir = await Directory.systemTemp.createTemp('catenna_snap');
       addTearDown(() => dir.delete(recursive: true));
       final path = '${dir.path}/v2.db';
       final v2 = await SqliteAppRepository.openDb(databaseFactoryFfi, path);

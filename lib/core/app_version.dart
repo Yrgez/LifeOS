@@ -3,9 +3,9 @@
 /// У локального запуска без них — «сборка для разработки».
 library;
 
-const String kAppVersion = String.fromEnvironment('LIFEOS_VERSION');
-const String kAppBuild = String.fromEnvironment('LIFEOS_BUILD');
-const String kAppCommit = String.fromEnvironment('LIFEOS_COMMIT');
+const String kAppVersion = String.fromEnvironment('CATENNA_VERSION');
+const String kAppBuild = String.fromEnvironment('CATENNA_BUILD');
+const String kAppCommit = String.fromEnvironment('CATENNA_COMMIT');
 
 /// «1.1.0 (сборка 412) · 4b9e89e»; без данных сборки — «сборка для разработки».
 String appVersionLabel({String version = kAppVersion, String build = kAppBuild, String commit = kAppCommit}) {

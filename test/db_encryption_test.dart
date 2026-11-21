@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/data/sqlite_app_repository.dart';
-import 'package:life_os/security/db_encryption.dart';
-import 'package:life_os/security/key_store.dart';
-import 'package:life_os/security/security_service.dart';
-import 'package:life_os/state/app_controller.dart';
+import 'package:catenna/data/sqlite_app_repository.dart';
+import 'package:catenna/security/db_encryption.dart';
+import 'package:catenna/security/key_store.dart';
+import 'package:catenna/security/security_service.dart';
+import 'package:catenna/state/app_controller.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 /// Моделируем SQLCipher так: «пароль» хранится в заголовке файла (application_id). Открыть файл с неверным
@@ -110,8 +110,8 @@ void main() {
       await keys.read(DbEncryptionManager.markerName) == null && await keys.read(DbEncryptionManager.pendingKeyName) == null;
 
   setUp(() {
-    dir = Directory.systemTemp.createTempSync('life_os_enc_test');
-    path = '${dir.path}/life_os.db';
+    dir = Directory.systemTemp.createTempSync('catenna_enc_test');
+    path = '${dir.path}/catenna.db';
     keys = MemoryKeyStore();
   });
   tearDown(() => dir.deleteSync(recursive: true));

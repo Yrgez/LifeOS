@@ -1,4 +1,4 @@
-package dev.lifeos.local_reminders;
+package dev.catenna.local_reminders;
 
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -14,7 +14,7 @@ public class ReminderReceiver extends BroadcastReceiver {
     static final String EXTRA_ID = "id";
     static final String EXTRA_TITLE = "title";
     static final String EXTRA_BODY = "body";
-    static final String CHANNEL = "lifeos_reminders";
+    static final String CHANNEL = "catenna_reminders";
 
     static void ensureChannel(Context context) {
         NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -40,12 +40,12 @@ public class ReminderReceiver extends BroadcastReceiver {
 
         // на экране блокировки — только нейтральная строка: суммы и заметки видны после разблокировки
         Notification publicVersion = new Notification.Builder(context, CHANNEL)
-                .setSmallIcon(R.drawable.ic_lifeos_reminder)
+                .setSmallIcon(R.drawable.ic_catenna_reminder)
                 .setContentTitle("Catenna")
                 .setContentText("Напоминание")
                 .build();
         Notification.Builder b = new Notification.Builder(context, CHANNEL)
-                .setSmallIcon(R.drawable.ic_lifeos_reminder)
+                .setSmallIcon(R.drawable.ic_catenna_reminder)
                 .setContentTitle(title)
                 .setContentText(body)
                 .setStyle(new Notification.BigTextStyle().bigText(body))

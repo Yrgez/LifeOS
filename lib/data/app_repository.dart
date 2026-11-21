@@ -27,8 +27,8 @@ class SchemaTooNewException implements Exception {
 /// Хранит ВСЁ состояние одним JSON-блобом: запись атомарна (раньше — 16 отдельных ключей,
 /// которые могли записаться наполовину) и быстрее.
 class PrefsAppRepository implements AppRepository {
-  static const dataKey = 'life_os_data_v3';
-  static const corruptKey = 'life_os_data_v3.corrupt';
+  static const dataKey = 'catenna_data_v3';
+  static const corruptKey = 'catenna_data_v3.corrupt';
 
   SharedPreferences? _cached;
 
@@ -71,7 +71,7 @@ class PrefsAppRepository implements AppRepository {
   // ---- миграция со старого формата (отдельные ключи). Старые ключи НЕ удаляются — можно откатиться. ----
 
   static bool hasLegacy(SharedPreferences p) =>
-      p.containsKey('life_os_muscles') || p.containsKey('life_os_net_worth') || p.containsKey('life_os_goals');
+      p.containsKey('catenna_muscles') || p.containsKey('catenna_net_worth') || p.containsKey('catenna_goals');
 
   static Map<String, dynamic> legacyToJson(SharedPreferences p) {
     dynamic dec(String k) {
@@ -86,22 +86,22 @@ class PrefsAppRepository implements AppRepository {
     }
 
     return {
-      'netWorth': p.getInt('life_os_net_worth'),
-      'monthlyIncome': p.getInt('life_os_income'),
-      'monthlyExpense': p.getInt('life_os_expense'),
-      'dailySteps': p.getInt('life_os_steps'),
-      'activeCalories': p.getInt('life_os_cals'),
-      'proteinGrams': p.getInt('life_os_prot'),
-      'lastDay': p.getString('life_os_day'),
-      'muscles': dec('life_os_muscles'),
-      'goals': dec('life_os_goals'),
-      'achievements': dec('life_os_achievements'),
-      'salaryHistory': dec('life_os_salary'),
-      'graphNodes': dec('life_os_nodes_v3') ?? dec('life_os_nodes_v2'),
-      'graphEdges': dec('life_os_edges_v2'),
-      'stepsWeekHistory': dec('life_os_steps_hist'),
-      'caloriesWeekHistory': dec('life_os_cals_hist'),
-      'graphEvolutionHistory': dec('life_os_graph_hist'),
+      'netWorth': p.getInt('catenna_net_worth'),
+      'monthlyIncome': p.getInt('catenna_income'),
+      'monthlyExpense': p.getInt('catenna_expense'),
+      'dailySteps': p.getInt('catenna_steps'),
+      'activeCalories': p.getInt('catenna_cals'),
+      'proteinGrams': p.getInt('catenna_prot'),
+      'lastDay': p.getString('catenna_day'),
+      'muscles': dec('catenna_muscles'),
+      'goals': dec('catenna_goals'),
+      'achievements': dec('catenna_achievements'),
+      'salaryHistory': dec('catenna_salary'),
+      'graphNodes': dec('catenna_nodes_v3') ?? dec('catenna_nodes_v2'),
+      'graphEdges': dec('catenna_edges_v2'),
+      'stepsWeekHistory': dec('catenna_steps_hist'),
+      'caloriesWeekHistory': dec('catenna_cals_hist'),
+      'graphEvolutionHistory': dec('catenna_graph_hist'),
     };
   }
 }

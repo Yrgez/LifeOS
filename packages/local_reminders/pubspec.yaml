@@ -15,5 +15,5 @@ flutter:
   plugin:
     platforms:
       android:
-        package: dev.lifeos.local_reminders
+        package: dev.catenna.local_reminders
         pluginClass: LocalRemindersPlugin

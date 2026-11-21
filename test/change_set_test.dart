@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/data/app_data.dart';
-import 'package:life_os/data/change_set.dart';
-import 'package:life_os/models/models.dart';
+import 'package:catenna/data/app_data.dart';
+import 'package:catenna/data/change_set.dart';
+import 'package:catenna/models/models.dart';
 
 WorkoutSet ws(String id) => WorkoutSet(id: id, muscleId: 'chest', at: DateTime(2026, 10, 24), weight: 10, reps: 5);
 MoneyTx tx(String id) => MoneyTx(id: id, at: DateTime(2026, 10, 24), isIncome: false, amount: 1, categoryId: 'food');

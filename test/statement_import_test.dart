@@ -2,12 +2,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/core/statement_import.dart';
-import 'package:life_os/data/app_data.dart';
-import 'package:life_os/data/app_repository.dart';
-import 'package:life_os/data/sqlite_app_repository.dart';
-import 'package:life_os/state/app_controller.dart';
-import 'package:life_os/ui/screens/statement_import_screen.dart';
+import 'package:catenna/core/statement_import.dart';
+import 'package:catenna/data/app_data.dart';
+import 'package:catenna/data/app_repository.dart';
+import 'package:catenna/data/sqlite_app_repository.dart';
+import 'package:catenna/state/app_controller.dart';
+import 'package:catenna/ui/screens/statement_import_screen.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 // Похоже на выгрузку банка: шапка над таблицей, «;», кавычки, копейки через запятую, неразрывные пробелы.
@@ -129,7 +129,7 @@ void main() {
     });
 
     test('SQLite: источник операции хранится; база версии 3 получает колонку при обновлении', () async {
-      final dir = await Directory.systemTemp.createTemp('lifeos_import');
+      final dir = await Directory.systemTemp.createTemp('catenna_import');
       addTearDown(() => dir.delete(recursive: true));
       final path = '${dir.path}/v3.db';
       // база старой версии: таблица операций без import_id

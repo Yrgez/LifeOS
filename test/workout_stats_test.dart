@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/core/workout_stats.dart';
-import 'package:life_os/models/models.dart';
+import 'package:catenna/core/workout_stats.dart';
+import 'package:catenna/models/models.dart';
 
 WorkoutSet ws(DateTime at, double w, int r, {String m = 'chest', String? id}) =>
     WorkoutSet(id: id ?? '${at.microsecondsSinceEpoch}_$w$r$m', muscleId: m, at: at, weight: w, reps: r);

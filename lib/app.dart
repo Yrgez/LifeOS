@@ -7,11 +7,11 @@ import 'state/app_controller.dart';
 import 'ui/app_shell.dart';
 import 'ui/widgets/lock_layer.dart';
 
-class LifeOSApp extends StatelessWidget {
+class CatennaApp extends StatelessWidget {
   final AppController controller;
   final SecurityService security;
 
-  LifeOSApp({super.key, required this.controller, SecurityService? security}) : security = security ?? SecurityService.disabled();
+  CatennaApp({super.key, required this.controller, SecurityService? security}) : security = security ?? SecurityService.disabled();
 
   @override
   Widget build(BuildContext context) {

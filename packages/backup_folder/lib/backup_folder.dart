@@ -12,7 +12,7 @@ class BackupFolderEntry {
 /// Папка для резервных копий на Android через Storage Access Framework. Человек выбирает папку один раз
 /// (в том числе облачную, например Google Drive), приложение получает постоянный доступ только к ней.
 class BackupFolder {
-  static const _ch = MethodChannel('lifeos/backup_folder');
+  static const _ch = MethodChannel('catenna/backup_folder');
 
   /// Выбор папки. Возвращает её адрес (content://…) или null, если выбор отменён.
   static Future<String?> pickFolder() => _ch.invokeMethod<String>('pickFolder');

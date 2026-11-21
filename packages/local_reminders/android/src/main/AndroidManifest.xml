@@ -1,12 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  package="dev.lifeos.local_reminders">
+  package="dev.catenna.local_reminders">
     <!-- Android 13+: показ уведомлений (запрашивается у человека явно) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- восстановить запланированные напоминания после перезагрузки телефона -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <application>
-        <receiver android:name="dev.lifeos.local_reminders.ReminderReceiver" android:exported="false"/>
-        <receiver android:name="dev.lifeos.local_reminders.RestoreReceiver" android:exported="true">
+        <receiver android:name="dev.catenna.local_reminders.ReminderReceiver" android:exported="false"/>
+        <receiver android:name="dev.catenna.local_reminders.RestoreReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>

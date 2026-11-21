@@ -3,12 +3,12 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/core/text_decoding.dart';
-import 'package:life_os/data/app_data.dart';
-import 'package:life_os/data/app_repository.dart';
-import 'package:life_os/data/file_source.dart';
-import 'package:life_os/state/app_controller.dart';
-import 'package:life_os/ui/screens/statement_import_screen.dart';
+import 'package:catenna/core/text_decoding.dart';
+import 'package:catenna/data/app_data.dart';
+import 'package:catenna/data/app_repository.dart';
+import 'package:catenna/data/file_source.dart';
+import 'package:catenna/state/app_controller.dart';
+import 'package:catenna/ui/screens/statement_import_screen.dart';
 
 import 'statement_import_test.dart' show tinkoffLike;
 

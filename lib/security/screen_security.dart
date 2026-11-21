@@ -8,7 +8,7 @@ abstract class ScreenSecurity {
 }
 
 class MethodChannelScreenSecurity implements ScreenSecurity {
-  static const _channel = MethodChannel('life_os/screen_security');
+  static const _channel = MethodChannel('catenna/screen_security');
 
   @override
   Future<void> setSecure(bool secure) async {
