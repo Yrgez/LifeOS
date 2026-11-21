@@ -12,7 +12,7 @@ extension EventOps on AppController {
   List<LifeEvent> get allEvents => List.unmodifiable(_d.events);
 
   /// Актуальные события (последние версии, не отменённые), по возрастанию времени.
-  List<LifeEvent> get events => currentEvents(_d.events);
+  List<LifeEvent> get events => _memo('events', () => List<LifeEvent>.unmodifiable(currentEvents(_d.events)));
 
   /// Поиск по всем записям: последние версии событий (отменённые — тоже, с пометкой), операции, отметки,
   /// процессы, цели, достижения, счета.
@@ -47,11 +47,11 @@ extension EventOps on AppController {
   List<LifeEvent> eventsForGoal(String goalId) => goalEvents(goalId, events, _d.processes);
 
   /// Что уже вложено в цель: ресурсы, число событий (напрямую / через процессы), затронутые измерения.
-  GoalFact goalFactOf(String goalId) => goalFact(goalId, events, _d.processes);
+  GoalFact goalFactOf(String goalId) => _memo(('goalFact', goalId), () => goalFact(goalId, events, _d.processes));
 
   /// Распределение ресурсов за [days] дней, заканчивающихся сегодня: по измерениям, процессам, с прошлым периодом.
   ResourceBreakdown resourceBreakdownFor(int days) =>
-      resourceBreakdown(current: events, transactions: _d.transactions, now: _clock(), days: days);
+      _memo(('resources', days), () => resourceBreakdown(current: events, transactions: _d.transactions, now: _clock(), days: days));
 
   /// Фиксирует событие. Возвращает id или null (неверные данные, событие в будущем, журнал полон).
   String? addEvent({
@@ -212,11 +212,18 @@ extension EventOps on AppController {
   }
 
   /// Подходы за день [day], на которые ещё не ссылается ни одно актуальное событие.
-  List<WorkoutSet> unrecordedSets(DateTime day) {
-    final key = dayKey(day);
-    final referenced = {for (final e in events) for (final r in e.refs) if (r.type == EventRef.workoutSet) r.id};
-    return [for (final s in _d.workoutSets) if (dayKey(s.at) == key && !referenced.contains(s.id)) s];
-  }
+  List<WorkoutSet> unrecordedSets(DateTime day) => _memo(('unrecorded', dayKey(day)), () {
+        final start = DateTime(day.year, day.month, day.day), end = DateTime(day.year, day.month, day.day + 1);
+        final referenced = {for (final e in events) for (final r in e.refs) if (r.type == EventRef.workoutSet) r.id};
+        // журнал отсортирован по времени: идём с конца и останавливаемся на предыдущем дне
+        final out = <WorkoutSet>[];
+        for (var i = _d.workoutSets.length - 1; i >= 0; i--) {
+          final s = _d.workoutSets[i];
+          if (s.at.isBefore(start)) break;
+          if (s.at.isBefore(end) && !referenced.contains(s.id)) out.add(s);
+        }
+        return List<WorkoutSet>.unmodifiable(out.reversed);
+      });
 
   /// Событие тренировки дня из подходов журнала: «Тренировка: Грудь, Бицепс», ссылки на подходы, источник — авто.
   /// Если событие тренировки этого дня уже есть — дополняется новой версией, а не дублируется.

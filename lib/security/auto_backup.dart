@@ -159,6 +159,12 @@ class AutoBackup extends ChangeNotifier {
   Future<BackupOutcome> runNow() async {
     if (!configured) return BackupOutcome.notConfigured;
     if (_running) return BackupOutcome.failed;
+    if (controller.loadFailed) {
+      // данные прочитаны не полностью: такая копия вытеснила бы из папки прежние, целые
+      await _fail(await _p, 'данные прочитаны не полностью — копия не делается, прежние копии сохранены');
+      notifyListeners();
+      return BackupOutcome.failed;
+    }
     _running = true;
     notifyListeners();
     final p = await _p;
@@ -205,6 +211,17 @@ class AutoBackup extends ChangeNotifier {
       _running = false;
       notifyListeners();
     }
+  }
+
+  /// Открытый экспорт файлом в выбранную папку — для того, что не помещается в буфер обмена. Без шифрования:
+  /// это таблица для чтения без приложения, а сохранить её человек просит сам. null — папка не выбрана или недоступна.
+  Future<String?> saveExport(String name, String text) async {
+    final folder = _folder;
+    if (folder == null || !await storage.hasAccess(folder)) return null;
+    // метка UTF-8 в начале CSV — иначе Excel показывает кириллицу нечитаемо
+    final body = name.endsWith('.csv') ? '\uFEFF$text' : text;
+    await storage.write(folder, name, Uint8List.fromList(utf8.encode(body)));
+    return name;
   }
 
   Future<void> _fail(SharedPreferences p, String message) async {

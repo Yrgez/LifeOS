@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/utils.dart';
 import '../../state/app_controller.dart';
 import 'form_dialog.dart';
+import 'toast.dart';
 
 /// Диалог записи подхода. Если [muscleId] задан — мышца фиксирована, а вес и повторы
 /// подставляются из последнего подхода (быстро записать «ещё один такой же»).
@@ -38,7 +39,10 @@ Future<void> showLogSetDialog(BuildContext context, AppController c, {String? mu
     parseInt(r['r']!)!,
     daysAgo: parseInt(r['d']!) ?? 0,
   );
-  if (!res.ok) return;
+  if (!res.ok) {
+    if (c.setsFull) showToast(context, 'Журнал подходов заполнен — новые подходы не принимаются');
+    return;
+  }
 
   final text = res.isRecord ? 'Новый рекорд! Расчётный 1RM: ${trimNum(res.oneRm)} кг' : 'Подход записан • 1RM ≈ ${trimNum(res.oneRm)} кг';
   ScaffoldMessenger.of(context)

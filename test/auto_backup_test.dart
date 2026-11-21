@@ -86,6 +86,31 @@ void main() {
       expect(b.configured, isTrue);
     });
 
+    test('большой экспорт — файлом в папку копий; CSV с меткой UTF-8; без папки — null', () async {
+      final b = await make();
+      expect(await b.saveExport('lifeos-events-2026-11-18.csv', 'a,b'), isNull);
+      await b.chooseFolder();
+      expect(await b.saveExport('lifeos-events-2026-11-18.csv', 'когда,название'), 'lifeos-events-2026-11-18.csv');
+      final csv = storage.folders[b.folder]!['lifeos-events-2026-11-18.csv']!;
+      expect(csv.take(3), [0xEF, 0xBB, 0xBF]); // метка UTF-8 (utf8.decode её скрывает)
+      expect(utf8.decode(csv), 'когда,название');
+      await b.saveExport('lifeos-chronicle-2026-11-18.md', '# Хроника');
+      expect(storage.folders[b.folder]!['lifeos-chronicle-2026-11-18.md']!.first, '#'.codeUnitAt(0)); // без метки
+    });
+
+    test('данные прочитаны не полностью — копия не делается и не вытесняет прежние', () async {
+      final damaged = AppData.fromJson({...AppData.blank(now: now).toJson(), 'goals': 'не список'}, now: now);
+      c = AppController(MemoryAppRepository(data: damaged), clock: () => now, saveDelay: const Duration(days: 1));
+      await c.load();
+      final b = await make();
+      await b.chooseFolder();
+      await b.setPassword('надёжный пароль');
+      expect(await b.runNow(), BackupOutcome.failed);
+      expect(await b.maybeRun(), BackupOutcome.failed);
+      expect(storage.folders[b.folder] ?? const {}, isEmpty);
+      expect(b.error, contains('не полностью'));
+    });
+
     test('копия зашифрована и восстанавливается в данные один к одному', () async {
       c.addEvent(title: 'Пробежка', dimensions: [LifeDimension.body]);
       final b = await make();

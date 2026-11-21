@@ -17,18 +17,13 @@ import 'categories_screen.dart';
 import 'statement_import_screen.dart';
 import '../widgets/adaptive_pair.dart';
 import '../widgets/stat_tile.dart';
+import '../widgets/toast.dart';
 
 /// Категории для выбора: встроенные и свои; архивная остаётся, только если её уже выбрала правимая запись.
 Map<String, String> _allCategoryOptions({String? keep}) =>
     {for (final k in pickableFinCategories(keep: keep)) k.id: '${k.isIncome ? 'Доход' : 'Расход'} • ${k.name}'};
 
-const _capitalOptions = {'1': 'Да — изменит чистый капитал', '0': 'Нет — только учёт'};
-
-void _toast(BuildContext context, String text) {
-  ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(text)));
-}
+const _capitalOptions = {'1': 'Да', '0': 'Нет, только учёт'};
 
 /// Диалог добавления (или правки, если задан [existing]) операции. Тип определяется категорией.
 Future<void> showTransactionDialog(BuildContext context, AppController c, {MoneyTx? existing}) async {
@@ -63,7 +58,11 @@ Future<void> showTransactionDialog(BuildContext context, AppController c, {Money
   final ok = existing == null
       ? c.addTransaction(categoryId: r['c']!, amount: amount, at: at, note: r['n']!, affectsNetWorth: r['w'] == '1')
       : c.updateTransaction(existing.id, categoryId: r['c']!, amount: amount, at: at, note: r['n']!, affectsNetWorth: r['w'] == '1');
-  if (ok) _toast(context, existing == null ? 'Операция добавлена' : 'Операция изменена');
+  if (ok) {
+    showToast(context, existing == null ? 'Операция добавлена' : 'Операция изменена');
+  } else if (existing == null && c.transactionsFull) {
+    showToast(context, 'Журнал операций заполнен — новые операции не принимаются');
+  }
 }
 
 /// Лимит расходов на месяц по категории. Пустое значение или 0 снимает лимит.
@@ -137,7 +136,7 @@ Future<void> showRecurringSheet(BuildContext context, AppController c) {
                     TextButton.icon(
                       onPressed: () => showRecurringDialog(sheetContext, c),
                       icon: const Icon(Icons.add, size: 16, color: AppColors.material),
-                      label: const Text('Добавить', style: TextStyle(color: AppColors.material, fontSize: 12)),
+                      label: const Text('Добавить', style: TextStyle(color: AppColors.material, fontSize: 13)),
                     ),
                   ],
                 ),
@@ -146,7 +145,7 @@ Future<void> showRecurringSheet(BuildContext context, AppController c) {
                 if (rules.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 20),
-                    child: Text('Правил нет. Создайте правило (аренда, подписка, зарплата) — операция будет появляться сама каждый месяц.', style: TextStyle(color: AppColors.muted, fontSize: 12)),
+                    child: Text('Правил нет. Создайте правило (аренда, подписка, зарплата) — операция будет появляться сама каждый месяц.', style: TextStyle(color: AppColors.muted, fontSize: 13)),
                   )
                 else
                         for (final r in rules)
@@ -244,8 +243,8 @@ class _FinanceScreenState extends State<FinanceScreen> {
         AdaptivePair(
           spacing: 8,
           children: [
-            StatTile('ДОХОД', '+${fmtCur(totals.income)}', valueColor: AppColors.green),
-            StatTile('РАСХОД', '−${fmtCur(totals.expense)}', valueColor: AppColors.red),
+            StatTile('ДОХОД', '${totals.income > 0 ? '+' : ''}${fmtCur(totals.income)}', valueColor: AppColors.green),
+            StatTile('РАСХОД', '${totals.expense > 0 ? '−' : ''}${fmtCur(totals.expense)}', valueColor: AppColors.red),
           ],
         ),
         const SizedBox(height: 8),
@@ -260,7 +259,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
         const SizedBox(height: 12),
         _categoriesCard(totals),
         const SizedBox(height: 16),
-        const Text('ОПЕРАЦИИ', style: TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold)),
+        const Text('ОПЕРАЦИИ', style: AppText.caption),
         const SizedBox(height: 8),
         ..._list(monthTxs),
       ],
@@ -272,7 +271,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         IconButton(tooltip: 'Предыдущий месяц', icon: const Icon(Icons.chevron_left), onPressed: () => setState(() => _month = addMonths(_month, -1))),
-        SizedBox(width: 170, child: Text(monthYear(_month), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15))),
+        SizedBox(width: 170, child: Text(monthYear(_month), textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
         IconButton(
           tooltip: 'Следующий месяц',
           icon: const Icon(Icons.chevron_right),
@@ -287,7 +286,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
     final labels = List.generate(6, (i) => monthShortName(addMonths(_month, i - 5).month));
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: tileDecoration(radius: 20),
+      decoration: tileDecoration(radius: AppRadii.card),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -298,15 +297,15 @@ class _FinanceScreenState extends State<FinanceScreen> {
             spacing: 8,
             runSpacing: 4,
             children: [
-              Text('ДИНАМИКА ЗА 6 МЕСЯЦЕВ', style: TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold)),
+              Text('ДИНАМИКА ЗА 6 МЕСЯЦЕВ', style: AppText.caption),
               Row(mainAxisSize: MainAxisSize.min, children: [
                 CircleAvatar(radius: 4, backgroundColor: AppColors.green),
                 SizedBox(width: 4),
-                Text('доход', style: TextStyle(color: AppColors.muted, fontSize: 10)),
+                Text('доход', style: TextStyle(color: AppColors.muted, fontSize: 11)),
                 SizedBox(width: 8),
                 CircleAvatar(radius: 4, backgroundColor: AppColors.red),
                 SizedBox(width: 4),
-                Text('расход', style: TextStyle(color: AppColors.muted, fontSize: 10)),
+                Text('расход', style: TextStyle(color: AppColors.muted, fontSize: 11)),
               ]),
             ],
           ),
@@ -339,7 +338,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
     final exceeded = statuses.where((s) => s.exceeded).length;
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: tileDecoration(radius: 20),
+      decoration: tileDecoration(radius: AppRadii.card),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -347,7 +346,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // на узком экране заголовок переносится, а не выталкивает соседей за край
-              const Flexible(child: Text('РАСХОДЫ ПО КАТЕГОРИЯМ', style: TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold))),
+              const Flexible(child: Text('РАСХОДЫ ПО КАТЕГОРИЯМ', style: AppText.caption)),
               TextButton.icon(
                 onPressed: () => showBudgetDialog(context, c),
                 style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 24)),
@@ -363,7 +362,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
             ),
           const SizedBox(height: 8),
           if (statuses.isEmpty)
-            const Text('В этом месяце расходов и лимитов нет', style: TextStyle(color: AppColors.muted, fontSize: 12))
+            const Text('В этом месяце расходов и лимитов нет', style: TextStyle(color: AppColors.muted, fontSize: 13))
           else
             for (final st in statuses)
               Padding(
@@ -389,12 +388,12 @@ class _FinanceScreenState extends State<FinanceScreen> {
         children: [
           Icon(cat?.icon ?? Icons.help_outline, size: 16, color: cat?.color ?? AppColors.muted),
           const SizedBox(width: 8),
-          SizedBox(width: 92, child: Text(cat?.name ?? st.categoryId, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12))),
+          SizedBox(width: 92, child: Text(cat?.name ?? st.categoryId, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13))),
           Expanded(
             child: LinearProgressIndicator(
               value: value,
               minHeight: 6,
-              borderRadius: BorderRadius.circular(3),
+              borderRadius: BorderRadius.circular(AppRadii.bar),
               backgroundColor: AppColors.track,
               valueColor: AlwaysStoppedAnimation(color),
             ),
@@ -405,7 +404,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
             child: Text(
               st.exceeded ? '$label ⚠' : label,
               textAlign: TextAlign.right,
-              style: TextStyle(color: st.exceeded ? AppColors.text : AppColors.muted, fontSize: 10, fontWeight: st.exceeded ? FontWeight.bold : FontWeight.normal),
+              style: TextStyle(color: st.exceeded ? AppColors.text : AppColors.muted, fontSize: 11, fontWeight: st.exceeded ? FontWeight.bold : FontWeight.normal),
             ),
           ),
         ],
@@ -418,7 +417,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
       return const [
         Padding(
           padding: EdgeInsets.symmetric(vertical: 24),
-          child: Center(child: Text('В этом месяце операций нет.\nНажмите «+ Операция», чтобы добавить.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted, fontSize: 12))),
+          child: Center(child: Text('В этом месяце операций нет.\nНажмите «+ Операция», чтобы добавить.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted, fontSize: 13))),
         ),
       ];
     }
@@ -434,7 +433,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Flexible(child: Text(shortDate(t.at), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+              Flexible(child: Text(shortDate(t.at), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13))),
               const SizedBox(width: 8),
               Text('${dayTotal >= 0 ? '+' : '−'}${fmtCur(dayTotal.abs())}', style: const TextStyle(color: AppColors.muted, fontSize: 11)),
             ],
@@ -452,7 +451,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
       padding: const EdgeInsets.only(bottom: 6),
       child: Material(
         color: AppColors.card,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadii.small),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () => showTransactionDialog(context, c, existing: t),

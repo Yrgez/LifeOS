@@ -36,11 +36,25 @@ class AppColors {
   static const accent = Color(0xFFF2F2F2); // главное действие — белое
 }
 
-/// Радиусы: плитки 28, поля 18, панели снизу 36.
+/// Радиусы: плитки 28, средние плитки 20, поля и карточки списков 18, «таблетки» 24, мелкие блоки 12,
+/// полосы и дорожки 3, панели снизу 36. Другие значения не используются (`test/design_tokens_test.dart`).
 class AppRadii {
   static const tile = 28.0;
+  static const card = 20.0;
+  static const pill = 24.0;
   static const field = 18.0;
+  static const small = 12.0;
+  static const bar = 3.0;
   static const sheet = 36.0;
+}
+
+/// Типографика: размеры только из шкалы [scale] — подпись 11, основной 13, заголовок 16, крупный 22, экран 34.
+/// Мельче 11 не бывает: на 360 dp такой текст уже трудно читать.
+class AppText {
+  static const scale = [11.0, 13.0, 16.0, 22.0, 34.0];
+
+  /// Заголовок секции: «РАСХОДЫ ПО КАТЕГОРИЯМ», «КОЛОНКИ», поля диалогов.
+  static const caption = TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8);
 }
 
 /// Плитка в стиле макета: тёмно-серая, скруглённая, с тонкой рамкой.
@@ -83,7 +97,7 @@ ThemeData buildAppTheme() {
       foregroundColor: AppColors.text,
       elevation: 0,
       centerTitle: false,
-      titleTextStyle: TextStyle(fontFamily: 'Inter', fontSize: 17, fontWeight: FontWeight.w600, color: AppColors.text),
+      titleTextStyle: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.text),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(

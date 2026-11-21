@@ -32,6 +32,9 @@ void main() {
       expect(parseStatementAmount('1.234,40'), 1234);
       expect(parseStatementAmount('−500 ₽'), -500);
       expect(parseStatementAmount('(300.00)'), -300);
+      expect(parseStatementAmount('1.234'), 1234); // одна точка и три знака — разряды, как с запятой
+      expect(parseStatementAmount('12.5'), 13);
+      expect(parseStatementAmount('1,234'), 1234);
       expect(parseStatementAmount('1,5'), 2);
       expect(parseStatementAmount('12,345'), 12345); // запятая — разряды
       expect(parseStatementAmount('1.234.567'), 1234567);
@@ -94,6 +97,10 @@ void main() {
       final id = c.importStatement(tinkoffLike, m, name: 'Банк, ноябрь')!;
       expect(c.transactions.length, 3);
       expect(c.transactions.every((t) => t.importId == id), isTrue);
+      // строки выписки идут не по порядку, а журнал сортируется один раз в конце импорта
+      for (var i = 1; i < c.transactions.length; i++) {
+        expect(c.transactions[i - 1].at.isAfter(c.transactions[i].at), isFalse);
+      }
       expect(c.transactions.where((t) => !t.isIncome).every((t) => t.categoryId == 'other_exp'), isTrue);
       expect(c.netWorth, before); // по умолчанию капитал не меняется
 

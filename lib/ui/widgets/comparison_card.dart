@@ -56,7 +56,7 @@ class _ComparisonCardState extends State<ComparisonCard> {
 
     // Коэффициент корреляции по 7 точкам не говорит о связи ничего надёжного (и дни без данных здесь — нули),
     // поэтому число и вердикт не показываются: только сами кривые и честное число точек.
-    final corrText = 'Точек: $n. Этого мало для вывода о связи — сравнивайте форму кривых сами; '
+    final pointsNote = 'Точек: $n. Этого мало для вывода о связи — сравнивайте форму кривых сами; '
         'дни без данных показаны нулём.';
 
     return Container(
@@ -121,9 +121,9 @@ class _ComparisonCardState extends State<ComparisonCard> {
             ),
           ),
           const SizedBox(height: 8),
-          Text(corrText, style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600)),
+          Text(pointsNote, style: const TextStyle(color: AppColors.text, fontSize: 11, fontWeight: FontWeight.w600)),
           const SizedBox(height: 2),
-          const Text('Каждая кривая приведена к своему диапазону (от минимума до максимума), чтобы сравнить форму.', style: TextStyle(color: AppColors.muted, fontSize: 10)),
+          const Text('Каждая кривая приведена к своему диапазону (от минимума до максимума), чтобы сравнить форму.', style: TextStyle(color: AppColors.muted, fontSize: 11)),
         ],
       ),
     );

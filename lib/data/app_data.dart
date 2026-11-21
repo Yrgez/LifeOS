@@ -101,6 +101,10 @@ class AppData {
   String currency; // код основной валюты (RUB, USD…): только обозначение, суммы не пересчитываются
   int? lastHealthSyncMs;
 
+  /// Что при обычной загрузке оказалось повреждённым (поле целиком или пропущенные записи). Не сохраняется.
+  /// Непустой список = запись запрещена: иначе подставленное значение затёрло бы настоящие данные в базе.
+  final List<String> damaged = [];
+
   AppData({
     required this.netWorth,
     required this.monthlyIncome,
@@ -257,12 +261,13 @@ class AppData {
   /// (и логируется), остальные поля не страдают.
   factory AppData.fromJson(Map<String, dynamic> j, {DateTime? now, bool strict = false}) {
     final d = AppData.defaults(now: now);
+    final damaged = <String>[];
 
     T pick<T>(String key, T Function(dynamic) parse, T fallback) {
       final v = j[key];
       if (v == null) {
-        // Missing fields are valid in older schemas; explicit null is not valid for
-        // required exported fields. lastHealthSyncMs, heightCm and bodyGoal are intentionally nullable.
+        // отсутствие поля допустимо (старые схемы), а явный null — нет; рост, цель по весу и время синхронизации
+        // бывают пустыми по смыслу
         if (strict && j.containsKey(key) && !const {'lastHealthSyncMs', 'heightCm', 'bodyGoal'}.contains(key)) {
           throw FormatException('AppData: поле "$key" не может быть null');
         }
@@ -271,9 +276,11 @@ class AppData {
       try {
         return parse(v);
       } catch (e, st) {
-        AppLog.e('AppData: поле "$key" повреждено, использовано значение по умолчанию', e, st);
         if (strict) rethrow;
-        return fallback;
+        AppLog.e('AppData: поле "$key" повреждено — запись будет запрещена', e, st);
+        damaged.add(key);
+        // повреждённый список — пустой, а не примеры: демо-данные нельзя выдавать за данные человека
+        return fallback is List ? fallback.sublist(0, 0) as T : fallback;
       }
     }
 
@@ -287,8 +294,7 @@ class AppData {
       String Function(T) keyOf,
     ) {
       final entries = list(v, parse);
-      // docs uses (collection, id) as its primary key. Reject collisions on
-      // backup import before _docsFrom can collapse records into its Map.
+      // в таблице docs ключ — (коллекция, id): повтор при импорте копии отвергаем, иначе записи молча слились бы
       if (strict) {
         final seen = <String>{};
         for (final entry in entries) {
@@ -310,8 +316,7 @@ class AppData {
       String Function(T)? idOf,
     }) {
       final entries = v as List;
-      // Existing local data remains readable for compatibility. User-imported backups
-      // must respect the same memory bounds enforced by controller mutations.
+      // свои данные читаются как есть; импортированная копия обязана укладываться в те же пределы, что и правки
       if (strict && entries.length > maxLength) {
         throw FormatException(
           'AppData: поле "$field" превышает допустимый размер ($maxLength)',
@@ -320,9 +325,8 @@ class AppData {
       final parsed = entries
           .map((e) => parse(e as Map<String, dynamic>))
           .toList();
-      // SQLite stores journal IDs as primary keys. ConflictAlgorithm.replace
-      // would silently overwrite an earlier row if an imported backup repeats an ID.
-      // Keep legacy/local parsing tolerant; enforce uniqueness on strict imports only.
+      // id журнала — первичный ключ в SQLite: повтор в импортированной копии молча затёр бы строку.
+      // Обычная загрузка терпима, строгий импорт повторы отвергает.
       if (strict && idOf != null) {
         final seenIds = <String>{};
         for (final entry in parsed) {
@@ -356,7 +360,7 @@ class AppData {
       graphNodes: pick<List<GraphNode>>('graphNodes', (v) => uniqueCollection(v, 'graphNodes', GraphNode.fromJson, (entry) => entry.id), d.graphNodes),
       graphEdges: pick<List<GraphEdge>>('graphEdges', (v) => uniqueCollection(v, 'graphEdges', GraphEdge.fromJson, (entry) => entry.key), d.graphEdges),
       snapshots: j.containsKey('snapshots')
-          ? pick<Map<String, DaySnapshot>>('snapshots', (v) => _parseSnapshots(v, strict: strict), {})
+          ? pick<Map<String, DaySnapshot>>('snapshots', (v) => _parseSnapshots(v, strict: strict, damaged: damaged), {})
           : _migrateWeekly(j, pick, fallbackDay: j['lastDay'] is String ? j['lastDay'] as String : d.lastDay),
       workoutSets: pick<List<WorkoutSet>>(
         'workoutSets',
@@ -375,7 +379,7 @@ class AppData {
         }
         return list;
       }, <LifeProcess>[]),
-      events: pick<List<LifeEvent>>('events', (v) => _parseEvents(v, strict: strict), <LifeEvent>[]),
+      events: pick<List<LifeEvent>>('events', (v) => _parseEvents(v, strict: strict, damaged: damaged), <LifeEvent>[]),
       budgets: pick<Map<String, int>>(
         'budgets',
         (v) => (v as Map).map((k, x) => MapEntry(k as String, (x as num).toInt())),
@@ -472,10 +476,10 @@ class AppData {
         return v;
       }, kDefaultCurrency),
       lastHealthSyncMs: pick<int?>('lastHealthSyncMs', (v) => (v as num).toInt(), null),
-    );
+    )..damaged.addAll(damaged);
   }
 
-  static Map<String, DaySnapshot> _parseSnapshots(dynamic v, {required bool strict}) {
+  static Map<String, DaySnapshot> _parseSnapshots(dynamic v, {required bool strict, required List<String> damaged}) {
     final raw = v as List;
     if (strict && raw.length > kMaxSnapshots) {
       throw const FormatException('AppData: поле "snapshots" превышает допустимый размер ($kMaxSnapshots)');
@@ -487,6 +491,7 @@ class AppData {
       if (s == null || out.containsKey(s.day)) {
         if (strict) throw FormatException('AppData: поле "snapshots" — запись #$i повреждена или повторяет день');
         AppLog.e('AppData: снимок дня #$i пропущен (повреждён или повторяет день)');
+        damaged.add('snapshots #$i');
         continue;
       }
       out[s.day] = s;
@@ -521,7 +526,7 @@ class AppData {
   /// Журнал событий. Строгий режим (импорт копии) отвергает копию при любой битой записи, повторе id,
   /// нарушении цепочек версий или превышении предела. Обычная загрузка пропускает только битые записи
   /// (с записью в журнал диагностики) — остальная история не теряется.
-  static List<LifeEvent> _parseEvents(dynamic v, {required bool strict}) {
+  static List<LifeEvent> _parseEvents(dynamic v, {required bool strict, required List<String> damaged}) {
     final raw = v as List;
     if (strict && raw.length > kMaxLifeEvents) {
       throw const FormatException('AppData: поле "events" превышает допустимый размер ($kMaxLifeEvents)');
@@ -534,6 +539,7 @@ class AppData {
       if (ev == null || !ids.add(ev.id)) {
         if (strict) throw FormatException('AppData: поле "events" — запись #$i повреждена или повторяет id');
         AppLog.e('AppData: событие #$i пропущено (повреждено или повторяет id)');
+        damaged.add('events #$i');
         continue;
       }
       out.add(ev);

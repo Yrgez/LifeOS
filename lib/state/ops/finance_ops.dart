@@ -92,7 +92,7 @@ extension FinanceOps on AppController {
     bool affectsNetWorth = true,
   }) {
     final cat = finCategory(categoryId);
-    if (cat == null || amount <= 0) return false;
+    if (cat == null || amount <= 0 || transactionsFull) return false;
     final tx = MoneyTx(
       id: 'tx_${_clock().microsecondsSinceEpoch}_${_random.nextInt(1 << 20)}',
       at: at ?? _clock(),
@@ -120,7 +120,7 @@ extension FinanceOps on AppController {
   }
 
   void restoreTransaction(MoneyTx tx) {
-    if (_d.transactions.any((t) => t.id == tx.id)) return;
+    if (transactionsFull || _d.transactions.any((t) => t.id == tx.id)) return;
     _commit(() => _insertTx(tx, applyNetWorth: true));
   }
 
@@ -152,7 +152,7 @@ extension FinanceOps on AppController {
       if (old.affectsNetWorth) _d.netWorth -= old.signed;
       if (updated.affectsNetWorth) _d.netWorth += updated.signed;
       _d.transactions[i] = updated;
-      _d.transactions.sort((a, b) => a.at.compareTo(b.at));
+      _sortTransactions();
       _pending.upsertTx(updated);
     });
     return true;
@@ -166,6 +166,9 @@ extension FinanceOps on AppController {
   /// операции ради новых нельзя.
   int get transactionCapacityLeft => _maxTx - _d.transactions.length;
 
+  /// Журнал операций заполнен: новые не принимаются, старые не вытесняются (история не стирается сама).
+  bool get transactionsFull => transactionCapacityLeft <= 0;
+
   /// Сколько строк предпросмотра разберут правила.
   int statementRuleHits(List<StatementRow> rows) => rows.where((r) => categoryByRules(r.note, r.signed > 0, _d.importRules) != null).length;
 
@@ -175,10 +178,14 @@ extension FinanceOps on AppController {
 
   /// Предпросмотр: что будет добавлено, что уже загружалось раньше, какие строки не распознаны.
   ({ParsedStatement parsed, List<StatementRow> fresh, List<StatementRow> duplicates}) previewStatement(String text, ColumnMapping mapping) {
-    final parsed = parseStatement(text, mapping, now: _clock());
-    final existing = [for (final t in _d.transactions) if (t.importId != null) statementFingerprint(t.at, t.signed, t.note)];
-    final split = splitDuplicates(parsed.rows, existing);
-    return (parsed: parsed, fresh: split.fresh, duplicates: split.duplicates);
+    // экран предпросмотра перерисовывается часто — разбор и сверка с журналом только при новом тексте или колонках
+    final m = mapping;
+    return _memo(('statementPreview', text, m.date, m.amount, m.income, m.expense, m.note), () {
+      final parsed = parseStatement(text, mapping, now: _clock());
+      final existing = [for (final t in _d.transactions) if (t.importId != null) statementFingerprint(t.at, t.signed, t.note)];
+      final split = splitDuplicates(parsed.rows, existing);
+      return (parsed: parsed, fresh: split.fresh, duplicates: split.duplicates);
+    });
   }
 
   /// Импортирует новые строки выписки как операции со ссылкой на импорт. Категории — общие для всех
@@ -216,8 +223,10 @@ extension FinanceOps on AppController {
             importId: id,
           ),
           applyNetWorth: true,
+          sort: false,
         );
       }
+      _sortTransactions(); // один раз на весь импорт, а не на каждую строку
       _d.imports.add(StatementImport(id: id, at: now, name: n, added: p.fresh.length, duplicates: p.duplicates.length, rejected: p.parsed.rejected.length));
     });
     return id;
@@ -335,6 +344,10 @@ extension FinanceOps on AppController {
         if (due.isAfter(today)) break; // срок ещё не наступил — вернёмся позже
         final id = 'rec_${r.id}_${ymKey(month)}';
         if (!due.isBefore(r.start) && !_d.transactions.any((t) => t.id == id)) {
+          if (transactionsFull) {
+            AppLog.e('Журнал операций заполнен — повторяющаяся операция ${r.id} за ${ymKey(month)} не создана');
+            return; // месяц не отмечен обработанным: операция появится, когда в журнале освободится место
+          }
           _insertTx(
             MoneyTx(
               id: id,
@@ -355,19 +368,14 @@ extension FinanceOps on AppController {
     }
   }
 
-  void _insertTx(MoneyTx tx, {required bool applyNetWorth}) {
+  /// Вызывающий заранее проверяет [transactionsFull]: сверх предела запись не делается.
+  void _insertTx(MoneyTx tx, {required bool applyNetWorth, bool sort = true}) {
+    assert(!transactionsFull, 'журнал операций заполнен');
     _d.transactions.add(tx);
-    _d.transactions.sort((a, b) => a.at.compareTo(b.at));
+    if (sort) _sortTransactions();
     _pending.upsertTx(tx);
     if (applyNetWorth && tx.affectsNetWorth) _d.netWorth += tx.signed;
-    if (_d.transactions.length > _maxTx) {
-      final drop = _d.transactions.length - _maxTx;
-      final dropped = _d.transactions.take(drop).toList();
-      _d.transactions.removeRange(0, drop); // капитал не трогаем: старые операции уже учтены в нём
-      for (final x in dropped) {
-        _pending.deleteTx(x.id);
-      }
-      AppLog.e('Список операций превысил $_maxTx — удалено старейших: $drop');
-    }
   }
+
+  void _sortTransactions() => _d.transactions.sort((a, b) => a.at.compareTo(b.at));
 }

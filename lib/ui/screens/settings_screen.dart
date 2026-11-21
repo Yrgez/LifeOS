@@ -69,10 +69,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showToast(context, 'Обозначение сменилось на $cur. Суммы не пересчитываются — курс приложению неизвестен.');
   }
 
-  Future<void> _copyExport(String what, String text) async {
-    await Clipboard.setData(ClipboardData(text: text));
-    if (!mounted) return;
-    showToast(context, '$what — в буфере обмена. Вставьте в файл или таблицу');
+  /// Буфер обмена Android не принимает больше ~1 МБ за раз: большой экспорт сохраняется файлом в папку копий.
+  static const _clipboardLimit = 200000;
+
+  Future<void> _copyExport(String what, String text, String fileName) async {
+    String message;
+    if (text.length > _clipboardLimit) {
+      final b = security.backup;
+      String? saved;
+      try {
+        final dot = fileName.lastIndexOf('.');
+        saved = b == null ? null : await b.saveExport('lifeos-${fileName.substring(0, dot)}-${dayKey(c.now)}${fileName.substring(dot)}', text);
+      } catch (_) {
+        saved = null;
+      }
+      message = saved != null
+          ? '$what — файл «$saved» в папке копий'
+          : '$what не помещается в буфер обмена. Выберите папку в разделе «Автокопия» — файл сохранится туда';
+    } else {
+      try {
+        await Clipboard.setData(ClipboardData(text: text));
+        message = '$what — в буфере обмена. Вставьте в файл или таблицу';
+      } catch (_) {
+        message = 'Не удалось скопировать $what в буфер обмена';
+      }
+    }
+    if (mounted) showToast(context, message);
   }
 
   Future<void> _editStepsGoal() async {
@@ -116,7 +138,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       key: ValueKey('reminder_$id'),
       value: on,
       onChanged: (v) => r.update(build(v, time)),
-      title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+      title: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
       subtitle: Wrap(
         crossAxisAlignment: WrapCrossAlignment.center,
         spacing: 4,
@@ -144,7 +166,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       const Padding(
         padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
         child: Text('Приглашения, а не оценки: о том, что уже сделано, не напомним. Всё работает на телефоне, без сети.',
-            style: TextStyle(color: AppColors.muted, fontSize: 12)),
+            style: TextStyle(color: AppColors.muted, fontSize: 13)),
       ),
       _reminderRow(r,
           id: 'checkin',
@@ -171,7 +193,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ListTile(
           key: const ValueKey('reminders_denied'),
           leading: const Icon(Icons.notifications_off_outlined, color: AppColors.text, size: 20),
-          title: const Text('Уведомления запрещены', style: TextStyle(fontSize: 14, color: AppColors.text)),
+          title: const Text('Уведомления запрещены', style: TextStyle(fontSize: 13, color: AppColors.text)),
           subtitle: const Text('Разрешите их — или в настройках Android для LIFE OS', style: TextStyle(color: AppColors.muted, fontSize: 11)),
           trailing: TextButton(onPressed: r.requestPermission, child: const Text('Разрешить')),
         )
@@ -179,7 +201,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         Padding(
           key: const ValueKey('reminders_next'),
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-          child: Text('Ближайшее: ${fmtDate(next.at)} ${fmtTime(next.at)} — ${next.title}', style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+          child: Text('Ближайшее: ${fmtDate(next.at)} ${fmtTime(next.at)} — ${next.title}', style: const TextStyle(color: AppColors.muted, fontSize: 13)),
         ),
     ];
   }
@@ -244,11 +266,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const Text(
               'Данные хранятся только на телефоне. Автокопия раз в выбранный срок кладёт зашифрованную копию в папку, '
               'которую вы укажете — например, в Google Drive. Хранятся последние $backupKeepCount копий.',
-              style: TextStyle(color: AppColors.muted, fontSize: 12),
+              style: TextStyle(color: AppColors.muted, fontSize: 13),
             ),
             const SizedBox(height: 8),
             Text(status, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-            if (b.error != null) Text('Не получилось: ${b.error}', style: const TextStyle(color: AppColors.text, fontSize: 12)),
+            if (b.error != null) Text('Не получилось: ${b.error}', style: const TextStyle(color: AppColors.text, fontSize: 13)),
           ],
         ),
       ),
@@ -445,7 +467,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               healthStatusLine(c),
               trailing: c.healthSyncing
                   ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent))
-                  : Text(c.healthEnabled ? 'Синхр.' : 'Подключить', style: const TextStyle(color: AppColors.accent, fontSize: 12, fontWeight: FontWeight.bold)),
+                  : Text(c.healthEnabled ? 'Синхр.' : 'Подключить', style: const TextStyle(color: AppColors.accent, fontSize: 13, fontWeight: FontWeight.bold)),
               onTap: c.healthSyncing ? null : () => syncHealthWithToast(context, c),
             ),
             if (c.healthEnabled) _tile(Icons.link_off, 'Отключить синхронизацию', 'Разрешение в системе останется', onTap: c.disconnectHealth),
@@ -481,7 +503,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const Padding(
             padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
             child: Text('Скройте то, чем не пользуетесь. Данные не удаляются: они остаются в Хронике, экспорте и копии.',
-                style: TextStyle(color: AppColors.muted, fontSize: 12)),
+                style: TextStyle(color: AppColors.muted, fontSize: 13)),
           ),
           for (final s in Sections.all)
             adaptiveSwitchTile(
@@ -489,13 +511,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               key: ValueKey('section_${s.id}'),
               value: c.isShown(s.id),
               onChanged: (v) => c.setSectionShown(s.id, v),
-              title: Text(s.title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              title: Text(s.title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
               subtitle: Text(s.where, style: const TextStyle(color: AppColors.muted, fontSize: 11)),
             ),
         ]),
         _section('ОТКРЫТЫЙ ЭКСПОРТ', [
           // читается без LIFE OS: Excel, LibreOffice, любой текстовый редактор; это не резервная копия
-          _tile(Icons.article_outlined, 'Хроника (Markdown)', 'Текст: месяцы, дни, события и заметки', onTap: () => _copyExport('Хроника', c.exportChronicleMarkdown())),
+          _tile(Icons.article_outlined, 'Хроника (Markdown)', 'Текст: месяцы, дни, события и заметки', onTap: () => _copyExport('Хроника', c.exportChronicleMarkdown(), 'chronicle.md')),
           for (final e in const {
             'events': ('События (CSV)', 'Все версии и отменённые — с пометками'),
             'checkins': ('Отметки дня (CSV)', 'Оценка, метки, заметка; все версии'),
@@ -504,7 +526,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             'weights': ('Вес (CSV)', 'Замеры с источником'),
             'sets': ('Подходы (CSV)', 'Журнал тренировок с расчётным 1RM'),
           }.entries)
-            _tile(Icons.table_chart_outlined, e.value.$1, e.value.$2, onTap: () => _copyExport(e.value.$1, c.exportCsv(e.key)!)),
+            _tile(Icons.table_chart_outlined, e.value.$1, e.value.$2, onTap: () => _copyExport(e.value.$1, c.exportCsv(e.key)!, '${e.key}.csv')),
         ]),
         if (security.reminders != null && security.reminders!.supported) _section('НАПОМИНАНИЯ', _reminderTiles(security.reminders!)),
         _section('РЕЗЕРВНАЯ КОПИЯ', _backupTiles(security.backup)),
@@ -540,7 +562,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             color: AppColors.card,
             clipBehavior: Clip.antiAlias,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppRadii.small),
               side: const BorderSide(color: Colors.white10),
             ),
             child: Column(
@@ -562,7 +584,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context,
       // значок — украшение: при крупном шрифте его место нужнее тексту
       secondary: largeText(context) ? null : Icon(icon, color: AppColors.muted, size: 20),
-      title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+      title: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
       subtitle: Text(subtitle, style: const TextStyle(color: AppColors.muted, fontSize: 11)),
       value: value,
       activeThumbColor: AppColors.accent,
@@ -574,7 +596,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final color = danger ? AppColors.red : Colors.white;
     return ListTile(
       leading: largeText(context) ? null : Icon(icon, color: danger ? AppColors.red : AppColors.muted, size: 20),
-      title: Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: color)),
+      title: Text(title, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: color)),
       subtitle: Text(subtitle, style: const TextStyle(color: AppColors.muted, fontSize: 11)),
       trailing: trailing ?? (onTap != null ? const Icon(Icons.chevron_right, color: Colors.white24) : null),
       onTap: onTap,

@@ -18,10 +18,11 @@ extension ProcessOps on AppController {
   }
 
   /// Актуальные события процесса, по возрастанию времени.
-  List<LifeEvent> eventsForProcess(String processId) => [for (final e in events) if (e.processIds.contains(processId)) e];
+  List<LifeEvent> eventsForProcess(String processId) =>
+      _memo(('processEvents', processId), () => List<LifeEvent>.unmodifiable([for (final e in events) if (e.processIds.contains(processId)) e]));
 
   /// Ресурсы, вложенные в процесс за всё время, первое и последнее событие.
-  ProcessActivity processActivityOf(String processId) => processActivity(events, processId);
+  ProcessActivity processActivityOf(String processId) => _memo(('processActivity', processId), () => processActivity(events, processId));
 
   /// Начинает процесс. [startedAt] — когда он фактически начался (можно задним числом, не в будущем).
   /// Возвращает id или null.
@@ -70,10 +71,10 @@ extension ProcessOps on AppController {
   }
 
   /// Ритм процесса за последние [count] периодов (текущий первым); пусто — процесса нет.
-  List<RhythmSpan> rhythmOf(String processId, {int count = 8}) {
-    final p = processById(processId);
-    return p == null ? const [] : rhythmHistory(p, events, _clock(), count: count);
-  }
+  List<RhythmSpan> rhythmOf(String processId, {int count = 8}) => _memo(('rhythm', processId, count), () {
+        final p = processById(processId);
+        return p == null ? const <RhythmSpan>[] : List<RhythmSpan>.unmodifiable(rhythmHistory(p, events, _clock(), count: count));
+      });
 
   /// Меняет описание процесса (название, измерения, цели, обычная длительность). Статус — только через [setProcessStatus].
   bool updateProcess(String id, {required String title, required Iterable<String> dimensions, String description = '', Iterable<String> goalIds = const [], int? defaultMinutes}) {

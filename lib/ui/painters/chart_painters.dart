@@ -77,7 +77,7 @@ class DualLineComparisonPainter extends CustomPainter {
 
     final pathA = Path(), pathB = Path();
     final dotA = Paint()..color = colorA, dotB = Paint()..color = colorB;
-    const labelStyle = TextStyle(color: AppColors.muted, fontSize: 9);
+    const labelStyle = TextStyle(color: AppColors.muted, fontSize: 11);
 
     for (int i = 0; i < n; i++) {
       final x = padX + i * stepX;
@@ -100,8 +100,8 @@ class DualLineComparisonPainter extends CustomPainter {
     canvas.drawPath(pathA, Paint()..color = colorA..strokeWidth = 2.5..style = PaintingStyle.stroke);
     canvas.drawPath(pathB, Paint()..color = colorB..strokeWidth = 2.5..style = PaintingStyle.stroke);
 
-    drawText(canvas, '${dataA.last.toInt()} $unitA', Offset(size.width, 0), TextStyle(color: colorA, fontSize: 9, fontWeight: FontWeight.bold), anchor: 1);
-    drawText(canvas, '${dataB.last.toInt()} $unitB', Offset(size.width, 13), TextStyle(color: colorB, fontSize: 9, fontWeight: FontWeight.bold), anchor: 1);
+    drawText(canvas, '${dataA.last.toInt()} $unitA', Offset(size.width, 0), TextStyle(color: colorA, fontSize: 11, fontWeight: FontWeight.bold), anchor: 1);
+    drawText(canvas, '${dataB.last.toInt()} $unitB', Offset(size.width, 13), TextStyle(color: colorB, fontSize: 11, fontWeight: FontWeight.bold), anchor: 1);
   }
 
   @override
@@ -173,7 +173,7 @@ class SalaryLineChartPainter extends CustomPainter {
     if (steps.isEmpty) return;
 
     const padX = 24.0; // поля, чтобы первая/последняя подписи не обрезались
-    const labelStyle = TextStyle(color: Colors.white70, fontSize: 10);
+    const labelStyle = TextStyle(color: AppColors.muted, fontSize: 11);
     final dot = Paint()..color = AppColors.text;
 
     if (steps.length == 1) {
@@ -265,10 +265,10 @@ class VolumeBarsPainter extends CustomPainter {
       );
       canvas.drawRRect(rect, Paint()..color = color.withValues(alpha: isLast ? 0.95 : 0.45));
       if (values[i] > 0) {
-        drawText(canvas, fmtVolume(values[i]), Offset(cx, baseY - max(h, 2.0) - 12), const TextStyle(color: AppColors.muted, fontSize: 8), anchor: 0.5);
+        drawText(canvas, fmtVolume(values[i]), Offset(cx, baseY - max(h, 2.0) - 12), const TextStyle(color: AppColors.muted, fontSize: 11), anchor: 0.5);
       }
       if (i < labels.length) {
-        drawText(canvas, labels[i], Offset(cx, baseY + 3), const TextStyle(color: AppColors.muted, fontSize: 9), anchor: 0.5);
+        drawText(canvas, labels[i], Offset(cx, baseY + 3), const TextStyle(color: AppColors.muted, fontSize: 11), anchor: 0.5);
       }
     }
   }
@@ -315,7 +315,7 @@ class DualBarsPainter extends CustomPainter {
       bar(cx - barW * 0.6, a[i], colorA, isLast);
       bar(cx + barW * 0.6, b[i], colorB, isLast);
       if (i < labels.length) {
-        drawText(canvas, labels[i], Offset(cx, baseY + 3), const TextStyle(color: AppColors.muted, fontSize: 9), anchor: 0.5);
+        drawText(canvas, labels[i], Offset(cx, baseY + 3), const TextStyle(color: AppColors.muted, fontSize: 11), anchor: 0.5);
       }
     }
   }

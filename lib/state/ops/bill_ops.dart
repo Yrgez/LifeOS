@@ -75,6 +75,7 @@ extension BillOps on AppController {
     if (when.isAfter(now.add(const Duration(minutes: 5)))) return null;
     final sum = amount ?? b.amount;
     if (sum != null && sum <= 0) return null;
+    if (createTransaction && sum != null && transactionsFull) return null;
     _commit(() {
       String? txId;
       if (createTransaction && sum != null) {

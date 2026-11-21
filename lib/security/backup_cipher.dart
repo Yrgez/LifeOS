@@ -87,10 +87,10 @@ class BackupCipher {
     final Map<String, dynamic> j;
     try {
       final d = jsonDecode(text);
-      if (d is! Map<String, dynamic> || d['format'] != format) throw const FormatException('не копия Life OS');
+      if (d is! Map<String, dynamic> || d['format'] != format) throw const FormatException('не копия LIFE OS');
       j = d;
     } catch (_) {
-      throw const BackupDecryptException('Это не зашифрованная копия Life OS');
+      throw const BackupDecryptException('Это не зашифрованная копия LIFE OS');
     }
     if (j['v'] != version || j['kdf'] != kdfName) {
       throw const BackupDecryptException('Копия создана другой версией приложения');

@@ -84,7 +84,7 @@ class _MindScreenState extends State<MindScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Flexible(child: Text('Цели', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600))),
+              const Flexible(child: Text('Цели', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
               IconButton(tooltip: 'Новая цель', onPressed: _addNewGoalDialog, icon: const Icon(Icons.add_circle_outline, color: AppColors.text, size: 26)),
             ],
           ),
@@ -94,7 +94,7 @@ class _MindScreenState extends State<MindScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Flexible(child: Text('Достижения', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600))),
+              const Flexible(child: Text('Достижения', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),
               IconButton(tooltip: 'Новое достижение', onPressed: _addNewAchievementDialog, icon: const Icon(Icons.add_circle_outline, color: AppColors.text, size: 26)),
             ],
           ),
@@ -103,12 +103,12 @@ class _MindScreenState extends State<MindScreen> {
             Container(
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.all(12),
-              decoration: tileDecoration(radius: 20),
+              decoration: tileDecoration(radius: AppRadii.card),
               child: Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: AppColors.raised, borderRadius: BorderRadius.circular(14)),
+                    decoration: BoxDecoration(color: AppColors.raised, borderRadius: BorderRadius.circular(AppRadii.small)),
                     child: Icon(item.icon, color: AppColors.text, size: 20),
                   ),
                   const SizedBox(width: 14),

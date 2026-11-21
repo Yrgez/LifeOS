@@ -156,12 +156,12 @@ class _GymScreenState extends State<GymScreen> {
                 color: AppColors.card,
                 clipBehavior: Clip.antiAlias,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(AppRadii.card),
                   side: BorderSide(color: selection.muscleId == muscle.id ? AppColors.text : AppColors.border, width: selection.muscleId == muscle.id ? 1.2 : 1),
                 ),
                 child: ListTile(
                   onTap: () => selection.select(muscle.id),
-                  title: Text(muscle.name, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 15)),
+                  title: Text(muscle.name, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

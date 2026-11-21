@@ -44,9 +44,7 @@ class _ChronicleScreenState extends State<ChronicleScreen> {
   }
 
   Widget _content() {
-    final entries = [for (final e in c.chronicle) if (_dimension == null || e.dimensions.contains(_dimension)) e];
-    final months = groupChronicle(entries,
-        snapshots: c.snapshotsByDay, includeQuietDays: _quietDays && _dimension == null, checkIns: _dimension == null ? c.checkInsByDay : const {});
+    final months = c.chronicleMonths(dimension: _dimension, quietDays: _quietDays);
     final undated = _dimension == null ? undatedAchievements(c.achievements) : <AchievementItem>[];
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
@@ -97,7 +95,8 @@ class _ChronicleScreenState extends State<ChronicleScreen> {
               style: TextStyle(color: AppColors.muted, fontSize: 13),
             ),
           ),
-        for (final m in months.take(_months)) _MonthSection(month: m, controller: c),
+        // каждый день — отдельный элемент списка: строятся только видимые, а не все дни показанных месяцев
+        for (final m in months.take(_months)) ..._MonthSection.children(m, c),
         if (months.length > _months)
           TextButton(onPressed: () => setState(() => _months += 6), child: Text('Ранее (ещё месяцев: ${months.length - _months})')),
         if (undated.isNotEmpty) ...[
@@ -116,46 +115,19 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(top: 16, bottom: 6),
-        child: Text(text, style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
+        child: Text(text, style: const TextStyle(color: AppColors.muted, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
       );
 }
 
-class _MonthSection extends StatelessWidget {
-  final ChronicleMonth month;
-  final AppController controller;
-  const _MonthSection({required this.month, required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+/// Месяц хроники — заголовок, записи «в течение месяца» и дни отдельными элементами списка.
+class _MonthSection {
+  static List<Widget> children(ChronicleMonth month, AppController controller) => [
         _Header(monthYear(month.month).toUpperCase()),
-        for (final e in month.monthOnly) _entry(context, e),
-        for (final d in month.days)
-          Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.all(10),
-            decoration: tileDecoration(radius: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(_dayTitle(d.day), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                if (d.snapshot != null && _snapshotLine(d.snapshot!).isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: Text(_snapshotLine(d.snapshot!), style: const TextStyle(color: AppColors.muted, fontSize: 11)),
-                  ),
-                if (d.checkIn != null) _checkInLines(d.checkIn!),
-                for (final e in d.entries) _entry(context, e),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
+        for (final e in month.monthOnly) Builder(builder: (context) => _entry(context, controller, e)),
+        for (final d in month.days) _DayTile(day: d, controller: controller),
+      ];
 
-  Widget _entry(BuildContext context, ChronicleEntry e) {
+  static Widget _entry(BuildContext context, AppController controller, ChronicleEntry e) {
     final (icon, color) = switch (e.kind) {
       ChronicleKind.event => (Icons.circle, e.dimensions.isEmpty ? AppColors.muted : dimensionColor(e.dimensions.first)),
       ChronicleKind.process => (Icons.autorenew, AppColors.text),
@@ -180,6 +152,34 @@ class _MonthSection extends StatelessWidget {
     );
   }
 
+}
+
+class _DayTile extends StatelessWidget {
+  final ChronicleDay day;
+  final AppController controller;
+  const _DayTile({required this.day, required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final d = day;
+    final snapshot = d.snapshot == null ? '' : _snapshotLine(d.snapshot!);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(10),
+      decoration: tileDecoration(radius: AppRadii.card),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(_dayTitle(d.day), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          if (snapshot.isNotEmpty)
+            Padding(padding: const EdgeInsets.only(top: 2), child: Text(snapshot, style: const TextStyle(color: AppColors.muted, fontSize: 11))),
+          if (d.checkIn != null) _checkInLines(d.checkIn!),
+          for (final e in d.entries) _MonthSection._entry(context, controller, e),
+        ],
+      ),
+    );
+  }
+
   /// Отметка дня: оценка и метки одной строкой, заметка — отдельной.
   static Widget _checkInLines(DayCheckIn ch) => Padding(
         padding: const EdgeInsets.only(top: 4),
@@ -189,16 +189,16 @@ class _MonthSection extends StatelessWidget {
             if (ch.rating != null || ch.tags.isNotEmpty)
               Text(
                 [if (ch.rating != null) 'день ${ch.rating} из ${DayCheckIn.maxRating}', ...ch.tags].join(' · '),
-                style: const TextStyle(fontSize: 12),
+                style: const TextStyle(fontSize: 13),
               ),
-            if (ch.note.isNotEmpty) Text('«${ch.note}»', style: const TextStyle(color: AppColors.muted, fontSize: 12, fontStyle: FontStyle.italic)),
+            if (ch.note.isNotEmpty) Text('«${ch.note}»', style: const TextStyle(color: AppColors.muted, fontSize: 13, fontStyle: FontStyle.italic)),
           ],
         ),
       );
 
   static String _dayTitle(String key) {
     final d = dayFromKey(key);
-    return '${d.day} ${monthNames[d.month - 1].toLowerCase()}, ${dayNames[d.weekday - 1]}';
+    return '${dayMonth(d)}, ${dayNames[d.weekday - 1]}';
   }
 
   /// Состояние дня: только известные значения.

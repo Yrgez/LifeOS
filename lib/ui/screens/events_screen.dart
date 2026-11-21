@@ -133,7 +133,7 @@ class _EventsScreenState extends State<EventsScreen> {
     );
   }
 
-  static String _fmt(DateTime d) => '${dayKey(d)} ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+  static String _fmt(DateTime d) => '${fmtDate(d)} ${fmtTime(d)}';
 
   @override
   Widget build(BuildContext context) {
@@ -147,7 +147,7 @@ class _EventsScreenState extends State<EventsScreen> {
                 : widget.goalId != null
                     ? (c.goals.where((g) => g.id == widget.goalId).firstOrNull?.title ?? 'Цель')
                     : 'События',
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1),
           ),
         ),
         backgroundColor: AppColors.panel,
@@ -227,14 +227,14 @@ class _WeekCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: tileDecoration(radius: 20),
+      decoration: tileDecoration(radius: AppRadii.card),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('ЗА 7 ДНЕЙ: ${summary.events} событий', style: const TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold)),
           if (summary.events > 0) ...[
             const SizedBox(height: 6),
-            for (final line in resourceLines(summary)) Text(line, style: const TextStyle(fontSize: 12)),
+            for (final line in resourceLines(summary)) Text(line, style: const TextStyle(fontSize: 13)),
           ],
         ],
       ),
@@ -274,7 +274,7 @@ class _EventTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
-      decoration: tileDecoration(radius: 20),
+      decoration: tileDecoration(radius: AppRadii.card),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -289,11 +289,11 @@ class _EventTile extends StatelessWidget {
                 Text(e.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 const SizedBox(height: 2),
                 Text(
-                  '${LifeEventKind.labels[e.kind]} · ${e.dimensions.map((d) => LifeDimension.labels[d]).join(' + ')} · ${dayKey(e.at)}'
+                  '${LifeEventKind.labels[e.kind]} · ${e.dimensions.map((d) => LifeDimension.labels[d]).join(' + ')} · ${fmtDate(e.at)}'
                   '${versions > 1 ? ' · версий: $versions' : ''}',
                   style: const TextStyle(color: AppColors.muted, fontSize: 11),
                 ),
-                if (cost.isNotEmpty) Text(cost.join(' · '), style: const TextStyle(color: Colors.white70, fontSize: 11)),
+                if (cost.isNotEmpty) Text(cost.join(' · '), style: const TextStyle(color: AppColors.muted, fontSize: 11)),
                 if (e.goalIds.isNotEmpty)
                   Text(
                     '→ ${e.goalIds.map((id) => goalTitles[id] ?? 'цель удалена').join(', ')}',
@@ -348,13 +348,13 @@ class _TasksBlock extends StatelessWidget {
     return Container(
       key: const ValueKey('tasks_block'),
       padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
-      decoration: tileDecoration(radius: 20),
+      decoration: tileDecoration(radius: AppRadii.card),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
-              Expanded(child: Text(list.isEmpty ? 'Задач нет' : 'Задачи · ${list.length}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500))),
+              Expanded(child: Text(list.isEmpty ? 'Задач нет' : 'Задачи · ${list.length}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500))),
               TextButton.icon(
                 key: const ValueKey('block_add_task'),
                 onPressed: () => showTaskSheet(context, controller, presetProcessId: processId, presetGoalId: goalId),

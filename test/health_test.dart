@@ -62,6 +62,18 @@ void main() {
       expect(c.lastHealthSync, now);
     });
 
+    test('доступ выдан, но первая синхронизация упала: подключение всё равно сохранено', () async {
+      src.readError = Exception('Health Connect не ответил');
+      final c = make();
+      await c.load();
+      await pumpEventQueue(); // сохранение после загрузки уже прошло — как в приложении спустя время
+      expect(await c.connectHealth(), HealthSyncStatus.failed);
+      await pumpEventQueue(); // только отложенное сохранение, без ручного flush (как если приложение закрыли)
+      final reopened = AppController(repo, clock: () => now, saveDelay: Duration.zero, health: src);
+      await reopened.load();
+      expect(reopened.healthEnabled, isTrue);
+    });
+
     test('разрешение не выдано: ничего не включается, есть сообщение', () async {
       src.grantOnRequest = false;
       final c = make();
