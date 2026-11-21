@@ -69,12 +69,12 @@ class _JournalScreenState extends State<JournalScreen> {
           spacing: 8,
           children: [
             StatTile(
-              'ОБЪЁМ 7 ДН',
+              'ОБЪЁМ / 7',
               '${fmtVolume(vol7)} кг',
               sub: change == null ? 'нет данных за прошлую' : '${change >= 0 ? '+' : '−'}${change.abs().toStringAsFixed(0)}% к прошлой',
               subColor: change == null ? AppColors.muted : (change >= 0 ? AppColors.green : AppColors.red),
             ),
-            StatTile('ПОДХОДОВ 7 ДН', '${setsInWindow(sets, now, 7)}', sub: 'всего: ${sets.length}'),
+            StatTile('ПОДХОДЫ / 7', '${setsInWindow(sets, now, 7)}', sub: 'всего: ${sets.length}'),
             StatTile('ДНЕЙ / 28', '${trainingDaysInWindow(sets, now, 28)}', sub: 'с тренировками'),
           ],
         ),
@@ -122,6 +122,31 @@ class _JournalScreenState extends State<JournalScreen> {
         child: Text(label, style: TextStyle(color: active ? AppColors.accent : Colors.white60, fontSize: 11, fontWeight: active ? FontWeight.bold : FontWeight.normal)),
       ),
     );
+  }
+
+  /// Строка «мышца — полоса — объём». При крупном шрифте название над полосой, а объём без фиксированной ширины:
+  /// иначе «Квадрицепсы» обрезаются, а «500 кг» рвётся на две строки.
+  Widget _volumeRow(String name, String volume, double ratio) {
+    final large = largeText(context);
+    final value = Text(volume, textAlign: TextAlign.right, style: const TextStyle(color: AppColors.muted, fontSize: 10));
+    final bar = Row(
+      children: [
+        Expanded(
+          child: LinearProgressIndicator(
+            value: ratio,
+            minHeight: 6,
+            borderRadius: BorderRadius.circular(3),
+            backgroundColor: AppColors.track,
+            valueColor: const AlwaysStoppedAnimation(AppColors.bodyChart),
+          ),
+        ),
+        const SizedBox(width: 8),
+        large ? value : SizedBox(width: 54, child: value),
+      ],
+    );
+    final label = Text(name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12));
+    if (large) return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [label, const SizedBox(height: 4), bar]);
+    return Row(children: [SizedBox(width: 110, child: label), Expanded(child: bar)]);
   }
 
   Widget _volumeCard(List<WorkoutSet> sets, DateTime now) {
@@ -181,21 +206,10 @@ class _JournalScreenState extends State<JournalScreen> {
             for (final e in byMuscle)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  children: [
-                    SizedBox(width: 110, child: Text(c.muscles[e.key]?.name ?? e.key, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12))),
-                    Expanded(
-                      child: LinearProgressIndicator(
-                        value: total <= 0 ? 0 : e.value / byMuscle.first.value,
-                        minHeight: 6,
-                        borderRadius: BorderRadius.circular(3),
-                        backgroundColor: AppColors.track,
-                        valueColor: const AlwaysStoppedAnimation(AppColors.bodyChart),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    SizedBox(width: 54, child: Text('${fmtVolume(e.value)} кг', textAlign: TextAlign.right, style: const TextStyle(color: AppColors.muted, fontSize: 10))),
-                  ],
+                child: _volumeRow(
+                  c.muscles[e.key]?.name ?? e.key,
+                  '${fmtVolume(e.value)} кг',
+                  total <= 0 ? 0 : e.value / byMuscle.first.value,
                 ),
               ),
         ],

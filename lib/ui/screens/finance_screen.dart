@@ -240,18 +240,20 @@ class _FinanceScreenState extends State<FinanceScreen> {
       children: [
         _monthSelector(),
         const SizedBox(height: 8),
+        // два столбца, баланс — строкой ниже: в три узких столбца суммы сжимались каждая по-своему
         AdaptivePair(
           spacing: 8,
           children: [
             StatTile('ДОХОД', '+${fmtCur(totals.income)}', valueColor: AppColors.green),
             StatTile('РАСХОД', '−${fmtCur(totals.expense)}', valueColor: AppColors.red),
-            StatTile(
-              'БАЛАНС',
-              '${totals.saldo >= 0 ? '+' : '−'}${fmtCur(totals.saldo.abs())}',
-              valueColor: totals.saldo >= 0 ? AppColors.material : AppColors.red,
-              sub: totals.savingsRate == null ? 'нет дохода' : 'сбережения ${totals.savingsRate!.round()}%',
-            ),
           ],
+        ),
+        const SizedBox(height: 8),
+        StatTile(
+          'БАЛАНС',
+          '${totals.saldo >= 0 ? '+' : '−'}${fmtCur(totals.saldo.abs())}',
+          valueColor: totals.saldo >= 0 ? AppColors.material : AppColors.red,
+          sub: totals.savingsRate == null ? 'нет дохода' : 'сбережения ${totals.savingsRate!.round()}%',
         ),
         const SizedBox(height: 12),
         _trendCard(),
