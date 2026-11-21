@@ -7,13 +7,13 @@ extension BodyOps on AppController {
 
   /// Прогрессия 1RM по мышце: базовая история (до журнала) + лучший результат за каждый тренировочный день.
   /// Последние 8 точек.
-  List<double> progression(String muscleId) {
-    final m = _d.muscles[muscleId];
-    final fromJournal = progressionFromSets(_d.workoutSets.where((s) => s.muscleId == muscleId));
-    final all = [...?m?.history1RM.where((v) => v > 0), ...fromJournal];
-    if (all.isEmpty) return [0];
-    return all.length > 8 ? all.sublist(all.length - 8) : all;
-  }
+  List<double> progression(String muscleId) => _memo(('progression', muscleId), () {
+        final m = _d.muscles[muscleId];
+        final fromJournal = progressionFromSets(_d.workoutSets.where((s) => s.muscleId == muscleId));
+        final all = [...?m?.history1RM.where((v) => v > 0), ...fromJournal];
+        if (all.isEmpty) return const [0.0];
+        return List<double>.unmodifiable(all.length > 8 ? all.sublist(all.length - 8) : all);
+      });
 
   /// Последний записанный подход по мышце (для подстановки веса/повторов в форму).
   WorkoutSet? lastSetFor(String muscleId) {

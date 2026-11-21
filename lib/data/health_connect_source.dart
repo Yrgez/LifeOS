@@ -1,6 +1,6 @@
 import 'dart:io' show Platform;
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:health/health.dart';
 
 import '../core/app_log.dart';
@@ -69,121 +69,134 @@ class HealthConnectSource implements HealthDataSource {
       for (var d = DateTime(from.year, from.month, from.day); !d.isAfter(to); d = DateTime(d.year, d.month, d.day + 1)) d,
     ];
 
-    // Калории — одним запросом на весь период, затем раскладываем по дням.
-    // removeDuplicates: несколько приложений могут писать одни и те же калории.
-    final kcalByDay = <DateTime, double>{};
-    try {
-      var points = await _health.getHealthDataFromTypes(
-        types: const [HealthDataType.ACTIVE_ENERGY_BURNED],
-        startTime: days.first,
-        endTime: now,
-      );
-      points = _health.removeDuplicates(points);
-      for (final p in points) {
-        final v = p.value;
-        if (v is NumericHealthValue) {
-          final key = DateTime(p.dateFrom.year, p.dateFrom.month, p.dateFrom.day);
-          kcalByDay[key] = (kcalByDay[key] ?? 0) + v.numericValue.toDouble();
-        }
-      }
-      // Диагностика: видно, отдаёт ли источник активные калории вообще.
-      if (points.isEmpty) {
-        AppLog.e('Диагностика Health Connect: записей активных калорий нет — источник (например, Samsung Health) '
-            'не передаёт их в Health Connect');
-      } else {
-        final src = points.map((p) => p.sourceName).toSet().join(', ');
-        AppLog.e('Диагностика Health Connect: активных калорий — записей ${points.length}, источники: $src');
-      }
-    } catch (e, st) {
-      AppLog.e('Health Connect: не удалось прочитать активные калории', e, st);
-    }
-
-    // Белок — сумма по записям питания за день. Читаем только если доступ выдан.
-    final proteinByDay = <DateTime, double>{};
-    try {
-      final granted = await _health.hasPermissions(_nutrition, permissions: _nutritionAccess) ?? false;
-      if (granted) {
-        var meals = await _health.getHealthDataFromTypes(
-          types: const [HealthDataType.NUTRITION],
+    // Запросы друг от друга не зависят — идут параллельно, а не по очереди.
+    Future<Map<DateTime, double>> readKcal() async {
+      // Калории — одним запросом на весь период, затем раскладываем по дням.
+      // removeDuplicates: несколько приложений могут писать одни и те же калории.
+      final kcalByDay = <DateTime, double>{};
+      try {
+        var points = await _health.getHealthDataFromTypes(
+          types: const [HealthDataType.ACTIVE_ENERGY_BURNED],
           startTime: days.first,
           endTime: now,
         );
-        meals = _health.removeDuplicates(meals);
-        for (final p in meals) {
-          final v = p.value;
-          if (v is NutritionHealthValue) {
-            final g = v.protein;
-            if (g != null && g.isFinite) {
-              final key = DateTime(p.dateFrom.year, p.dateFrom.month, p.dateFrom.day);
-              proteinByDay[key] = (proteinByDay[key] ?? 0) + g;
-            }
-          }
-        }
-      }
-    } catch (e, st) {
-      AppLog.e('Health Connect: не удалось прочитать питание (белок)', e, st);
-    }
-
-    // Сон — сеансы, отнесённые к дню пробуждения; вес — последний замер дня. Читаем, только если доступ выдан.
-    final sleepByDay = <DateTime, double>{};
-    final weightByDay = <DateTime, ({DateTime at, double kg})>{};
-    try {
-      final granted = await _health.hasPermissions(_body, permissions: _bodyAccess) ?? false;
-      if (granted) {
-        var sleeps = await _health.getHealthDataFromTypes(
-          types: const [HealthDataType.SLEEP_SESSION],
-          startTime: days.first.subtract(const Duration(days: 1)), // ночь накануне первого дня
-          endTime: now,
-        );
-        sleeps = _health.removeDuplicates(sleeps);
-        for (final p in sleeps) {
-          final v = p.value;
-          if (v is NumericHealthValue) {
-            final key = DateTime(p.dateTo.year, p.dateTo.month, p.dateTo.day);
-            if (!key.isBefore(days.first)) sleepByDay[key] = (sleepByDay[key] ?? 0) + v.numericValue.toDouble();
-          }
-        }
-        var ws = await _health.getHealthDataFromTypes(types: const [HealthDataType.WEIGHT], startTime: days.first, endTime: now);
-        ws = _health.removeDuplicates(ws);
-        for (final p in ws) {
+        points = _health.removeDuplicates(points);
+        for (final p in points) {
           final v = p.value;
           if (v is NumericHealthValue) {
             final key = DateTime(p.dateFrom.year, p.dateFrom.month, p.dateFrom.day);
-            final prev = weightByDay[key];
-            if (prev == null || p.dateFrom.isAfter(prev.at)) weightByDay[key] = (at: p.dateFrom, kg: v.numericValue.toDouble());
+            kcalByDay[key] = (kcalByDay[key] ?? 0) + v.numericValue.toDouble();
           }
         }
-        AppLog.d('Health Connect: сон — сеансов ${sleeps.length}, вес — замеров ${ws.length}');
+        // Диагностика: видно, отдаёт ли источник активные калории вообще.
+        if (points.isEmpty) {
+          AppLog.d('Диагностика Health Connect: записей активных калорий нет — источник (например, Samsung Health) '
+              'не передаёт их в Health Connect');
+        } else {
+          final src = points.map((p) => p.sourceName).toSet().join(', ');
+          AppLog.d('Диагностика Health Connect: активных калорий — записей ${points.length}, источники: $src');
+        }
+      } catch (e, st) {
+        AppLog.e('Health Connect: не удалось прочитать активные калории', e, st);
       }
-    } catch (e, st) {
-      AppLog.e('Health Connect: не удалось прочитать сон и вес', e, st);
+      return kcalByDay;
+    }
+
+    Future<Map<DateTime, double>> readProtein() async {
+      // Белок — сумма по записям питания за день. Читаем только если доступ выдан.
+      final proteinByDay = <DateTime, double>{};
+      try {
+        final granted = await _health.hasPermissions(_nutrition, permissions: _nutritionAccess) ?? false;
+        if (granted) {
+          var meals = await _health.getHealthDataFromTypes(
+            types: const [HealthDataType.NUTRITION],
+            startTime: days.first,
+            endTime: now,
+          );
+          meals = _health.removeDuplicates(meals);
+          for (final p in meals) {
+            final v = p.value;
+            if (v is NutritionHealthValue) {
+              final g = v.protein;
+              if (g != null && g.isFinite) {
+                final key = DateTime(p.dateFrom.year, p.dateFrom.month, p.dateFrom.day);
+                proteinByDay[key] = (proteinByDay[key] ?? 0) + g;
+              }
+            }
+          }
+        }
+      } catch (e, st) {
+        AppLog.e('Health Connect: не удалось прочитать питание (белок)', e, st);
+      }
+      return proteinByDay;
+    }
+
+    Future<({Map<DateTime, double> sleep, Map<DateTime, ({DateTime at, double kg})> weight})> readBody() async {
+      // Сон — сеансы, отнесённые к дню пробуждения; вес — последний замер дня. Читаем, только если доступ выдан.
+      final sleepByDay = <DateTime, double>{};
+      final weightByDay = <DateTime, ({DateTime at, double kg})>{};
+      try {
+        final granted = await _health.hasPermissions(_body, permissions: _bodyAccess) ?? false;
+        if (granted) {
+          var sleeps = await _health.getHealthDataFromTypes(
+            types: const [HealthDataType.SLEEP_SESSION],
+            startTime: days.first.subtract(const Duration(days: 1)), // ночь накануне первого дня
+            endTime: now,
+          );
+          sleeps = _health.removeDuplicates(sleeps);
+          for (final p in sleeps) {
+            final v = p.value;
+            if (v is NumericHealthValue) {
+              final key = DateTime(p.dateTo.year, p.dateTo.month, p.dateTo.day);
+              if (!key.isBefore(days.first)) sleepByDay[key] = (sleepByDay[key] ?? 0) + v.numericValue.toDouble();
+            }
+          }
+          var ws = await _health.getHealthDataFromTypes(types: const [HealthDataType.WEIGHT], startTime: days.first, endTime: now);
+          ws = _health.removeDuplicates(ws);
+          for (final p in ws) {
+            final v = p.value;
+            if (v is NumericHealthValue) {
+              final key = DateTime(p.dateFrom.year, p.dateFrom.month, p.dateFrom.day);
+              final prev = weightByDay[key];
+              if (prev == null || p.dateFrom.isAfter(prev.at)) weightByDay[key] = (at: p.dateFrom, kg: v.numericValue.toDouble());
+            }
+          }
+          AppLog.d('Health Connect: сон — сеансов ${sleeps.length}, вес — замеров ${ws.length}');
+        }
+      } catch (e, st) {
+        AppLog.e('Health Connect: не удалось прочитать сон и вес', e, st);
+      }
+      return (sleep: sleepByDay, weight: weightByDay);
     }
 
     // Шаги — агрегат платформы (корректно объединяет источники) отдельно на каждый день.
-    final out = <HealthDay>[];
-    for (final d in days) {
+    Future<int?> readSteps(DateTime d) async {
       final interval = stepsDayInterval(d); // полные сутки, иначе запись Samsung Health на весь день делится пропорционально
-      int? steps;
       try {
-        steps = await _health.getTotalStepsInInterval(interval.start, interval.end);
+        return await _health.getTotalStepsInInterval(interval.start, interval.end);
       } catch (e, st) {
         AppLog.e('Health Connect: не удалось прочитать шаги за ${d.toIso8601String()}', e, st);
+        return null;
       }
-      if (d == days.last) await _logStepsDiagnostics(d, now, steps);
-      final kcal = kcalByDay[d];
-      final protein = proteinByDay[d];
-      out.add(HealthDay(d,
-          steps: steps,
-          activeCalories: kcal?.round(),
-          protein: protein?.round(),
-          sleepMinutes: sleepByDay[d]?.round(),
-          weightKg: weightByDay[d]?.kg));
     }
-    return out;
+
+    final kcalF = readKcal(), proteinF = readProtein(), bodyF = readBody();
+    final stepsF = Future.wait([for (final d in days) readSteps(d)]);
+    final kcalByDay = await kcalF, proteinByDay = await proteinF, body = await bodyF, steps = await stepsF;
+    if (kDebugMode) await _logStepsDiagnostics(days.last, now, steps.last);
+    return [
+      for (final (i, d) in days.indexed)
+        HealthDay(d,
+            steps: steps[i],
+            activeCalories: kcalByDay[d]?.round(),
+            protein: proteinByDay[d]?.round(),
+            sleepMinutes: body.sleep[d]?.round(),
+            weightKg: body.weight[d]?.kg),
+    ];
   }
 
   /// Сверка шагов за сегодня: агрегат платформы против суммы отдельных записей (с источниками).
-  /// Пишет строку в журнал приложения — по ней видно, откуда расхождение с Samsung Health.
+  /// Только в отладочной сборке: это лишний запрос всех записей шагов за день.
   Future<void> _logStepsDiagnostics(DateTime day, DateTime now, int? aggregate) async {
     try {
       var pts = await _health.getHealthDataFromTypes(
@@ -202,7 +215,7 @@ class HealthConnectSource implements HealthDataSource {
         }
       }
       final src = bySource.entries.map((e) => '${e.key}: ${e.value.round()}').join('; ');
-      AppLog.e('Диагностика Health Connect: шаги сегодня — агрегат $aggregate, сумма записей ${sum.round()} '
+      AppLog.d('Диагностика Health Connect: шаги сегодня — агрегат $aggregate, сумма записей ${sum.round()} '
           '(записей ${pts.length}; $src)');
     } catch (e, st) {
       AppLog.e('Health Connect: диагностика шагов не удалась', e, st);

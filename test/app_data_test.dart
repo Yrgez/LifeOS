@@ -27,11 +27,13 @@ void main() {
     expect(d.muscles, isNotEmpty);
   });
 
-  test('повреждённое поле заменяется дефолтом, остальные сохраняются', () {
-    final d = AppData.fromJson({'netWorth': 'не число', 'monthlyIncome': 123, 'goals': 42});
+  test('повреждённое поле отмечается; список — пустой, а не примеры; остальные поля читаются', () {
+    final d = AppData.fromJson({'netWorth': 'не число', 'monthlyIncome': 123, 'goals': 42, 'events': [{'id': 'битое'}]});
     expect(d.netWorth, AppData.defaults().netWorth);
     expect(d.monthlyIncome, 123);
-    expect(d.goals, isNotEmpty);
+    expect(d.goals, isEmpty); // не демо-цели вместо своих
+    expect(d.damaged, ['netWorth', 'goals', 'events #0']);
+    expect(AppData.fromJson(AppData.defaults().toJson()).damaged, isEmpty);
   });
 
   test('недельные ряды (схема ≤ 5) переносятся в дневные снимки; ноль = «неизвестно»', () {

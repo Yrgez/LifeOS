@@ -159,6 +159,12 @@ class AutoBackup extends ChangeNotifier {
   Future<BackupOutcome> runNow() async {
     if (!configured) return BackupOutcome.notConfigured;
     if (_running) return BackupOutcome.failed;
+    if (controller.loadFailed) {
+      // данные прочитаны не полностью: такая копия вытеснила бы из папки прежние, целые
+      await _fail(await _p, 'данные прочитаны не полностью — копия не делается, прежние копии сохранены');
+      notifyListeners();
+      return BackupOutcome.failed;
+    }
     _running = true;
     notifyListeners();
     final p = await _p;

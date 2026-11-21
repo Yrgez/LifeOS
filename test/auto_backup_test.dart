@@ -86,6 +86,19 @@ void main() {
       expect(b.configured, isTrue);
     });
 
+    test('данные прочитаны не полностью — копия не делается и не вытесняет прежние', () async {
+      final damaged = AppData.fromJson({...AppData.blank(now: now).toJson(), 'goals': 'не список'}, now: now);
+      c = AppController(MemoryAppRepository(data: damaged), clock: () => now, saveDelay: const Duration(days: 1));
+      await c.load();
+      final b = await make();
+      await b.chooseFolder();
+      await b.setPassword('надёжный пароль');
+      expect(await b.runNow(), BackupOutcome.failed);
+      expect(await b.maybeRun(), BackupOutcome.failed);
+      expect(storage.folders[b.folder] ?? const {}, isEmpty);
+      expect(b.error, contains('не полностью'));
+    });
+
     test('копия зашифрована и восстанавливается в данные один к одному', () async {
       c.addEvent(title: 'Пробежка', dimensions: [LifeDimension.body]);
       final b = await make();

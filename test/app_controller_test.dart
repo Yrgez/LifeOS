@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:life_os/data/app_data.dart';
 import 'package:life_os/data/app_repository.dart';
+import 'package:life_os/models/life_event.dart';
 import 'package:life_os/models/models.dart';
 import 'package:life_os/state/app_controller.dart';
 
@@ -48,6 +49,23 @@ void main() {
       expect(c.weekLabels.last, 'Сб');
       expect(c.weekLabels.length, 7);
     });
+  });
+
+  test('производные данные считаются один раз и пересчитываются после любого изменения', () async {
+    final c = make();
+    await c.load();
+    final months = c.chronicleMonths();
+    final prog = c.progression('chest');
+    expect(identical(c.chronicleMonths(), months), isTrue);
+    expect(identical(c.progression('chest'), prog), isTrue);
+
+    c.addEvent(title: 'Новое событие', dimensions: [LifeDimension.mind]);
+    expect(identical(c.chronicleMonths(), months), isFalse);
+    expect(c.chronicleMonths().expand((m) => m.days).expand((d) => d.entries).any((e) => e.title == 'Новое событие'), isTrue);
+
+    c.logWorkout('chest', 300, 1); // заведомо новый рекорд
+    expect(c.progression('chest').last, greaterThan(prog.last));
+    expect(c.unrecordedSets(c.now), isNotEmpty);
   });
 
   group('журнал подходов', () {
@@ -278,6 +296,17 @@ void main() {
       await c.load();
       expect(c.loaded, isFalse);
       expect(c.loadFailed, isTrue);
+      c.updateWealth(netWorth: 1);
+      await c.flush();
+      expect(repo.saveCalls, 0);
+    });
+
+    test('повреждённые данные — только чтение: подставленное не затирает настоящее в базе', () async {
+      final damaged = AppData.fromJson({...AppData.blank(now: now).toJson(), 'goals': 'не список'}, now: now);
+      final c = make(data: damaged);
+      await c.load();
+      expect(c.loaded, isTrue);
+      expect(c.loadFailed, isTrue); // баннер «изменения не сохраняются»
       c.updateWealth(netWorth: 1);
       await c.flush();
       expect(repo.saveCalls, 0);

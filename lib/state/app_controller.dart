@@ -100,10 +100,13 @@ class AppController extends ChangeNotifier {
   String? _healthMessage;
   Timer? _saveTimer;
 
-  /// Актуальные события (без отменённых и заменённых версий) — считаются один раз после изменения, а не при
-  /// каждом чтении: экраны читают их много раз за кадр. Внутри [_commit] — всегда заново (журнал мог измениться).
-  List<LifeEvent>? _currentEvents;
+  /// Производные данные (актуальные события, хроника, ресурсы, факт целей…) считаются один раз после изменения,
+  /// а не при каждой перерисовке: экраны читают их много раз за кадр, а раз в минуту перерисовываются без изменений.
+  /// Сбрасываются в [_syncDerived] (любое изменение данных и смена суток). Внутри [_commit] — всегда заново.
+  final Map<Object, Object?> _derived = {};
   bool _committing = false;
+
+  T _memo<T>(Object key, T Function() compute) => _committing ? compute() : _derived.putIfAbsent(key, compute) as T;
 
   // ---------------- чтение ----------------
 
@@ -156,7 +159,15 @@ class AppController extends ChangeNotifier {
   Map<String, DaySnapshot> get snapshotsByDay => Map.unmodifiable(_d.snapshots);
 
   /// Хроника: события, смены статусов процессов и достижения — новые сверху.
-  List<ChronicleEntry> get chronicle => chronicleEntries(currentEvents: events, processes: _d.processes, achievements: _d.achievements, goals: _d.goals);
+  List<ChronicleEntry> get chronicle => _memo(
+      'chronicle', () => List<ChronicleEntry>.unmodifiable(chronicleEntries(currentEvents: events, processes: _d.processes, achievements: _d.achievements, goals: _d.goals)));
+
+  /// Хроника по месяцам и дням для экрана: [dimension] — фильтр измерения, [quietDays] — показывать дни без записей.
+  List<ChronicleMonth> chronicleMonths({String? dimension, bool quietDays = false}) => _memo(('months', dimension, quietDays), () {
+        final entries = [for (final e in chronicle) if (dimension == null || e.dimensions.contains(dimension)) e];
+        return groupChronicle(entries,
+            snapshots: _d.snapshots, includeQuietDays: quietDays && dimension == null, checkIns: dimension == null ? checkInsByDay : const {});
+      });
 
   /// Снимки последних [n] дней, заканчивая сегодняшним; null — данных за день нет.
   List<DaySnapshot?> lastDaysSnapshots(int n) {
@@ -243,6 +254,7 @@ class AppController extends ChangeNotifier {
       final data = await _repo.load();
       if (data != null) {
         _d = data;
+        if (data.damaged.isNotEmpty) blockWrites('повреждены данные: ${data.damaged.take(5).join(', ')}');
       } else {
         _pending.markFull(); // в хранилище ничего нет: стартовые данные пишем целиком
       }
@@ -368,7 +380,7 @@ class AppController extends ChangeNotifier {
 
   /// Подписи «системных» узлов графа и снимок текущего дня всегда отражают реальные цифры.
   void _syncDerived() {
-    _currentEvents = null;
+    _derived.clear();
     currentCurrency = currencyByCode(_d.currency) ?? currencies.first;
     setCustomFinCategories([for (final x in _d.categories) customFinCategory(x.id, x.name, x.isIncome, x.icon)],
         archived: {for (final x in _d.categories) if (x.archivedAt != null) x.id});
@@ -392,6 +404,7 @@ class AppController extends ChangeNotifier {
 
     _touchToday();
     _syncGoals();
+    _derived.clear(); // посчитанное по ходу синхронизации могло опереться на ещё не обновлённое
   }
 
   // ---------------- дневные снимки ----------------
