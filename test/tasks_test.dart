@@ -2,15 +2,15 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/app.dart';
-import 'package:life_os/core/search.dart';
-import 'package:life_os/data/app_data.dart';
-import 'package:life_os/data/app_repository.dart';
-import 'package:life_os/data/sqlite_app_repository.dart';
-import 'package:life_os/models/life_event.dart';
-import 'package:life_os/models/life_task.dart';
-import 'package:life_os/state/app_controller.dart';
-import 'package:life_os/ui/screens/events_screen.dart';
+import 'package:catenna/app.dart';
+import 'package:catenna/core/search.dart';
+import 'package:catenna/data/app_data.dart';
+import 'package:catenna/data/app_repository.dart';
+import 'package:catenna/data/sqlite_app_repository.dart';
+import 'package:catenna/models/life_event.dart';
+import 'package:catenna/models/life_task.dart';
+import 'package:catenna/state/app_controller.dart';
+import 'package:catenna/ui/screens/events_screen.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
@@ -139,7 +139,7 @@ void main() {
     addTearDown(tester.view.reset);
     final c = AppController(MemoryAppRepository(), clock: () => now, saveDelay: Duration.zero);
     await c.load();
-    await tester.pumpWidget(LifeOSApp(controller: c));
+    await tester.pumpWidget(CatennaApp(controller: c));
     await tester.pumpAndSettle();
     expect(find.text('Задач на сегодня нет'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('hub_add_task')));

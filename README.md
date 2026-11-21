@@ -1,4 +1,4 @@
-# Life OS — структура проекта
+# Catenna — структура проекта
 
 ```
 lib/
@@ -7,7 +7,7 @@ lib/
   core/                        чистая логика без Flutter-состояния
     utils, workout_stats, finance_stats, finance_categories, graph_stats, life_events, resource_stats, chronicle, goal_stats, recovery_stats, body_stats, review, memories, experiments, open_export, currency, theme, app_log
   models/models.dart           модели данных + JSON
-  models/life_event.dart       ядро LIFE OS: событие жизни (измерения, ресурсы, версии), чистый Dart
+  models/life_event.dart       ядро Catenna: событие жизни (измерения, ресурсы, версии), чистый Dart
   models/life_process.dart     процесс жизни (длительное направление) и журнал его статусов
   models/body.dart             замер веса, цель по весу
   models/day_snapshot.dart     дневной снимок состояния (шаги, калории, белок, капитал, узлы графа)
@@ -32,7 +32,7 @@ lib/
                                log_set_dialog, event_dialog, process_ui, backup_actions, health_actions, confirm_dialog, toast
     painters/                  chart_painters, body_painter, graph_painter, anatomy_geometry
 test/                          юнит-тесты логики и хранилищ + ui_smoke_test (виджеты, знакомство, настройки)
-android/                       Android-проект (io.github.yrgez.lifeos): разрешения, подпись, правила R8 — в репозитории
+android/                       Android-проект (io.github.yrgez.catenna): разрешения, подпись, правила R8 — в репозитории
 docs/RELEASE.md                ключ подписи, версия, выпуск, установка и обновление, переход со старого идентификатора
 docs/HEALTH_SETUP.md           настройка Health Connect на Android
 docs/SECURITY_SETUP.md         настройка и модель угроз: блокировка, шифрование базы и копий
@@ -50,7 +50,7 @@ docs/SECURITY_SETUP.md         настройка и модель угроз: б
 - Смена формата JSON → поднять `kSchemaVersion`; смена SQL-таблиц → поднять `kDbVersion` и добавить шаг в `_onUpgrade`.
 
 ## Хранилище (SQLite, `sqflite`)
-Файл `life_os.db`. Таблицы: `kv` (скаляры), `docs` (мышцы, цели, достижения, зарплата,
+Файл `catenna.db`. Таблицы: `kv` (скаляры), `docs` (мышцы, цели, достижения, зарплата,
 узлы и связи графа, правила повторов, лимиты, процессы), `workout_sets`, `money_tx`, `life_events` и `day_snapshots` (журналы, индексы по времени и категории;
 события и снимки хранятся JSON-ом).
 - **Запись инкрементальная на двух уровнях.**
@@ -188,7 +188,7 @@ docs/SECURITY_SETUP.md         настройка и модель угроз: б
 - **Автокопия** (`security/auto_backup.dart`, настройки → «Резервная копия»): папка выбирается один раз системным
   проводником (можно облачную, например Google Drive; локальный плагин `packages/backup_folder`, Android SAF),
   пароль задаётся один раз и хранится в защищённом хранилище телефона. При запуске и возвращении в приложение, если
-  пора (ежедневно / еженедельно / ежемесячно), в папку пишется зашифрованная копия `lifeos-backup-ГГГГ-ММ-ДД-ЧЧММ.lifeos`;
+  пора (ежедневно / еженедельно / ежемесячно), в папку пишется зашифрованная копия `catenna-backup-ГГГГ-ММ-ДД-ЧЧММ.catenna`;
   хранятся 8 последних, чужие файлы не трогаются, старые удаляются только после записи новой. Ошибка запоминается
   и видна на «Сегодня»; там же напоминание, если копии не было 14 дней. «Восстановить из файла» — любая копия.
 - **Напоминания** (`core/reminders.dart`, `state/reminders.dart`, настройки → «Напоминания»; по умолчанию выключены):
@@ -199,7 +199,7 @@ docs/SECURITY_SETUP.md         настройка и модель угроз: б
 - **Резервная копия вручную**: в буфер обмена и из него (с шифрованием паролем или без).
 - **Открытый экспорт** (`core/open_export.dart`): CSV (события со всеми версиями и отменами, операции, дни, вес, подходы)
   и хроника в Markdown — сохраняются файлом через системный диалог «Сохранить как» (место и имя выбирает человек;
-  CSV — с меткой UTF-8 для Excel, текст, похожий на формулу, экранируется). Читаются без LIFE OS; это не резервная копия.
+  CSV — с меткой UTF-8 для Excel, текст, похожий на формулу, экранируется). Читаются без Catenna; это не резервная копия.
 
 ## Настройки и знакомство
 - **Знакомство** (`onboarding_screen.dart`): имя → цели дня (шаги, белок) → деньги (по желанию) → Health Connect и способ старта

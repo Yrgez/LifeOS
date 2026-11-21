@@ -1,9 +1,9 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/security/app_lock.dart';
-import 'package:life_os/security/biometric_authenticator.dart';
-import 'package:life_os/security/screen_security.dart';
-import 'package:life_os/security/security_settings.dart';
+import 'package:catenna/security/app_lock.dart';
+import 'package:catenna/security/biometric_authenticator.dart';
+import 'package:catenna/security/screen_security.dart';
+import 'package:catenna/security/security_settings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {

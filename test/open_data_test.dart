@@ -1,11 +1,11 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/core/open_export.dart';
-import 'package:life_os/data/app_repository.dart';
-import 'package:life_os/data/health_source.dart';
-import 'package:life_os/models/life_event.dart';
-import 'package:life_os/state/app_controller.dart';
+import 'package:catenna/core/open_export.dart';
+import 'package:catenna/data/app_repository.dart';
+import 'package:catenna/data/health_source.dart';
+import 'package:catenna/models/life_event.dart';
+import 'package:catenna/state/app_controller.dart';
 
 void main() {
   late DateTime now;
@@ -64,10 +64,10 @@ void main() {
     });
 
     test('файл экспорта: CSV с меткой UTF-8 для Excel, Markdown без неё; тип для диалога сохранения', () {
-      final csv = exportFileBytes('lifeos-events-2026-11-18.csv', 'когда,название');
+      final csv = exportFileBytes('catenna-events-2026-11-18.csv', 'когда,название');
       expect(csv.take(3), [0xEF, 0xBB, 0xBF]);
       expect(utf8.decode(csv), 'когда,название'); // utf8.decode метку скрывает
-      expect(exportFileBytes('lifeos-chronicle-2026-11-18.md', '# Хроника').first, '#'.codeUnitAt(0));
+      expect(exportFileBytes('catenna-chronicle-2026-11-18.md', '# Хроника').first, '#'.codeUnitAt(0));
       expect(exportMime('a.csv'), 'text/csv');
       expect(exportMime('a.md'), 'text/markdown');
       expect(csvField('две\nстроки'), '"две\nстроки"');

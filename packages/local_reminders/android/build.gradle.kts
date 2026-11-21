@@ -1,5 +1,5 @@
-// Плагин LIFE OS: локальные напоминания (AlarmManager + уведомления) (только Java, без Kotlin).
-group = "dev.lifeos.local_reminders"
+// Плагин Catenna: локальные напоминания (AlarmManager + уведомления) (только Java, без Kotlin).
+group = "dev.catenna.local_reminders"
 version = "1.0"
 
 buildscript {
@@ -25,7 +25,7 @@ plugins {
 }
 
 android {
-    namespace = "dev.lifeos.local_reminders"
+    namespace = "dev.catenna.local_reminders"
 
     compileSdk = 36
 

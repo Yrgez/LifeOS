@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/app.dart';
-import 'package:life_os/data/app_data.dart';
-import 'package:life_os/data/app_repository.dart';
-import 'package:life_os/models/life_event.dart';
-import 'package:life_os/models/models.dart';
-import 'package:life_os/state/app_controller.dart';
+import 'package:catenna/app.dart';
+import 'package:catenna/data/app_data.dart';
+import 'package:catenna/data/app_repository.dart';
+import 'package:catenna/models/life_event.dart';
+import 'package:catenna/models/models.dart';
+import 'package:catenna/state/app_controller.dart';
 
 /// Дымовые тесты интерфейса: после разбиения на экраны проверяют, что каждая вкладка строится,
 /// а ключевые сценарии (запись подхода, добавление операции) доходят до контроллера.
@@ -22,7 +22,7 @@ void main() {
       initialData: blank ? (n) => AppData.blank(now: n) : null,
     );
     await c.load();
-    await tester.pumpWidget(LifeOSApp(controller: c));
+    await tester.pumpWidget(CatennaApp(controller: c));
     await tester.pumpAndSettle();
     return c;
   }
@@ -301,7 +301,7 @@ void main() {
   group('знакомство', () {
     testWidgets('новая установка: прохождение до конца с примерами данных', (tester) async {
       final c = await boot(tester, blank: true);
-      expect(find.text('Добро пожаловать в LIFE OS'), findsOneWidget);
+      expect(find.text('Добро пожаловать в Catenna'), findsOneWidget);
       expect(find.byKey(const ValueKey('today_date')), findsNothing);
 
       await tester.enterText(find.byType(TextField).first, 'Мария');
@@ -366,14 +366,14 @@ void main() {
 
     testWidgets('существующие данные: знакомство не показывается', (tester) async {
       final c = await boot(tester);
-      expect(find.text('Добро пожаловать в LIFE OS'), findsNothing);
+      expect(find.text('Добро пожаловать в Catenna'), findsNothing);
       expect(find.byKey(const ValueKey('today_date')), findsOneWidget);
       await shutdown(tester, c);
     });
 
     testWidgets('при недоступном хранилище знакомство не навязывается', (tester) async {
       final c = await boot(tester, blank: true, repo: MemoryAppRepository(loadError: StateError('диск')));
-      expect(find.text('Добро пожаловать в LIFE OS'), findsNothing);
+      expect(find.text('Добро пожаловать в Catenna'), findsNothing);
       expect(find.textContaining('Хранилище недоступно'), findsOneWidget);
       await shutdown(tester, c);
     });
@@ -473,7 +473,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Пройти знакомство заново'));
       await tester.pumpAndSettle();
-      expect(find.text('Добро пожаловать в LIFE OS'), findsOneWidget);
+      expect(find.text('Добро пожаловать в Catenna'), findsOneWidget);
       expect(find.text('Настройки'), findsNothing);
       expect(c.goals, isNotEmpty); // данные на месте
       await shutdown(tester, c);

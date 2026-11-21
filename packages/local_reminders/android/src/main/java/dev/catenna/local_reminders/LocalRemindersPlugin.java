@@ -1,4 +1,4 @@
-package dev.lifeos.local_reminders;
+package dev.catenna.local_reminders;
 
 import android.Manifest;
 import android.app.Activity;
@@ -33,7 +33,7 @@ public class LocalRemindersPlugin implements FlutterPlugin, MethodChannel.Method
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
         context = binding.getApplicationContext();
-        channel = new MethodChannel(binding.getBinaryMessenger(), "lifeos/local_reminders");
+        channel = new MethodChannel(binding.getBinaryMessenger(), "catenna/local_reminders");
         channel.setMethodCallHandler(this);
     }
 

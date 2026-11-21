@@ -1,4 +1,4 @@
-package io.github.yrgez.lifeos
+package io.github.yrgez.catenna
 
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterFragmentActivity
@@ -11,7 +11,7 @@ class MainActivity : FlutterFragmentActivity() {
         super.configureFlutterEngine(flutterEngine)
         // «Скрывать содержимое»: FLAG_SECURE — без миниатюры в недавних, скриншотов и записи экрана
         // (lib/security/screen_security.dart)
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "life_os/screen_security")
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "catenna/screen_security")
             .setMethodCallHandler { call, result ->
                 if (call.method == "setSecure") {
                     val secure = call.arguments as? Boolean ?: false

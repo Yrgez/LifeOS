@@ -1,5 +1,5 @@
 name: local_reminders
-description: Локальные напоминания LIFE OS (Android) — расписание будильниками, показ уведомлений, восстановление после перезагрузки.
+description: Локальные напоминания Catenna (Android) — расписание будильниками, показ уведомлений, восстановление после перезагрузки.
 version: 1.0.0
 publish_to: 'none'
 
@@ -15,5 +15,5 @@ flutter:
   plugin:
     platforms:
       android:
-        package: dev.lifeos.local_reminders
+        package: dev.catenna.local_reminders
         pluginClass: LocalRemindersPlugin

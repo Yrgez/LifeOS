@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/core/life_events.dart';
-import 'package:life_os/data/app_data.dart';
-import 'package:life_os/data/app_repository.dart';
-import 'package:life_os/data/sqlite_app_repository.dart';
-import 'package:life_os/models/life_event.dart';
-import 'package:life_os/state/app_controller.dart';
+import 'package:catenna/core/life_events.dart';
+import 'package:catenna/data/app_data.dart';
+import 'package:catenna/data/app_repository.dart';
+import 'package:catenna/data/sqlite_app_repository.dart';
+import 'package:catenna/models/life_event.dart';
+import 'package:catenna/state/app_controller.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
@@ -295,7 +295,7 @@ void main() {
     });
 
     test('миграция базы v1 → v2: таблица событий создаётся, данные целы', () async {
-      final dir = await Directory.systemTemp.createTemp('life_os_ev');
+      final dir = await Directory.systemTemp.createTemp('catenna_ev');
       addTearDown(() => dir.delete(recursive: true));
       final path = '${dir.path}/v1.db';
       // данные пишет текущая версия, затем база «откатывается» к формату v1: без таблицы событий

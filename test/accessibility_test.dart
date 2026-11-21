@@ -3,12 +3,12 @@ import 'dart:ui' show Tristate;
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/app.dart';
-import 'package:life_os/core/chart_text.dart';
-import 'package:life_os/core/theme.dart';
-import 'package:life_os/core/utils.dart';
-import 'package:life_os/data/app_repository.dart';
-import 'package:life_os/state/app_controller.dart';
+import 'package:catenna/app.dart';
+import 'package:catenna/core/chart_text.dart';
+import 'package:catenna/core/theme.dart';
+import 'package:catenna/core/utils.dart';
+import 'package:catenna/data/app_repository.dart';
+import 'package:catenna/state/app_controller.dart';
 
 /// Доступность: программа чтения экрана (TalkBack) и области нажатия.
 /// Каждое нажимаемое место подписано, не меньше 48 × 48 px (рекомендация Android),
@@ -20,7 +20,7 @@ void main() {
     addTearDown(tester.view.reset);
     final c = AppController(MemoryAppRepository(), saveDelay: Duration.zero, clock: clock);
     await c.load();
-    await tester.pumpWidget(LifeOSApp(controller: c));
+    await tester.pumpWidget(CatennaApp(controller: c));
     await tester.pumpAndSettle();
     return c;
   }

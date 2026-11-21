@@ -1,5 +1,5 @@
 name: backup_folder
-description: Папка для резервных копий LIFE OS (Android, Storage Access Framework) — выбрать папку один раз, писать и перечислять файлы.
+description: Папка для резервных копий Catenna (Android, Storage Access Framework) — выбрать папку один раз, писать и перечислять файлы.
 version: 1.0.0
 publish_to: 'none'
 
@@ -15,5 +15,5 @@ flutter:
   plugin:
     platforms:
       android:
-        package: dev.lifeos.backup_folder
+        package: dev.catenna.backup_folder
         pluginClass: BackupFolderPlugin

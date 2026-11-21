@@ -2,14 +2,14 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/app.dart';
-import 'package:life_os/core/chronicle.dart';
-import 'package:life_os/data/app_data.dart';
-import 'package:life_os/data/app_repository.dart';
-import 'package:life_os/data/sqlite_app_repository.dart';
-import 'package:life_os/models/day_checkin.dart';
-import 'package:life_os/models/experiment.dart';
-import 'package:life_os/state/app_controller.dart';
+import 'package:catenna/app.dart';
+import 'package:catenna/core/chronicle.dart';
+import 'package:catenna/data/app_data.dart';
+import 'package:catenna/data/app_repository.dart';
+import 'package:catenna/data/sqlite_app_repository.dart';
+import 'package:catenna/models/day_checkin.dart';
+import 'package:catenna/models/experiment.dart';
+import 'package:catenna/state/app_controller.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
@@ -140,7 +140,7 @@ void main() {
     addTearDown(tester.view.reset);
     final c = AppController(MemoryAppRepository(), clock: () => now, saveDelay: Duration.zero);
     await c.load();
-    await tester.pumpWidget(LifeOSApp(controller: c));
+    await tester.pumpWidget(CatennaApp(controller: c));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('checkin_tile')), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('hub_rating_4')));

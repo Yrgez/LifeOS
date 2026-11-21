@@ -20,7 +20,7 @@ Android-проект хранится в репозитории (`android/`), н
 
 ## 2. `MainActivity` — наследник `FlutterFragmentActivity`
 ```kotlin
-package io.github.yrgez.lifeos
+package io.github.yrgez.catenna
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

@@ -2,14 +2,14 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/app.dart';
-import 'package:life_os/core/rhythm.dart';
-import 'package:life_os/data/app_data.dart';
-import 'package:life_os/data/app_repository.dart';
-import 'package:life_os/models/life_event.dart';
-import 'package:life_os/models/life_process.dart';
-import 'package:life_os/state/app_controller.dart';
-import 'package:life_os/ui/screens/events_screen.dart';
+import 'package:catenna/app.dart';
+import 'package:catenna/core/rhythm.dart';
+import 'package:catenna/data/app_data.dart';
+import 'package:catenna/data/app_repository.dart';
+import 'package:catenna/models/life_event.dart';
+import 'package:catenna/models/life_process.dart';
+import 'package:catenna/state/app_controller.dart';
+import 'package:catenna/ui/screens/events_screen.dart';
 
 void main() {
   late DateTime now;
@@ -96,7 +96,7 @@ void main() {
     await c.load();
     final id = c.addProcess(title: 'Бег', dimensions: [LifeDimension.body], startedAt: DateTime(2026, 9, 1), rhythm: ProcessRhythm(at: now, times: 3))!;
     c.addEvent(title: 'Пробежка', dimensions: [LifeDimension.body], processIds: [id], at: DateTime(2026, 11, 17, 8));
-    await tester.pumpWidget(LifeOSApp(controller: c));
+    await tester.pumpWidget(CatennaApp(controller: c));
     await tester.pumpAndSettle();
     expect(find.textContaining('на этой неделе 1 из 3'), findsOneWidget);
     await tester.pumpWidget(MaterialApp(home: EventsScreen(controller: c, processId: id)));

@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/data/app_data.dart';
-import 'package:life_os/data/app_repository.dart';
-import 'package:life_os/data/change_set.dart';
-import 'package:life_os/data/sqlite_app_repository.dart';
-import 'package:life_os/models/models.dart';
-import 'package:life_os/state/app_controller.dart';
+import 'package:catenna/data/app_data.dart';
+import 'package:catenna/data/app_repository.dart';
+import 'package:catenna/data/change_set.dart';
+import 'package:catenna/data/sqlite_app_repository.dart';
+import 'package:catenna/models/models.dart';
+import 'package:catenna/state/app_controller.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 // Для запуска нужна системная библиотека sqlite3 (Linux: libsqlite3, macOS: есть из коробки, Windows: sqlite3.dll).
@@ -307,7 +307,7 @@ void main() {
     });
 
     test('база новее приложения: открытие отклоняется, файл не пересоздаётся', () async {
-      final dir = Directory.systemTemp.createTempSync('life_os_db_test');
+      final dir = Directory.systemTemp.createTempSync('catenna_db_test');
       addTearDown(() => dir.deleteSync(recursive: true));
       final path = '${dir.path}/future.db';
       final future = await databaseFactoryFfi.openDatabase(path, options: OpenDatabaseOptions(version: kDbVersion + 4));

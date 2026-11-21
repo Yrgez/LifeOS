@@ -15,12 +15,12 @@ val keyProps = Properties().apply {
 fun signingValue(prop: String, env: String): String? =
     keyProps.getProperty(prop)?.takeIf { it.isNotBlank() } ?: System.getenv(env)?.takeIf { it.isNotBlank() }
 
-val releaseStoreFile = signingValue("storeFile", "LIFEOS_KEYSTORE_PATH")
+val releaseStoreFile = signingValue("storeFile", "CATENNA_KEYSTORE_PATH")
 val hasReleaseKey = releaseStoreFile != null && file(releaseStoreFile).exists()
 
 android {
     // Постоянный идентификатор: его смена = другое приложение (обновление не встанет поверх)
-    namespace = "io.github.yrgez.lifeos"
+    namespace = "io.github.yrgez.catenna"
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
@@ -30,7 +30,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "io.github.yrgez.lifeos"
+        applicationId = "io.github.yrgez.catenna"
         // 26 (Android 8.0) — минимум для Health Connect
         minSdk = 26
         targetSdk = flutter.targetSdkVersion
@@ -43,9 +43,9 @@ android {
         if (hasReleaseKey) {
             create("release") {
                 storeFile = file(releaseStoreFile!!)
-                storePassword = signingValue("storePassword", "LIFEOS_KEYSTORE_PASSWORD")
-                keyAlias = signingValue("keyAlias", "LIFEOS_KEY_ALIAS")
-                keyPassword = signingValue("keyPassword", "LIFEOS_KEY_PASSWORD")
+                storePassword = signingValue("storePassword", "CATENNA_KEYSTORE_PASSWORD")
+                keyAlias = signingValue("keyAlias", "CATENNA_KEY_ALIAS")
+                keyPassword = signingValue("keyPassword", "CATENNA_KEY_PASSWORD")
             }
         }
     }

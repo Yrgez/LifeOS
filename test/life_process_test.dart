@@ -1,12 +1,12 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/data/app_data.dart';
-import 'package:life_os/data/app_repository.dart';
-import 'package:life_os/data/sqlite_app_repository.dart';
-import 'package:life_os/models/life_event.dart';
-import 'package:life_os/models/life_process.dart';
-import 'package:life_os/state/app_controller.dart';
+import 'package:catenna/data/app_data.dart';
+import 'package:catenna/data/app_repository.dart';
+import 'package:catenna/data/sqlite_app_repository.dart';
+import 'package:catenna/models/life_event.dart';
+import 'package:catenna/models/life_process.dart';
+import 'package:catenna/state/app_controller.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {

@@ -1,5 +1,5 @@
-// Плагин LIFE OS: доступ к папке для резервных копий через Storage Access Framework (только Java, без Kotlin).
-group = "dev.lifeos.backup_folder"
+// Плагин Catenna: доступ к папке для резервных копий через Storage Access Framework (только Java, без Kotlin).
+group = "dev.catenna.backup_folder"
 version = "1.0"
 
 buildscript {
@@ -25,7 +25,7 @@ plugins {
 }
 
 android {
-    namespace = "dev.lifeos.backup_folder"
+    namespace = "dev.catenna.backup_folder"
 
     compileSdk = 36
 

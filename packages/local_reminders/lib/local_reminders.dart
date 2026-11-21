@@ -13,7 +13,7 @@ class ScheduledReminder {
 
 /// Локальные напоминания на Android: будильники и уведомления без сети.
 class LocalReminders {
-  static const _ch = MethodChannel('lifeos/local_reminders');
+  static const _ch = MethodChannel('catenna/local_reminders');
 
   /// Уведомления разрешены (Android 13+ — разрешение, раньше — системный переключатель приложения).
   static Future<bool> permitted() async => await _ch.invokeMethod<bool>('permitted') ?? false;

@@ -1,4 +1,4 @@
-package dev.lifeos.backup_folder;
+package dev.catenna.backup_folder;
 
 import android.app.Activity;
 import android.content.ContentResolver;
@@ -49,7 +49,7 @@ public class BackupFolderPlugin implements FlutterPlugin, MethodChannel.MethodCa
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
         context = binding.getApplicationContext();
-        channel = new MethodChannel(binding.getBinaryMessenger(), "lifeos/backup_folder");
+        channel = new MethodChannel(binding.getBinaryMessenger(), "catenna/backup_folder");
         channel.setMethodCallHandler(this);
     }
 

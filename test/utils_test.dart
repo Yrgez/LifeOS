@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/core/utils.dart';
+import 'package:catenna/core/utils.dart';
 
 void main() {
   group('oneRM', () {

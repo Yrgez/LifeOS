@@ -17,7 +17,7 @@ class BackupDecryptException implements Exception {
 class BackupCipher {
   const BackupCipher({this.iterations = defaultIterations, this.useIsolate = false});
 
-  static const format = 'lifeos-backup';
+  static const format = 'catenna-backup';
   static const version = 1;
   static const kdfName = 'pbkdf2-sha256';
 
@@ -87,10 +87,10 @@ class BackupCipher {
     final Map<String, dynamic> j;
     try {
       final d = jsonDecode(text);
-      if (d is! Map<String, dynamic> || d['format'] != format) throw const FormatException('не копия LIFE OS');
+      if (d is! Map<String, dynamic> || d['format'] != format) throw const FormatException('не копия Catenna');
       j = d;
     } catch (_) {
-      throw const BackupDecryptException('Это не зашифрованная копия LIFE OS');
+      throw const BackupDecryptException('Это не зашифрованная копия Catenna');
     }
     if (j['v'] != version || j['kdf'] != kdfName) {
       throw const BackupDecryptException('Копия создана другой версией приложения');

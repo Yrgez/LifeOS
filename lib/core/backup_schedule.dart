@@ -2,12 +2,12 @@ import 'utils.dart';
 
 /// Правила автоматической резервной копии. Чистая логика без Flutter.
 ///
-/// Имя файла несёт время копии: «lifeos-backup-2026-11-18-2031.lifeos». По имени же отбираются только свои
+/// Имя файла несёт время копии: «catenna-backup-2026-11-18-2031.catenna». По имени же отбираются только свои
 /// файлы — чужие в папке не трогаются. Старые копии удаляются, только когда новая уже записана.
 
-const backupFilePrefix = 'lifeos-backup-';
-const backupFileExtension = '.lifeos';
-final _nameRe = RegExp(r'^lifeos-backup-(\d{4})-(\d{2})-(\d{2})-(\d{2})(\d{2})(?:-\d+)?\.lifeos$');
+const backupFilePrefix = 'catenna-backup-';
+const backupFileExtension = '.catenna';
+final _nameRe = RegExp(r'^catenna-backup-(\d{4})-(\d{2})-(\d{2})-(\d{2})(\d{2})(?:-\d+)?\.catenna$');
 
 /// Варианты частоты автокопии, дней.
 const backupIntervalOptions = [1, 7, 30];

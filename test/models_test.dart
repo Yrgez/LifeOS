@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:life_os/core/theme.dart';
-import 'package:life_os/models/models.dart';
+import 'package:catenna/core/theme.dart';
+import 'package:catenna/models/models.dart';
 
 MuscleGroup muscle({DateTime? at, double rh = 48}) => MuscleGroup(
       id: 'chest',
