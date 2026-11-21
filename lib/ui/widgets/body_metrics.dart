@@ -30,7 +30,7 @@ class BodyMetrics extends StatelessWidget {
       actionLabel: 'Записать',
       fields: [
         FieldSpec('w', 'Вес, кг', numeric: true, initial: last == null ? '' : trimNum(last.kg)),
-        const FieldSpec('d', 'Дата (дд.мм.гггг, пусто — сегодня)', initial: ''),
+        const FieldSpec('d', 'Дата (дд.мм.гггг)', help: 'Пусто — сегодня', initial: ''),
       ],
       validate: (v) {
         final kg = parseNum(v['w']!);
@@ -51,7 +51,7 @@ class BodyMetrics extends StatelessWidget {
       context,
       title: 'Рост',
       actionLabel: 'Сохранить',
-      fields: [FieldSpec('h', 'Рост, см (пусто — не указан)', numeric: true, initial: c.heightCm?.toString() ?? '')],
+      fields: [FieldSpec('h', 'Рост, см', help: 'Пусто — не указан', numeric: true, initial: c.heightCm?.toString() ?? '')],
       validate: (v) {
         if (v['h']!.trim().isEmpty) return true;
         final h = parseInt(v['h']!);

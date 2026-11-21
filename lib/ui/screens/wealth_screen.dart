@@ -76,9 +76,9 @@ class _WealthScreenState extends State<WealthScreen> {
       accent: AppColors.accent,
       fields: [
         // при счетах капитал считается по остаткам — вручную не задаётся
-        if (!c.netWorthFromAccounts) FieldSpec('w', 'Чистый капитал, если счетов нет ($cur)', initial: '${c.netWorth}', numeric: true),
-        FieldSpec('i', 'Плановый доход в месяц ($cur)', initial: '${c.monthlyIncome}', numeric: true),
-        FieldSpec('e', 'Плановые расходы в месяц ($cur)', initial: '${c.monthlyExpense}', numeric: true),
+        if (!c.netWorthFromAccounts) FieldSpec('w', 'Чистый капитал, $cur', help: 'Если счетов нет; со счетами считается по их остаткам', initial: '${c.netWorth}', numeric: true),
+        FieldSpec('i', 'Доход в месяц, $cur', help: 'План: ориентир, факт — по журналу операций', initial: '${c.monthlyIncome}', numeric: true),
+        FieldSpec('e', 'Расходы в месяц, $cur', help: 'План: ориентир, факт — по журналу операций', initial: '${c.monthlyExpense}', numeric: true),
       ],
     );
     if (r == null || !mounted) return;
@@ -92,8 +92,8 @@ class _WealthScreenState extends State<WealthScreen> {
       actionLabel: 'Добавить',
       accent: AppColors.accent,
       fields: [
-        const FieldSpec('n', 'Название (вклад, брокер, карта, наличные)'),
-        FieldSpec('b', 'Остаток сейчас ($cur, долг — со знаком минус)', numeric: true),
+        const FieldSpec('n', 'Название', help: 'Вклад, брокер, карта, наличные'),
+        FieldSpec('b', 'Остаток сейчас, $cur', help: 'Долг — со знаком минус', numeric: true),
       ],
       validate: (v) => v['n']!.trim().isNotEmpty && parseInt(v['b']!.replaceAll('−', '-')) != null,
     );

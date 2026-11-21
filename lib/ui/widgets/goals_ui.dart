@@ -22,8 +22,8 @@ Future<void> showNewGoalDialog(BuildContext context, AppController c) async {
     fields: const [
       FieldSpec('t', 'Формулировка цели'),
       FieldSpec('c', 'Категория', initial: 'Стратегия'),
-      FieldSpec('dl', 'Срок (дд.мм.гггг, можно пусто)'),
-      FieldSpec('cp', 'Чекпоинты (каждый с новой строки)', lines: 4),
+      FieldSpec('dl', 'Срок (дд.мм.гггг)', help: 'Можно оставить пустым'),
+      FieldSpec('cp', 'Чекпоинты', help: 'Каждый с новой строки', lines: 4),
     ],
     validate: (v) => v['t']!.isNotEmpty && (v['dl']!.isEmpty || parseDate(v['dl']!) != null),
   );
@@ -41,7 +41,7 @@ Future<void> showEditGoalDialog(BuildContext context, AppController c, GlobalGoa
     fields: [
       FieldSpec('t', 'Формулировка цели', initial: g.title),
       FieldSpec('c', 'Категория', initial: g.category),
-      FieldSpec('dl', 'Срок (дд.мм.гггг, пусто — без срока)', initial: g.deadline == null ? '' : fmtDate(g.deadline!)),
+      FieldSpec('dl', 'Срок (дд.мм.гггг)', help: 'Пусто — без срока', initial: g.deadline == null ? '' : fmtDate(g.deadline!)),
     ],
     validate: (v) => v['t']!.isNotEmpty && (v['dl']!.isEmpty || parseDate(v['dl']!) != null),
   );
@@ -60,8 +60,8 @@ Future<void> showGoalPlanDialog(BuildContext context, AppController c, GlobalGoa
     accent: AppColors.accent,
     actionTextColor: Colors.black,
     fields: [
-      FieldSpec('h', 'Время, часов (пусто — не задано)', numeric: true, initial: p?.minutes == null ? '' : trimNum(p!.minutes! / 60)),
-      FieldSpec('m', 'Деньги, $cur (пусто — не задано)', numeric: true, initial: p?.money?.toString() ?? ''),
+      FieldSpec('h', 'Время, часов', help: 'Пусто — не задано', numeric: true, initial: p?.minutes == null ? '' : trimNum(p!.minutes! / 60)),
+      FieldSpec('m', 'Деньги, $cur', help: 'Пусто — не задано', numeric: true, initial: p?.money?.toString() ?? ''),
     ],
     validate: (v) => ok(v['h']!) && ok(v['m']!),
   );
@@ -86,9 +86,9 @@ Future<void> showAddCheckpointDialog(BuildContext context, AppController c, Glob
         MetricLink.netWorth: 'Авто: капитал ≥',
         MetricLink.income: 'Авто: доход в месяц ≥',
       }),
-      const FieldSpec('t', 'Название (для авто можно пусто)'),
-      FieldSpec('m', 'Мышца (только для 1RM)', initial: muscleOptions.keys.contains('chest') ? 'chest' : muscleOptions.keys.first, options: muscleOptions),
-      FieldSpec('v', 'Целевое значение (кг или $cur)', numeric: true),
+      const FieldSpec('t', 'Название', help: 'Для автоматического можно оставить пустым'),
+      FieldSpec('m', 'Мышца', help: 'Только для рекорда 1RM', initial: muscleOptions.keys.contains('chest') ? 'chest' : muscleOptions.keys.first, options: muscleOptions),
+      FieldSpec('v', 'Целевое значение', help: 'Кг для 1RM, $cur для денег', numeric: true),
     ],
     validate: (v) => v['k'] == 'manual' ? v['t']!.isNotEmpty : (parseNum(v['v']!) ?? 0) > 0,
   );

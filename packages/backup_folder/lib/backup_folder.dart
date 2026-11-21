@@ -40,5 +40,9 @@ class BackupFolder {
     ];
   }
 
+  /// «Сохранить как»: системный диалог, человек выбирает место и имя файла. false — сохранение отменено.
+  static Future<bool> saveAs(String name, Uint8List bytes, {String mime = 'application/octet-stream'}) async =>
+      await _ch.invokeMethod<bool>('saveAs', {'name': name, 'bytes': bytes, 'mime': mime}) ?? false;
+
   static Future<void> deleteFile(String folder, String id) => _ch.invokeMethod<void>('deleteFile', {'folder': folder, 'id': id});
 }

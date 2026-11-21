@@ -57,7 +57,7 @@ class CategoriesScreen extends StatelessWidget {
       actionLabel: 'Сохранить',
       accent: AppColors.accent,
       fields: [
-        const FieldSpec('p', 'Если описание содержит (например, «Пятёрочка»)'),
+        const FieldSpec('p', 'Если описание содержит', help: 'Например, «Пятёрочка»'),
         FieldSpec('c', 'Категория', initial: 'food', options: _categoryOptions()),
       ],
       validate: (v) => v['p']!.trim().length >= 2,

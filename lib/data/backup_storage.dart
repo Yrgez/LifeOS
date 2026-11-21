@@ -22,6 +22,9 @@ abstract class BackupStorage {
   Future<void> write(String folder, String name, Uint8List bytes);
   Future<List<StoredBackup>> list(String folder);
   Future<void> delete(String folder, String id);
+
+  /// «Сохранить как» в месте, которое человек выберет сам (открытый экспорт). false — отменено.
+  Future<bool> saveAs(String name, Uint8List bytes, String mime);
 }
 
 /// Хранилище недоступно на этой платформе (тесты, компьютер): автокопия просто не предлагается.
@@ -36,6 +39,8 @@ class UnsupportedBackupStorage implements BackupStorage {
   @override
   Future<void> write(String folder, String name, Uint8List bytes) => throw UnsupportedError('нет хранилища');
   @override
+  Future<bool> saveAs(String name, Uint8List bytes, String mime) => throw UnsupportedError('нет хранилища');
+  @override
   Future<List<StoredBackup>> list(String folder) async => const [];
   @override
   Future<void> delete(String folder, String id) async {}
@@ -47,6 +52,17 @@ class MemoryBackupStorage implements BackupStorage {
   String? nextPick = 'content://папка/копии';
   bool access = true;
   Object? writeError;
+
+  /// Файлы, сохранённые через «Сохранить как»; [saveAsCancelled] — человек закрыл диалог.
+  final Map<String, Uint8List> savedAs = {};
+  bool saveAsCancelled = false;
+
+  @override
+  Future<bool> saveAs(String name, Uint8List bytes, String mime) async {
+    if (saveAsCancelled) return false;
+    savedAs[name] = bytes;
+    return true;
+  }
 
   @override
   Future<String?> pickFolder() async {

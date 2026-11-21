@@ -18,6 +18,7 @@ import 'package:life_os/security/key_store.dart';
 import 'package:life_os/security/security_service.dart';
 import 'package:life_os/security/security_settings.dart';
 import 'package:life_os/state/app_controller.dart';
+import 'package:life_os/ui/screens/settings_screen.dart';
 import 'package:life_os/ui/widgets/backup_actions.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -84,18 +85,6 @@ void main() {
       expect(b.configured, isFalse);
       expect(await b.setPassword('надёжный пароль'), isTrue);
       expect(b.configured, isTrue);
-    });
-
-    test('большой экспорт — файлом в папку копий; CSV с меткой UTF-8; без папки — null', () async {
-      final b = await make();
-      expect(await b.saveExport('lifeos-events-2026-11-18.csv', 'a,b'), isNull);
-      await b.chooseFolder();
-      expect(await b.saveExport('lifeos-events-2026-11-18.csv', 'когда,название'), 'lifeos-events-2026-11-18.csv');
-      final csv = storage.folders[b.folder]!['lifeos-events-2026-11-18.csv']!;
-      expect(csv.take(3), [0xEF, 0xBB, 0xBF]); // метка UTF-8 (utf8.decode её скрывает)
-      expect(utf8.decode(csv), 'когда,название');
-      await b.saveExport('lifeos-chronicle-2026-11-18.md', '# Хроника');
-      expect(storage.folders[b.folder]!['lifeos-chronicle-2026-11-18.md']!.first, '#'.codeUnitAt(0)); // без метки
     });
 
     test('данные прочитаны не полностью — копия не делается и не вытесняет прежние', () async {
@@ -264,6 +253,41 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('backup_reminder')), findsNothing);
       expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox());
+      c.dispose();
+    });
+
+    testWidgets('открытый экспорт — «Сохранить как»: файл с датой в имени и меткой UTF-8; отмена — без сообщения', (tester) async {
+      tester.view.physicalSize = const Size(360, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final c = AppController(MemoryAppRepository(), clock: () => now, saveDelay: Duration.zero);
+      await c.load();
+      final storage = MemoryBackupStorage();
+      final backup = AutoBackup(controller: c, storage: storage, keys: MemoryKeyStore(), cipher: fastCipher, prefs: prefs, clock: () => now);
+      await backup.init();
+      final lock = AppLock(authenticator: FakeAuthenticator(available: false), settings: SecuritySettings())..start();
+      final security = SecurityService(lock: lock, backupCipher: fastCipher, backup: backup);
+      await tester.pumpWidget(LifeOSApp(controller: c, security: security));
+      await tester.pumpAndSettle();
+      tester.state<NavigatorState>(find.byType(Navigator).first).push(MaterialPageRoute(builder: (_) => SettingsScreen(controller: c, security: security)));
+      await tester.pumpAndSettle();
+      final tile = find.text('События (CSV)');
+      await tester.scrollUntilVisible(tile, 300, scrollable: find.byType(Scrollable).first);
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+      final file = storage.savedAs['lifeos-events-2026-11-18.csv']!;
+      expect(file.take(3), [0xEF, 0xBB, 0xBF]);
+      expect(find.textContaining('сохранён'), findsOneWidget);
+
+      storage.saveAsCancelled = true;
+      ScaffoldMessenger.of(tester.element(tile)).hideCurrentSnackBar();
+      await tester.pumpAndSettle();
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('сохранён'), findsNothing);
       await tester.pumpWidget(const SizedBox());
       c.dispose();
     });

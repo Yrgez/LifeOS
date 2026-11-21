@@ -39,7 +39,7 @@ class BillsScreen extends StatelessWidget {
       accent: AppColors.accent,
       fields: [
         FieldSpec('t', 'Название: интернет, аренда, страховка', initial: b?.title ?? ''),
-        FieldSpec('a', 'Сумма, $cur (пусто — меняется)', numeric: true, initial: b?.amount?.toString() ?? ''),
+        FieldSpec('a', 'Сумма, $cur', help: 'Пусто — сумма каждый раз разная', numeric: true, initial: b?.amount?.toString() ?? ''),
         FieldSpec('c', 'Категория расхода', initial: b?.categoryId ?? 'other_exp', options: _expenseCats(keep: b?.categoryId)),
         if (!paid) ...[
           FieldSpec('d', 'Ближайший срок (дд.мм.гггг)', initial: fmtDate(b == null ? c.now : DateTime.parse(b.firstDue))),
@@ -67,7 +67,7 @@ class BillsScreen extends StatelessWidget {
         title: 'Оплата: ${b.title}',
         actionLabel: 'Оплачено',
         accent: AppColors.accent,
-        fields: [FieldSpec('a', 'Сумма, $cur (пусто — без операции)', numeric: true)],
+        fields: [FieldSpec('a', 'Сумма, $cur', help: 'Пусто — отметить оплату без операции', numeric: true)],
         validate: (v) => v['a']!.trim().isEmpty || (parseInt(v['a']!) ?? 0) > 0,
       );
       if (r == null || !context.mounted) return;

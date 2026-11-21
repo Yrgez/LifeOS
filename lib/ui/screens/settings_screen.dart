@@ -8,9 +8,11 @@ import '../../core/currency.dart';
 import '../../core/reminders.dart';
 import '../../core/sections.dart';
 import '../../core/theme.dart';
+import '../../core/open_export.dart';
 import '../../core/utils.dart';
 import '../../data/app_data.dart';
 import '../../security/app_lock.dart';
+import '../../data/backup_storage.dart';
 import '../../security/auto_backup.dart';
 import '../../security/backup_cipher.dart';
 import '../../security/biometric_authenticator.dart';
@@ -49,7 +51,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context,
       title: 'Как к вам обращаться',
       actionLabel: 'Сохранить',
-      fields: [FieldSpec('n', 'Имя (можно пусто)', initial: c.userName)],
+      fields: [FieldSpec('n', 'Имя', help: 'Можно оставить пустым', initial: c.userName)],
     );
     if (r == null || !mounted) return;
     c.updateSettings(userName: r['n']);
@@ -69,23 +71,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showToast(context, 'Обозначение сменилось на $cur. Суммы не пересчитываются — курс приложению неизвестен.');
   }
 
-  /// Буфер обмена Android не принимает больше ~1 МБ за раз: большой экспорт сохраняется файлом в папку копий.
+  /// Буфер обмена Android не принимает больше ~1 МБ за раз — он только запасной путь, где нет сохранения файлом.
   static const _clipboardLimit = 200000;
 
-  Future<void> _copyExport(String what, String text, String fileName) async {
-    String message;
-    if (text.length > _clipboardLimit) {
-      final b = security.backup;
-      String? saved;
+  /// Открытый экспорт: системный диалог «Сохранить как» — человек сам выбирает место (телефон, облако) и имя.
+  Future<void> _export(String what, String text, String fileName) async {
+    final dot = fileName.lastIndexOf('.');
+    final name = 'lifeos-${fileName.substring(0, dot)}-${dayKey(c.now)}${fileName.substring(dot)}';
+    final storage = security.backup?.storage;
+    String? message;
+    if (storage != null && storage is! UnsupportedBackupStorage) {
       try {
-        final dot = fileName.lastIndexOf('.');
-        saved = b == null ? null : await b.saveExport('lifeos-${fileName.substring(0, dot)}-${dayKey(c.now)}${fileName.substring(dot)}', text);
+        if (await storage.saveAs(name, exportFileBytes(name, text), exportMime(name))) message = '$what — файл «$name» сохранён';
       } catch (_) {
-        saved = null;
+        message = 'Не удалось сохранить файл «$name»';
       }
-      message = saved != null
-          ? '$what — файл «$saved» в папке копий'
-          : '$what не помещается в буфер обмена. Выберите папку в разделе «Автокопия» — файл сохранится туда';
+    } else if (text.length > _clipboardLimit) {
+      message = '$what не помещается в буфер обмена, а сохранение файлом здесь недоступно';
     } else {
       try {
         await Clipboard.setData(ClipboardData(text: text));
@@ -94,7 +96,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         message = 'Не удалось скопировать $what в буфер обмена';
       }
     }
-    if (mounted) showToast(context, message);
+    if (message != null && mounted) showToast(context, message);
   }
 
   Future<void> _editStepsGoal() async {
@@ -217,7 +219,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       actionLabel: 'Сохранить',
       accent: AppColors.accent,
       fields: const [
-        FieldSpec('p', 'Пароль (от ${BackupCipher.minPassphraseLength} символов)', obscure: true),
+        FieldSpec('p', 'Пароль', help: 'Не короче ${BackupCipher.minPassphraseLength} символов', obscure: true),
         FieldSpec('p2', 'Повторите пароль', obscure: true),
       ],
       validate: (v) => v['p']!.length >= BackupCipher.minPassphraseLength && v['p'] == v['p2'],
@@ -517,7 +519,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ]),
         _section('ОТКРЫТЫЙ ЭКСПОРТ', [
           // читается без LIFE OS: Excel, LibreOffice, любой текстовый редактор; это не резервная копия
-          _tile(Icons.article_outlined, 'Хроника (Markdown)', 'Текст: месяцы, дни, события и заметки', onTap: () => _copyExport('Хроника', c.exportChronicleMarkdown(), 'chronicle.md')),
+          _tile(Icons.article_outlined, 'Хроника (Markdown)', 'Текст: месяцы, дни, события и заметки', onTap: () => _export('Хроника', c.exportChronicleMarkdown(), 'chronicle.md')),
           for (final e in const {
             'events': ('События (CSV)', 'Все версии и отменённые — с пометками'),
             'checkins': ('Отметки дня (CSV)', 'Оценка, метки, заметка; все версии'),
@@ -526,7 +528,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             'weights': ('Вес (CSV)', 'Замеры с источником'),
             'sets': ('Подходы (CSV)', 'Журнал тренировок с расчётным 1RM'),
           }.entries)
-            _tile(Icons.table_chart_outlined, e.value.$1, e.value.$2, onTap: () => _copyExport(e.value.$1, c.exportCsv(e.key)!, '${e.key}.csv')),
+            _tile(Icons.table_chart_outlined, e.value.$1, e.value.$2, onTap: () => _export(e.value.$1, c.exportCsv(e.key)!, '${e.key}.csv')),
         ]),
         if (security.reminders != null && security.reminders!.supported) _section('НАПОМИНАНИЯ', _reminderTiles(security.reminders!)),
         _section('РЕЗЕРВНАЯ КОПИЯ', _backupTiles(security.backup)),
