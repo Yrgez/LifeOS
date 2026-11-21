@@ -1,4 +1,4 @@
-# Life OS — структура проекта
+# Catenna — структура проекта
 
 ```
 lib/
@@ -7,7 +7,7 @@ lib/
   core/                        чистая логика без Flutter-состояния
     utils, workout_stats, finance_stats, finance_categories, graph_stats, life_events, resource_stats, chronicle, goal_stats, recovery_stats, body_stats, review, memories, experiments, open_export, currency, theme, app_log
   models/models.dart           модели данных + JSON
-  models/life_event.dart       ядро LIFE OS: событие жизни (измерения, ресурсы, версии), чистый Dart
+  models/life_event.dart       ядро Catenna: событие жизни (измерения, ресурсы, версии), чистый Dart
   models/life_process.dart     процесс жизни (длительное направление) и журнал его статусов
   models/body.dart             замер веса, цель по весу
   models/day_snapshot.dart     дневной снимок состояния (шаги, калории, белок, капитал, узлы графа)
@@ -199,7 +199,7 @@ docs/SECURITY_SETUP.md         настройка и модель угроз: б
 - **Резервная копия вручную**: в буфер обмена и из него (с шифрованием паролем или без).
 - **Открытый экспорт** (`core/open_export.dart`): CSV (события со всеми версиями и отменами, операции, дни, вес, подходы)
   и хроника в Markdown — сохраняются файлом через системный диалог «Сохранить как» (место и имя выбирает человек;
-  CSV — с меткой UTF-8 для Excel, текст, похожий на формулу, экранируется). Читаются без LIFE OS; это не резервная копия.
+  CSV — с меткой UTF-8 для Excel, текст, похожий на формулу, экранируется). Читаются без Catenna; это не резервная копия.
 
 ## Настройки и знакомство
 - **Знакомство** (`onboarding_screen.dart`): имя → цели дня (шаги, белок) → деньги (по желанию) → Health Connect и способ старта

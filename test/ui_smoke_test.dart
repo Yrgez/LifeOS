@@ -301,7 +301,7 @@ void main() {
   group('знакомство', () {
     testWidgets('новая установка: прохождение до конца с примерами данных', (tester) async {
       final c = await boot(tester, blank: true);
-      expect(find.text('Добро пожаловать в LIFE OS'), findsOneWidget);
+      expect(find.text('Добро пожаловать в Catenna'), findsOneWidget);
       expect(find.byKey(const ValueKey('today_date')), findsNothing);
 
       await tester.enterText(find.byType(TextField).first, 'Мария');
@@ -366,14 +366,14 @@ void main() {
 
     testWidgets('существующие данные: знакомство не показывается', (tester) async {
       final c = await boot(tester);
-      expect(find.text('Добро пожаловать в LIFE OS'), findsNothing);
+      expect(find.text('Добро пожаловать в Catenna'), findsNothing);
       expect(find.byKey(const ValueKey('today_date')), findsOneWidget);
       await shutdown(tester, c);
     });
 
     testWidgets('при недоступном хранилище знакомство не навязывается', (tester) async {
       final c = await boot(tester, blank: true, repo: MemoryAppRepository(loadError: StateError('диск')));
-      expect(find.text('Добро пожаловать в LIFE OS'), findsNothing);
+      expect(find.text('Добро пожаловать в Catenna'), findsNothing);
       expect(find.textContaining('Хранилище недоступно'), findsOneWidget);
       await shutdown(tester, c);
     });
@@ -473,7 +473,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Пройти знакомство заново'));
       await tester.pumpAndSettle();
-      expect(find.text('Добро пожаловать в LIFE OS'), findsOneWidget);
+      expect(find.text('Добро пожаловать в Catenna'), findsOneWidget);
       expect(find.text('Настройки'), findsNothing);
       expect(c.goals, isNotEmpty); // данные на месте
       await shutdown(tester, c);

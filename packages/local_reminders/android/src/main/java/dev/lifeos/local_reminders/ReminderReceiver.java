@@ -41,7 +41,7 @@ public class ReminderReceiver extends BroadcastReceiver {
         // на экране блокировки — только нейтральная строка: суммы и заметки видны после разблокировки
         Notification publicVersion = new Notification.Builder(context, CHANNEL)
                 .setSmallIcon(R.drawable.ic_lifeos_reminder)
-                .setContentTitle("LIFE OS")
+                .setContentTitle("Catenna")
                 .setContentText("Напоминание")
                 .build();
         Notification.Builder b = new Notification.Builder(context, CHANNEL)

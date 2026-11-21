@@ -84,7 +84,7 @@ Future<void> restoreFromFile(
   if (f == null || !context.mounted) return;
   final d = decodeStatementBytes(f.bytes);
   if (d == null) {
-    showToast(context, 'Это не файл резервной копии LIFE OS');
+    showToast(context, 'Это не файл резервной копии Catenna');
     return;
   }
   final ok = await confirmDialog(context,

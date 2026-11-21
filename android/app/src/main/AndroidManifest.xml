@@ -18,7 +18,7 @@
          Зашифрованная база там нечитаема (ключ — в Keystore этого устройства); переносите данные копией
          из приложения (docs/SECURITY_SETUP.md). -->
     <application
-        android:label="LIFE OS"
+        android:label="Catenna"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="false"

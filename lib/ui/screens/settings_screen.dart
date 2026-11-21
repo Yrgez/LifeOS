@@ -77,7 +77,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// Открытый экспорт: системный диалог «Сохранить как» — человек сам выбирает место (телефон, облако) и имя.
   Future<void> _export(String what, String text, String fileName) async {
     final dot = fileName.lastIndexOf('.');
-    final name = 'lifeos-${fileName.substring(0, dot)}-${dayKey(c.now)}${fileName.substring(dot)}';
+    final name = 'catenna-${fileName.substring(0, dot)}-${dayKey(c.now)}${fileName.substring(dot)}';
     final storage = security.backup?.storage;
     String? message;
     if (storage != null && storage is! UnsupportedBackupStorage) {
@@ -196,7 +196,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           key: const ValueKey('reminders_denied'),
           leading: const Icon(Icons.notifications_off_outlined, color: AppColors.text, size: 20),
           title: const Text('Уведомления запрещены', style: TextStyle(fontSize: 13, color: AppColors.text)),
-          subtitle: const Text('Разрешите их — или в настройках Android для LIFE OS', style: TextStyle(color: AppColors.muted, fontSize: 11)),
+          subtitle: const Text('Разрешите их — или в настройках Android для Catenna', style: TextStyle(color: AppColors.muted, fontSize: 11)),
           trailing: TextButton(onPressed: r.requestPermission, child: const Text('Разрешить')),
         )
       else if (next != null)
@@ -250,7 +250,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   List<Widget> _backupTiles(AutoBackup? b) {
-    final restore = _tile(Icons.settings_backup_restore, 'Восстановить из файла', 'Копия LIFE OS (в том числе автокопия); заменяет все данные',
+    final restore = _tile(Icons.settings_backup_restore, 'Восстановить из файла', 'Копия Catenna (в том числе автокопия); заменяет все данные',
         onTap: () => restoreFromFile(context, c, cipher: security.backupCipher));
     if (b == null || !b.supported) return [restore];
     final now = c.now;
@@ -518,7 +518,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
         ]),
         _section('ОТКРЫТЫЙ ЭКСПОРТ', [
-          // читается без LIFE OS: Excel, LibreOffice, любой текстовый редактор; это не резервная копия
+          // читается без Catenna: Excel, LibreOffice, любой текстовый редактор; это не резервная копия
           _tile(Icons.article_outlined, 'Хроника (Markdown)', 'Текст: месяцы, дни, события и заметки', onTap: () => _export('Хроника', c.exportChronicleMarkdown(), 'chronicle.md')),
           for (final e in const {
             'events': ('События (CSV)', 'Все версии и отменённые — с пометками'),

@@ -95,7 +95,7 @@ jobs:
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/lifeos.jks"
             echo "path=$RUNNER_TEMP/lifeos.jks" >> "$GITHUB_OUTPUT"
-            echo "Подпись: ключ LIFE OS"
+            echo "Подпись: ключ Catenna"
           else
             echo "path=" >> "$GITHUB_OUTPUT"
             echo "::warning::Секрет LIFEOS_KEYSTORE_BASE64 не задан — APK подписан отладочным ключом и не обновит установленную версию (docs/RELEASE.md)"
@@ -114,12 +114,12 @@ jobs:
             --dart-define=LIFEOS_VERSION=${{ steps.ver.outputs.name }} \
             --dart-define=LIFEOS_BUILD=${{ steps.ver.outputs.build }} \
             --dart-define=LIFEOS_COMMIT=${{ github.sha }}
-          mv build/app/outputs/flutter-apk/app-release.apk "life-os-${{ steps.ver.outputs.name }}-${{ steps.ver.outputs.build }}.apk"
+          mv build/app/outputs/flutter-apk/app-release.apk "catenna-${{ steps.ver.outputs.name }}-${{ steps.ver.outputs.build }}.apk"
 
       - name: Проверка APK
         shell: bash -eo pipefail {0}
         run: |
-          apk=life-os-${{ steps.ver.outputs.name }}-${{ steps.ver.outputs.build }}.apk
+          apk=catenna-${{ steps.ver.outputs.name }}-${{ steps.ver.outputs.build }}.apk
           aapt=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -1)
           "$aapt" dump badging "$apk" | grep -E "^package:|sdkVersion|uses-permission" | tee badging.txt
           grep -q "name='io.github.yrgez.lifeos'" badging.txt
@@ -135,7 +135,7 @@ jobs:
       - name: APK как артефакт
         uses: actions/upload-artifact@v6
         with:
-          name: life-os-${{ steps.ver.outputs.name }}-${{ steps.ver.outputs.build }}
-          path: life-os-*.apk
+          name: catenna-${{ steps.ver.outputs.name }}-${{ steps.ver.outputs.build }}
+          path: catenna-*.apk
           if-no-files-found: error
           retention-days: 14

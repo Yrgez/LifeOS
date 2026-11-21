@@ -1,4 +1,4 @@
-// Плагин LIFE OS: доступ к папке для резервных копий через Storage Access Framework (только Java, без Kotlin).
+// Плагин Catenna: доступ к папке для резервных копий через Storage Access Framework (только Java, без Kotlin).
 group = "dev.lifeos.backup_folder"
 version = "1.0"
 

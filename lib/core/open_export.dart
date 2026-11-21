@@ -11,7 +11,7 @@ import 'chronicle.dart';
 import 'finance_categories.dart';
 import 'utils.dart';
 
-/// Открытый экспорт: данные в форматах, которые читаются без LIFE OS — таблицы CSV (Excel, LibreOffice, Python)
+/// Открытый экспорт: данные в форматах, которые читаются без Catenna — таблицы CSV (Excel, LibreOffice, Python)
 /// и хроника в Markdown (обычный текст). Это не резервная копия: восстановить из него приложение нельзя,
 /// зато через 20 лет его можно прочитать чем угодно. Принцип владения данными.
 
@@ -110,7 +110,7 @@ String chronicleMarkdown({
   final b = StringBuffer()
     ..writeln('# Хроника${userName.isEmpty ? '' : ' — $userName'}')
     ..writeln()
-    ..writeln('Выгружено из LIFE OS ${fmtDate(now)}. Только записанные факты; «нет данных» не означает ноль.')
+    ..writeln('Выгружено из Catenna ${fmtDate(now)}. Только записанные факты; «нет данных» не означает ноль.')
     ..writeln();
   for (final m in groupChronicle(entries, snapshots: snapshots, checkIns: checkIns)) {
     b.writeln('## ${monthYear(m.month)}');

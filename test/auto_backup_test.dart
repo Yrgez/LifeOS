@@ -278,7 +278,7 @@ void main() {
       await tester.scrollUntilVisible(tile, 300, scrollable: find.byType(Scrollable).first);
       await tester.tap(tile);
       await tester.pumpAndSettle();
-      final file = storage.savedAs['lifeos-events-2026-11-18.csv']!;
+      final file = storage.savedAs['catenna-events-2026-11-18.csv']!;
       expect(file.take(3), [0xEF, 0xBB, 0xBF]);
       expect(find.textContaining('сохранён'), findsOneWidget);
 

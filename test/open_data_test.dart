@@ -64,10 +64,10 @@ void main() {
     });
 
     test('файл экспорта: CSV с меткой UTF-8 для Excel, Markdown без неё; тип для диалога сохранения', () {
-      final csv = exportFileBytes('lifeos-events-2026-11-18.csv', 'когда,название');
+      final csv = exportFileBytes('catenna-events-2026-11-18.csv', 'когда,название');
       expect(csv.take(3), [0xEF, 0xBB, 0xBF]);
       expect(utf8.decode(csv), 'когда,название'); // utf8.decode метку скрывает
-      expect(exportFileBytes('lifeos-chronicle-2026-11-18.md', '# Хроника').first, '#'.codeUnitAt(0));
+      expect(exportFileBytes('catenna-chronicle-2026-11-18.md', '# Хроника').first, '#'.codeUnitAt(0));
       expect(exportMime('a.csv'), 'text/csv');
       expect(exportMime('a.md'), 'text/markdown');
       expect(csvField('две\nстроки'), '"две\nстроки"');
