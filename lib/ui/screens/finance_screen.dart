@@ -36,7 +36,7 @@ Future<void> showTransactionDialog(BuildContext context, AppController c, {Money
       FieldSpec('c', 'Категория', initial: existing?.categoryId ?? 'food', options: _allCategoryOptions(keep: existing?.categoryId)),
       FieldSpec('a', 'Сумма ($cur)', numeric: true, initial: existing == null ? '' : '${existing.amount}'),
       FieldSpec('d', 'Дата (дд.мм.гггг)', initial: fmtDate(existing?.at ?? c.now)),
-      FieldSpec('n', 'Заметка (необязательно)', initial: existing?.note ?? ''),
+      FieldSpec('n', 'Заметка', help: 'Необязательно', initial: existing?.note ?? ''),
       FieldSpec('w', 'Учитывать в капитале', initial: (existing?.affectsNetWorth ?? true) ? '1' : '0', options: _capitalOptions),
     ],
     validate: (v) => (parseNum(v['a']!) ?? 0) > 0 && parseDate(v['d']!) != null,
@@ -77,7 +77,7 @@ Future<void> showBudgetDialog(BuildContext context, AppController c, {String? ca
     accent: AppColors.material,
     fields: [
       FieldSpec('c', 'Категория расходов', initial: cat, options: expenseOptions),
-      FieldSpec('l', 'Лимит ($cur в месяц, пусто — без лимита)', numeric: true, initial: current == null ? '' : '$current'),
+      FieldSpec('l', 'Лимит в месяц, $cur', help: 'Пусто — без лимита', numeric: true, initial: current == null ? '' : '$current'),
     ],
     validate: (v) => v['l']!.isEmpty || (parseNum(v['l']!) ?? -1) >= 0,
   );
@@ -96,7 +96,7 @@ Future<void> showRecurringDialog(BuildContext context, AppController c, {Recurri
       FieldSpec('c', 'Категория', initial: existing?.categoryId ?? 'housing', options: _allCategoryOptions(keep: existing?.categoryId)),
       FieldSpec('a', 'Сумма ($cur)', numeric: true, initial: existing == null ? '' : '${existing.amount}'),
       FieldSpec('d', 'Число месяца (1–31)', numeric: true, initial: '${existing?.dayOfMonth ?? c.now.day}'),
-      FieldSpec('n', 'Заметка (необязательно)', initial: existing?.note ?? ''),
+      FieldSpec('n', 'Заметка', help: 'Необязательно', initial: existing?.note ?? ''),
       FieldSpec('w', 'Учитывать в капитале', initial: (existing?.affectsNetWorth ?? true) ? '1' : '0', options: _capitalOptions),
     ],
     validate: (v) => (parseNum(v['a']!) ?? 0) > 0 && (parseInt(v['d']!) ?? 0) >= 1 && (parseInt(v['d']!) ?? 0) <= 31,

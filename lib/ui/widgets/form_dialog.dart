@@ -10,7 +10,8 @@ class FieldSpec {
   final int lines;
   final bool obscure; // скрывать ввод (пароли)
   final Map<String, String>? options; // если задано — выпадающий список (value -> подпись)
-  const FieldSpec(this.key, this.label, {this.initial = '', this.numeric = false, this.lines = 1, this.obscure = false, this.options});
+  final String? help; // пояснение под полем: переносится по строкам, а не обрезает подпись многоточием
+  const FieldSpec(this.key, this.label, {this.initial = '', this.numeric = false, this.lines = 1, this.obscure = false, this.options, this.help});
 }
 
 Future<Map<String, String>?> showFormDialog(
@@ -100,6 +101,7 @@ class _FormDialogState extends State<_FormDialog> {
                 child: f.options != null
                     ? LabeledDropdown(
                         label: f.label,
+                        help: f.help,
                         value: _choices[f.key]!,
                         items: f.options!,
                         onChanged: (v) => setState(() => _choices[f.key] = v),
@@ -112,7 +114,7 @@ class _FormDialogState extends State<_FormDialog> {
                         obscureText: f.obscure,
                         minLines: f.obscure ? 1 : f.lines,
                         maxLines: f.obscure ? 1 : f.lines,
-                        decoration: fieldDecoration(f.label),
+                        decoration: InputDecoration(labelText: f.label, helperText: f.help, helperMaxLines: 3),
                       ),
               ),
           ],
@@ -136,17 +138,10 @@ class _FormDialogState extends State<_FormDialog> {
   }
 }
 
-/// Подпись поля узкого диалога. Длинная «Лимит (₽ в месяц, пусто — без лимита)» обрезалась бы многоточием —
-/// главное остаётся подписью, пояснение из скобок — строкой под полем (переносится, читается TalkBack).
-InputDecoration fieldDecoration(String label) {
-  final i = label.indexOf(' (');
-  if (label.length <= 20 || i <= 0 || !label.endsWith(')')) return InputDecoration(labelText: label);
-  return InputDecoration(labelText: label.substring(0, i), helperText: label.substring(i + 2, label.length - 1), helperMaxLines: 3);
-}
-
 /// Выпадающий список без устаревшего DropdownButtonFormField.value.
 class LabeledDropdown extends StatelessWidget {
   final String label;
+  final String? help; // пояснение под списком
   final Color? labelColor;
   final String value;
   final Map<String, String> items;
@@ -159,6 +154,7 @@ class LabeledDropdown extends StatelessWidget {
     required this.items,
     required this.onChanged,
     this.labelColor,
+    this.help,
   });
 
   @override
@@ -169,6 +165,8 @@ class LabeledDropdown extends StatelessWidget {
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: label,
+          helperText: help,
+          helperMaxLines: 3,
           labelStyle: labelColor == null ? null : TextStyle(color: labelColor, fontSize: 11),
           contentPadding: const EdgeInsets.symmetric(horizontal: 10),
         ),

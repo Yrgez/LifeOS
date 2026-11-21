@@ -296,6 +296,7 @@ void main() {
       await c.load();
       expect(c.loaded, isFalse);
       expect(c.loadFailed, isTrue);
+      expect(c.storageProblem, contains('Хранилище недоступно'));
       c.updateWealth(netWorth: 1);
       await c.flush();
       expect(repo.saveCalls, 0);
@@ -307,6 +308,7 @@ void main() {
       await c.load();
       expect(c.loaded, isTrue);
       expect(c.loadFailed, isTrue); // баннер «изменения не сохраняются»
+      expect(c.storageProblem, allOf(contains('Повреждены: цели'), contains('из резервной копии')));
       c.updateWealth(netWorth: 1);
       await c.flush();
       expect(repo.saveCalls, 0);
@@ -315,6 +317,7 @@ void main() {
     test('схема новее — запись тоже отключена', () async {
       final c = make(loadError: const SchemaTooNewException(99));
       await c.load();
+      expect(c.storageProblem, contains('более новой версией'));
       await c.flush();
       expect(repo.saveCalls, 0);
     });

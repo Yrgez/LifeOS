@@ -35,11 +35,14 @@ import io.flutter.plugin.common.PluginRegistry;
 public class BackupFolderPlugin implements FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware,
         PluginRegistry.ActivityResultListener {
     private static final int PICK_FOLDER = 0x4C05;
+    private static final int SAVE_AS = 0x4C07;
 
     private MethodChannel channel;
     private Context context;
     private ActivityPluginBinding activityBinding;
     private MethodChannel.Result pendingPick;
+    private MethodChannel.Result pendingSave;
+    private byte[] pendingSaveBytes;
     private final ExecutorService io = Executors.newSingleThreadExecutor();
     private final Handler main = new Handler(Looper.getMainLooper());
 
@@ -83,6 +86,9 @@ public class BackupFolderPlugin implements FlutterPlugin, MethodChannel.MethodCa
         switch (call.method) {
             case "pickFolder":
                 pickFolder(result);
+                return;
+            case "saveAs":
+                saveAs(result, (String) call.argument("name"), (byte[]) call.argument("bytes"), (String) call.argument("mime"));
                 return;
             case "hasAccess":
                 result.success(hasAccess(Uri.parse((String) call.argument("folder"))));
@@ -142,8 +148,59 @@ public class BackupFolderPlugin implements FlutterPlugin, MethodChannel.MethodCa
         activity.startActivityForResult(intent, PICK_FOLDER);
     }
 
+    /** «Сохранить как»: системный диалог создания файла — человек сам выбирает место и имя. */
+    private void saveAs(MethodChannel.Result result, String name, byte[] bytes, String mime) {
+        Activity activity = activityBinding == null ? null : activityBinding.getActivity();
+        if (activity == null) {
+            result.error("no_activity", "Нет активного экрана для сохранения файла", null);
+            return;
+        }
+        if (pendingSave != null) {
+            result.error("busy", "Сохранение файла уже открыто", null);
+            return;
+        }
+        pendingSave = result;
+        pendingSaveBytes = bytes;
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType(mime == null ? "application/octet-stream" : mime);
+        intent.putExtra(Intent.EXTRA_TITLE, name);
+        activity.startActivityForResult(intent, SAVE_AS);
+    }
+
+    private boolean onSaveAsResult(int resultCode, Intent data) {
+        MethodChannel.Result result = pendingSave;
+        byte[] bytes = pendingSaveBytes;
+        pendingSave = null;
+        pendingSaveBytes = null;
+        if (result == null) return true;
+        if (resultCode != Activity.RESULT_OK || data == null || data.getData() == null || bytes == null) {
+            result.success(false); // отменено
+            return true;
+        }
+        Uri doc = data.getData();
+        background(result, () -> {
+            ContentResolver r = context.getContentResolver();
+            try (OutputStream out = r.openOutputStream(doc, "w")) {
+                if (out == null) throw new IllegalStateException("Файл недоступен для записи");
+                out.write(bytes);
+                out.flush();
+            } catch (Exception e) {
+                // недописанный файл не оставляем
+                try {
+                    DocumentsContract.deleteDocument(r, doc);
+                } catch (Exception ignored) {
+                }
+                throw e;
+            }
+            return true;
+        });
+        return true;
+    }
+
     @Override
     public boolean onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == SAVE_AS) return onSaveAsResult(resultCode, data);
         if (requestCode != PICK_FOLDER) return false;
         MethodChannel.Result result = pendingPick;
         pendingPick = null;

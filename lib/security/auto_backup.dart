@@ -213,17 +213,6 @@ class AutoBackup extends ChangeNotifier {
     }
   }
 
-  /// Открытый экспорт файлом в выбранную папку — для того, что не помещается в буфер обмена. Без шифрования:
-  /// это таблица для чтения без приложения, а сохранить её человек просит сам. null — папка не выбрана или недоступна.
-  Future<String?> saveExport(String name, String text) async {
-    final folder = _folder;
-    if (folder == null || !await storage.hasAccess(folder)) return null;
-    // метка UTF-8 в начале CSV — иначе Excel показывает кириллицу нечитаемо
-    final body = name.endsWith('.csv') ? '\uFEFF$text' : text;
-    await storage.write(folder, name, Uint8List.fromList(utf8.encode(body)));
-    return name;
-  }
-
   Future<void> _fail(SharedPreferences p, String message) async {
     _error = message;
     await p.setString(_kError, message);

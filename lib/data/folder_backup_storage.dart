@@ -29,4 +29,7 @@ class FolderBackupStorage implements BackupStorage {
 
   @override
   Future<void> delete(String folder, String id) => BackupFolder.deleteFile(folder, id);
+
+  @override
+  Future<bool> saveAs(String name, Uint8List bytes, String mime) => BackupFolder.saveAs(name, bytes, mime: mime);
 }

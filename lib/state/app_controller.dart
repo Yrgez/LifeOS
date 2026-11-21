@@ -118,13 +118,31 @@ class AppController extends ChangeNotifier {
   /// true — последняя попытка чтения хранилища провалилась (UI показывает предупреждение).
   bool get loadFailed => _loadFailed;
 
+  /// Почему изменения не сохраняются — для баннера: причина и что делать. null — всё в порядке.
+  String? get storageProblem => _loadFailed ? (_storageProblem ?? 'Хранилище недоступно — изменения не сохраняются.') : null;
+  String? _storageProblem;
+
   /// Запрещает сохранение, если предварительная проверка целостности/миграции не завершилась.
   /// Снимается только созданием нового контроллера после успешного восстановления при запуске.
-  void blockWrites(String reason) {
+  /// [problem] — объяснение для человека (баннер); [reason] — для журнала диагностики.
+  void blockWrites(String reason, {String? problem}) {
     _writesBlocked = true;
     _loadFailed = true;
+    _storageProblem = problem ?? 'Проверка базы после шифрования не завершилась — изменения не сохраняются. '
+        'Перезапустите приложение; если не поможет — восстановите данные из копии (Настройки).';
     AppLog.e('Запись отключена: $reason');
     _notify();
+  }
+
+  /// Названия повреждённых при загрузке данных для человека: «цели, события».
+  static String _damagedLabel(List<String> damaged) {
+    const names = {
+      'goals': 'цели', 'events': 'события', 'transactions': 'операции', 'workoutSets': 'подходы', 'snapshots': 'дни',
+      'processes': 'процессы', 'checkins': 'отметки дня', 'tasks': 'задачи', 'weights': 'вес', 'accounts': 'счета',
+      'achievements': 'достижения', 'graphNodes': 'граф', 'graphEdges': 'граф', 'recurring': 'повторяющиеся операции',
+      'bills': 'счета к оплате', 'categories': 'категории', 'importRules': 'правила выписки', 'experiments': 'эксперименты',
+    };
+    return {for (final d in damaged) names[d.split(' ').first] ?? 'настройки'}.join(', ');
   }
 
   /// Капитал: сумма последних остатков счетов; пока счетов нет — значение, указанное вручную.
@@ -255,7 +273,11 @@ class AppController extends ChangeNotifier {
       final data = await _repo.load();
       if (data != null) {
         _d = data;
-        if (data.damaged.isNotEmpty) blockWrites('повреждены данные: ${data.damaged.take(5).join(', ')}');
+        if (data.damaged.isNotEmpty) {
+          blockWrites('повреждены данные: ${data.damaged.take(5).join(', ')}',
+              problem: 'Повреждены: ${_damagedLabel(data.damaged)}. Изменения не сохраняются, чтобы не затереть настоящие данные. '
+                  'Восстановите их из резервной копии (Настройки).');
+        }
       } else {
         _pending.markFull(); // в хранилище ничего нет: стартовые данные пишем целиком
       }
@@ -263,6 +285,9 @@ class AppController extends ChangeNotifier {
       _loadFailed = _writesBlocked;
     } catch (e, st) {
       _loadFailed = true;
+      _storageProblem = e is SchemaTooNewException
+          ? 'Данные записаны более новой версией приложения — обновите его. Изменения не сохраняются.'
+          : 'Хранилище недоступно — изменения не сохраняются, чтобы не затереть данные. Перезапустите приложение.';
       AppLog.e('Не удалось загрузить данные — запись отключена, чтобы не затереть сохранённое', e, st);
     }
     _rollOverDays();

@@ -69,14 +69,20 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
     );
   }
 
+  /// Предупреждение — текстом и значком, не цветом (CLAUDE.md): причина и что делать.
   Widget _storageBanner() {
     return Container(
+      key: const ValueKey('storage_banner'),
       width: double.infinity,
-      color: AppColors.red.withValues(alpha: 0.18),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: const Text(
-        'Хранилище недоступно или данные от более новой версии — изменения не сохраняются.',
-        style: TextStyle(fontSize: 11, color: AppColors.text),
+      color: AppColors.raised,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.error_outline, size: 18, color: AppColors.text),
+          const SizedBox(width: 8),
+          Expanded(child: Text(c.storageProblem ?? '', style: const TextStyle(fontSize: 11, color: AppColors.text))),
+        ],
       ),
     );
   }

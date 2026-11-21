@@ -200,7 +200,7 @@ class _GraphScreenState extends State<GraphScreen> {
       actionTextColor: Colors.black,
       fields: [
         if (refs.length > 1) FieldSpec('ref', 'Связать с процессом или целью', initial: '', options: refs),
-        const FieldSpec('title', 'Название узла (для связанного — из процесса/цели)'),
+        const FieldSpec('title', 'Название узла', help: 'У связанного узла название берётся из процесса или цели'),
         const FieldSpec('cat', 'Сфера жизни', initial: 'mind', options: _categoryNames),
       ],
       validate: (v) => v['title']!.isNotEmpty || (v['ref'] ?? '').isNotEmpty,

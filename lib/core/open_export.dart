@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import '../models/body.dart';
 import '../models/day_checkin.dart';
 import '../models/day_snapshot.dart';
@@ -21,6 +24,12 @@ String csvField(Object? v) {
   if (s.contains(RegExp(r'[",\n\r;]'))) return '"${s.replaceAll('"', '""')}"';
   return s;
 }
+
+/// Байты файла открытого экспорта. CSV — с меткой UTF-8 в начале: иначе Excel показывает кириллицу нечитаемо.
+Uint8List exportFileBytes(String name, String text) => Uint8List.fromList(utf8.encode(name.endsWith('.csv') ? '\uFEFF$text' : text));
+
+/// Тип файла для системного диалога сохранения.
+String exportMime(String name) => name.endsWith('.csv') ? 'text/csv' : (name.endsWith('.md') ? 'text/markdown' : 'text/plain');
 
 String _csv(List<String> header, Iterable<List<Object?>> rows) {
   final b = StringBuffer()..writeln(header.map(csvField).join(','));

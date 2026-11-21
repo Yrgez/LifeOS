@@ -27,7 +27,7 @@ Future<void> exportBackup(BuildContext context, AppController c, {BackupCipher c
         'enc': 'Зашифровать паролем (рекомендуется)',
         'plain': 'Без шифрования — читается любым приложением',
       }),
-      FieldSpec('p', 'Пароль (от 8 символов, нужен только для шифрования)', obscure: true),
+      FieldSpec('p', 'Пароль', help: 'От 8 символов; нужен только для шифрования', obscure: true),
       FieldSpec('p2', 'Повторите пароль', obscure: true),
     ],
     validate: (v) => v['mode'] == 'plain' || (v['p']!.length >= BackupCipher.minPassphraseLength && v['p'] == v['p2']),
@@ -57,7 +57,7 @@ Future<void> importBackupDialog(BuildContext context, AppController c, {BackupCi
     actionLabel: 'Далее',
     accent: AppColors.red,
     actionTextColor: Colors.white,
-    fields: const [FieldSpec('json', 'Вставьте копию (обычную или зашифрованную)', lines: 6)],
+    fields: const [FieldSpec('json', 'Вставьте копию', help: 'Обычную или зашифрованную', lines: 6)],
     validate: (v) => v['json']!.isNotEmpty,
   );
   if (r == null || !context.mounted) return;
