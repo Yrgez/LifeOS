@@ -7,13 +7,13 @@ extension BodyOps on AppController {
 
   /// Прогрессия 1RM по мышце: базовая история (до журнала) + лучший результат за каждый тренировочный день.
   /// Последние 8 точек.
-  List<double> progression(String muscleId) {
-    final m = _d.muscles[muscleId];
-    final fromJournal = progressionFromSets(_d.workoutSets.where((s) => s.muscleId == muscleId));
-    final all = [...?m?.history1RM.where((v) => v > 0), ...fromJournal];
-    if (all.isEmpty) return [0];
-    return all.length > 8 ? all.sublist(all.length - 8) : all;
-  }
+  List<double> progression(String muscleId) => _memo(('progression', muscleId), () {
+        final m = _d.muscles[muscleId];
+        final fromJournal = progressionFromSets(_d.workoutSets.where((s) => s.muscleId == muscleId));
+        final all = [...?m?.history1RM.where((v) => v > 0), ...fromJournal];
+        if (all.isEmpty) return const [0.0];
+        return List<double>.unmodifiable(all.length > 8 ? all.sublist(all.length - 8) : all);
+      });
 
   /// Последний записанный подход по мышце (для подстановки веса/повторов в форму).
   WorkoutSet? lastSetFor(String muscleId) {
@@ -26,7 +26,7 @@ extension BodyOps on AppController {
   /// Записывает подход в журнал. [daysAgo] — задним числом (0 = сейчас).
   LogResult logWorkout(String muscleId, double weight, int reps, {int daysAgo = 0}) {
     final m = _d.muscles[muscleId];
-    if (m == null || weight <= 0 || reps <= 0 || daysAgo < 0) return LogResult.rejected;
+    if (m == null || weight <= 0 || reps <= 0 || daysAgo < 0 || setsFull) return LogResult.rejected;
 
     final at = _clock().subtract(Duration(days: daysAgo));
     final set = WorkoutSet(
@@ -56,27 +56,18 @@ extension BodyOps on AppController {
 
   /// Возвращает ранее удалённый подход (кнопка «Отменить»).
   void restoreSet(WorkoutSet s) {
-    if (_d.muscles[s.muscleId] == null || _d.workoutSets.any((x) => x.id == s.id)) return;
+    if (setsFull || _d.muscles[s.muscleId] == null || _d.workoutSets.any((x) => x.id == s.id)) return;
     _commit(() => _insertSet(s));
   }
 
+  /// Журнал подходов заполнен: новые не принимаются, старые не вытесняются.
+  bool get setsFull => _d.workoutSets.length >= _maxSets;
+
   void _insertSet(WorkoutSet s) {
+    assert(!setsFull, 'журнал подходов заполнен');
     _d.workoutSets.add(s);
     _d.workoutSets.sort((a, b) => a.at.compareTo(b.at));
     _pending.upsertSet(s);
-    if (_d.workoutSets.length > _maxSets) {
-      final drop = _d.workoutSets.length - _maxSets;
-      final dropped = _d.workoutSets.take(drop).toList();
-      final affected = dropped.map((x) => x.muscleId).toSet();
-      _d.workoutSets.removeRange(0, drop);
-      for (final x in dropped) {
-        _pending.deleteSet(x.id);
-      }
-      AppLog.e('Журнал превысил $_maxSets записей — удалено старейших: $drop');
-      for (final id in affected) {
-        _recomputeMuscle(id);
-      }
-    }
     _recomputeMuscle(s.muscleId);
   }
 

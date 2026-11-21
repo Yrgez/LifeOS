@@ -70,7 +70,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           children: [
             Align(
               alignment: Alignment.centerRight,
-              child: TextButton(onPressed: _skip, child: const Text('Пропустить', style: TextStyle(color: AppColors.muted, fontSize: 12))),
+              child: TextButton(onPressed: _skip, child: const Text('Пропустить', style: TextStyle(color: AppColors.muted, fontSize: 13))),
             ),
             Expanded(
               child: PageView(
@@ -97,7 +97,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             margin: const EdgeInsets.symmetric(horizontal: 3),
                             width: i == _page ? 18 : 6,
                             height: 6,
-                            decoration: BoxDecoration(color: i == _page ? AppColors.accent : Colors.white24, borderRadius: BorderRadius.circular(3)),
+                            decoration: BoxDecoration(color: i == _page ? AppColors.accent : Colors.white24, borderRadius: BorderRadius.circular(AppRadii.bar)),
                           ),
                       ],
                     ),
@@ -126,13 +126,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: AppColors.accent.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(16)),
+            decoration: BoxDecoration(color: AppColors.accent.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(AppRadii.small)),
             child: Icon(icon, color: AppColors.accent, size: 28),
           ),
           const SizedBox(height: 18),
           Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          Text(subtitle, style: const TextStyle(color: Colors.white60, fontSize: 13, height: 1.4)),
+          Text(subtitle, style: const TextStyle(color: AppColors.muted, fontSize: 13, height: 1.4)),
           const SizedBox(height: 22),
           ...children,
         ],
@@ -154,7 +154,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _welcome() => _shell(
         Icons.auto_awesome,
-        'Добро пожаловать в Life OS',
+        'Добро пожаловать в LIFE OS',
         'Одно место для тела, денег, целей и связей между ними. Все данные хранятся на вашем устройстве. '
             'Знакомство займёт минуту — всё можно изменить позже в настройках.',
         [_field(_name, 'Как к вам обращаться?', maxLength: 40)],
@@ -196,10 +196,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(height: 6),
             Text(healthStatusLine(c), style: const TextStyle(color: AppColors.muted, fontSize: 11)),
           ] else
-            const Text('Health Connect доступен на Android — подключить можно позже в настройках.', style: TextStyle(color: AppColors.muted, fontSize: 12)),
+            const Text('Health Connect доступен на Android — подключить можно позже в настройках.', style: TextStyle(color: AppColors.muted, fontSize: 13)),
           if (c.isBlank) ...[
             const SizedBox(height: 22),
-            const Text('С ЧЕГО НАЧАТЬ', style: TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
+            const Text('С ЧЕГО НАЧАТЬ', style: AppText.caption),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -211,7 +211,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             const SizedBox(height: 8),
             Text(
               _demo ? 'Заполним журнал, цели, граф и операции примерами — удобно, чтобы осмотреться. Удалить их можно в настройках.' : 'Всё начнётся с нуля — вы заполните только то, что нужно.',
-              style: const TextStyle(color: AppColors.muted, fontSize: 12),
+              style: const TextStyle(color: AppColors.muted, fontSize: 13),
             ),
           ],
         ],

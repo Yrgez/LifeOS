@@ -126,7 +126,7 @@ class BodyMapCard extends StatelessWidget {
           if (activeMuscle != null)
             Container(
               padding: const EdgeInsets.all(14),
-              decoration: tileDecoration(radius: 20, color: AppColors.field),
+              decoration: tileDecoration(radius: AppRadii.card, color: AppColors.field),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

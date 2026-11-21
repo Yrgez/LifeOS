@@ -76,7 +76,7 @@ class HubScreen extends StatelessWidget {
         children: [
           // дата — над заголовком во всю ширину: кнопки справа её не обрезают
           Text(
-            '${c.userName.isEmpty ? '' : '${c.userName} · '}${_weekday(now)}, ${now.day} ${_monthGen(now)}',
+            '${c.userName.isEmpty ? '' : '${c.userName} · '}${_weekday(now)}, ${dayMonth(now)}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             key: const ValueKey('today_date'),
@@ -228,20 +228,6 @@ class HubScreen extends StatelessWidget {
   }
 
   static String _weekday(DateTime d) => const ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'][d.weekday - 1];
-  static String _monthGen(DateTime d) => const [
-        'января',
-        'февраля',
-        'марта',
-        'апреля',
-        'мая',
-        'июня',
-        'июля',
-        'августа',
-        'сентября',
-        'октября',
-        'ноября',
-        'декабря',
-      ][d.month - 1];
 }
 
 class _RoundButton extends StatelessWidget {
@@ -371,13 +357,13 @@ class _StepsTile extends StatelessWidget {
               children: [
                 Text(fmtMoney(c.dailySteps), style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -1)),
                 const SizedBox(width: 6),
-                const Text('шагов', style: TextStyle(color: AppColors.muted, fontSize: 14)),
+                const Text('шагов', style: TextStyle(color: AppColors.muted, fontSize: 13)),
               ],
             ),
           ),
           const SizedBox(height: 28),
           ClipRRect(
-            borderRadius: BorderRadius.circular(2),
+            borderRadius: BorderRadius.circular(AppRadii.bar),
             child: LinearProgressIndicator(value: goal <= 0 ? 0 : (c.dailySteps / goal).clamp(0.0, 1.0), minHeight: 4),
           ),
           const SizedBox(height: 8),
@@ -452,7 +438,7 @@ class _ProcessesTile extends StatelessWidget {
             InkWell(
               key: ValueKey('today_${p.id}'),
               onTap: () => onOpen(p),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppRadii.small),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 child: Row(
@@ -507,7 +493,7 @@ class _MonthDots extends StatelessWidget {
         // название месяца — одной строкой: при крупном шрифте чуть сжимается, а не рвётся («Сентяб-рь»)
         FittedBox(
           fit: BoxFit.scaleDown,
-          child: Text(monthNames[month.month - 1], maxLines: 1, style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w500)),
+          child: Text(monthNames[month.month - 1], maxLines: 1, style: const TextStyle(color: AppColors.muted, fontSize: 13, fontWeight: FontWeight.w500)),
         ),
         const SizedBox(height: 8),
         SizedBox(
@@ -580,7 +566,7 @@ class _ResourcesTile extends StatelessWidget {
                 if (b.byDimension[d]!.events > 0)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: tileDecoration(radius: 16),
+                    decoration: tileDecoration(radius: AppRadii.card),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -792,14 +778,14 @@ class _MemoryTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${memory.daysAgo >= 365 ? 'Год назад' : 'Месяц назад'} · ${memory.day.day} ${HubScreen._monthGen(memory.day)} ${memory.day.year}',
+              '${memory.daysAgo >= 365 ? 'Год назад' : 'Месяц назад'} · ${dayMonth(memory.day)} ${memory.day.year}',
               style: _label,
             ),
             const SizedBox(height: 6),
             for (final l in memory.lines)
               Padding(
                 padding: const EdgeInsets.only(top: 2),
-                child: Text(l.text, style: const TextStyle(fontSize: 14, color: Color(0xFFC8C8CC))),
+                child: Text(l.text, style: const TextStyle(fontSize: 13, color: Color(0xFFC8C8CC))),
               ),
           ],
         ),

@@ -75,7 +75,7 @@ class _JournalScreenState extends State<JournalScreen> {
               subColor: change == null ? AppColors.muted : (change >= 0 ? AppColors.green : AppColors.red),
             ),
             StatTile('ПОДХОДЫ / 7', '${setsInWindow(sets, now, 7)}', sub: 'всего: ${sets.length}'),
-            StatTile('ДНЕЙ / 28', '${trainingDaysInWindow(sets, now, 28)}', sub: 'с тренировками'),
+            StatTile('ДНЕЙ / 28', '${trainingDaysInWindow(sets, now, 28)}', sub: 'с подходами'),
           ],
         ),
         const SizedBox(height: 12),
@@ -83,7 +83,7 @@ class _JournalScreenState extends State<JournalScreen> {
         const SizedBox(height: 12),
         if (filter == 'all') _distributionCard(sets, now) else _progressionCard(filter, sets),
         const SizedBox(height: 16),
-        const Text('ИСТОРИЯ ПОДХОДОВ', style: TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold)),
+        const Text('ИСТОРИЯ ПОДХОДОВ', style: AppText.caption),
         const SizedBox(height: 8),
         ..._history(sets),
       ],
@@ -116,10 +116,10 @@ class _JournalScreenState extends State<JournalScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: active ? AppColors.accent.withValues(alpha: 0.18) : AppColors.card,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadii.small),
           border: Border.all(color: active ? AppColors.accent : Colors.white12),
         ),
-        child: Text(label, style: TextStyle(color: active ? AppColors.accent : Colors.white60, fontSize: 11, fontWeight: active ? FontWeight.bold : FontWeight.normal)),
+        child: Text(label, style: TextStyle(color: active ? AppColors.accent : AppColors.muted, fontSize: 11, fontWeight: active ? FontWeight.bold : FontWeight.normal)),
       ),
     );
   }
@@ -128,14 +128,14 @@ class _JournalScreenState extends State<JournalScreen> {
   /// иначе «Квадрицепсы» обрезаются, а «500 кг» рвётся на две строки.
   Widget _volumeRow(String name, String volume, double ratio) {
     final large = largeText(context);
-    final value = Text(volume, textAlign: TextAlign.right, style: const TextStyle(color: AppColors.muted, fontSize: 10));
+    final value = Text(volume, textAlign: TextAlign.right, style: const TextStyle(color: AppColors.muted, fontSize: 11));
     final bar = Row(
       children: [
         Expanded(
           child: LinearProgressIndicator(
             value: ratio,
             minHeight: 6,
-            borderRadius: BorderRadius.circular(3),
+            borderRadius: BorderRadius.circular(AppRadii.bar),
             backgroundColor: AppColors.track,
             valueColor: const AlwaysStoppedAnimation(AppColors.bodyChart),
           ),
@@ -144,7 +144,7 @@ class _JournalScreenState extends State<JournalScreen> {
         large ? value : SizedBox(width: 54, child: value),
       ],
     );
-    final label = Text(name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12));
+    final label = Text(name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13));
     if (large) return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [label, const SizedBox(height: 4), bar]);
     return Row(children: [SizedBox(width: 110, child: label), Expanded(child: bar)]);
   }
@@ -156,21 +156,21 @@ class _JournalScreenState extends State<JournalScreen> {
         : List.generate(7, (i) => dayNames[now.subtract(Duration(days: 6 - i)).weekday - 1]);
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: tileDecoration(radius: 20),
+      decoration: tileDecoration(radius: AppRadii.card),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Flexible(child: Text('ОБЪЁМ НАГРУЗКИ (вес × повторы, кг)', style: TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold))),
+              const Flexible(child: Text('ОБЪЁМ НАГРУЗКИ (вес × повторы, кг)', style: AppText.caption)),
               const SizedBox(width: 8),
               SegmentPill<bool>(
                 options: const {false: '7 дн', true: '8 нед'},
                 value: _weekly,
                 onChanged: (v) => setState(() => _weekly = v),
                 activeColor: AppColors.accent,
-                fontSize: 10,
+                fontSize: 11,
                 segmentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               ),
             ],
@@ -194,14 +194,14 @@ class _JournalScreenState extends State<JournalScreen> {
     final total = byMuscle.fold(0.0, (a, e) => a + e.value);
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: tileDecoration(radius: 20),
+      decoration: tileDecoration(radius: AppRadii.card),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('РАСПРЕДЕЛЕНИЕ ОБЪЁМА ЗА 7 ДНЕЙ', style: TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold)),
+          const Text('РАСПРЕДЕЛЕНИЕ ОБЪЁМА ЗА 7 ДНЕЙ', style: AppText.caption),
           const SizedBox(height: 10),
           if (byMuscle.isEmpty)
-            const Text('За последние 7 дней подходов нет', style: TextStyle(color: AppColors.muted, fontSize: 12))
+            const Text('За последние 7 дней подходов нет', style: TextStyle(color: AppColors.muted, fontSize: 13))
           else
             for (final e in byMuscle)
               Padding(
@@ -225,14 +225,14 @@ class _JournalScreenState extends State<JournalScreen> {
     final delta = series.length > 1 ? series.last - series.first : 0.0;
     return Container(
       padding: const EdgeInsets.all(14),
-      decoration: tileDecoration(radius: 20),
+      decoration: tileDecoration(radius: AppRadii.card),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('ПРОГРЕССИЯ 1RM • ${(m?.name ?? '').toUpperCase()}', style: const TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.bold)),
+              Text('ПРОГРЕССИЯ 1RM • ${(m?.name ?? '').toUpperCase()}', style: const TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold)),
               Text('${delta >= 0 ? '+' : '−'}${trimNum(round1(delta.abs()))} кг', style: TextStyle(color: delta >= 0 ? AppColors.green : AppColors.red, fontSize: 11, fontWeight: FontWeight.bold)),
             ],
           ),
@@ -257,7 +257,7 @@ class _JournalScreenState extends State<JournalScreen> {
       return const [
         Padding(
           padding: EdgeInsets.symmetric(vertical: 24),
-          child: Center(child: Text('Пока нет записей.\nНажмите «+ Подход», чтобы начать журнал.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted, fontSize: 12))),
+          child: Center(child: Text('Пока нет записей.\nНажмите «+ Подход», чтобы начать журнал.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted, fontSize: 13))),
         ),
       ];
     }
@@ -276,7 +276,7 @@ class _JournalScreenState extends State<JournalScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(shortDate(st.day), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              Text(shortDate(st.day), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               Text('${st.sets} подх. • ${fmtVolume(st.volume)} кг', style: const TextStyle(color: AppColors.muted, fontSize: 11)),
             ],
           ),
@@ -295,7 +295,7 @@ class _JournalScreenState extends State<JournalScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
-      decoration: tileDecoration(radius: 20),
+      decoration: tileDecoration(radius: AppRadii.card),
       child: Row(
         children: [
           CircleAvatar(radius: 4, backgroundColor: m?.color ?? Colors.white24),

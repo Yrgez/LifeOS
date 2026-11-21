@@ -81,7 +81,7 @@ class TaskRow extends StatelessWidget {
     return InkWell(
       key: ValueKey('task_${task.id}'),
       onTap: () => showTaskSheet(context, c, initial: task),
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(AppRadii.small),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Row(
@@ -96,8 +96,8 @@ class TaskRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(task.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 15)),
-                  if (meta.isNotEmpty) Text(meta.join(' · '), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                  Text(task.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 16)),
+                  if (meta.isNotEmpty) Text(meta.join(' · '), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted, fontSize: 13)),
                 ],
               ),
             ),
@@ -207,7 +207,7 @@ class _TaskSheetState extends State<_TaskSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(editing ? 'Задача' : 'Новая задача', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
+            Text(editing ? 'Задача' : 'Новая задача', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
             const SizedBox(height: 12),
             TextField(
               key: const ValueKey('task_title'),
@@ -268,7 +268,7 @@ class _TaskSheetState extends State<_TaskSheet> {
               ),
             const SizedBox(height: 8),
             Text(_processId != null || _goalId != null ? 'Измерения (по умолчанию — от процесса или цели)' : 'Измерения',
-                style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                style: const TextStyle(color: AppColors.muted, fontSize: 13)),
             Wrap(
               spacing: 6,
               children: [

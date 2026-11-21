@@ -99,7 +99,7 @@ class _ProcessDialogState extends State<_ProcessDialog> {
         filled: true,
         fillColor: AppColors.field,
         isDense: true,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.small), borderSide: BorderSide.none),
       );
 
   @override
@@ -152,7 +152,7 @@ class _ProcessDialogState extends State<_ProcessDialog> {
                     if (d != null && mounted) setState(() => _start = d);
                   },
                   icon: const Icon(Icons.event, size: 16),
-                  label: Text(dayKey(_start)),
+                  label: Text(fmtDate(_start)),
                 ),
               ],
               if (widget.goals.isNotEmpty) ...[
@@ -171,7 +171,7 @@ class _ProcessDialogState extends State<_ProcessDialog> {
                 ),
               ],
               fieldLabel('ОПИСАНИЕ'),
-              TextField(controller: _desc, maxLines: 3, maxLength: LifeProcess.maxDescription, decoration: _dec('Зачем, что считается результатом')),
+              TextField(controller: _desc, maxLines: 3, maxLength: LifeProcess.maxDescription, decoration: _dec('Описание').copyWith(helperText: 'Зачем этот процесс и что считается результатом', helperMaxLines: 3)),
               const SizedBox(height: 4),
               TextField(
                 key: const ValueKey('process_minutes'),
@@ -181,7 +181,7 @@ class _ProcessDialogState extends State<_ProcessDialog> {
                 decoration: _dec('Обычно длится, мин').copyWith(
                   helperText: 'Необязательно. Подставится в запись события — время можно изменить. '
                       'Учитывается только то, что записано.',
-                  helperMaxLines: 3,
+                  helperMaxLines: 4,
                 ),
                 onChanged: (_) => setState(() {}),
               ),
@@ -258,14 +258,14 @@ class ProcessCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = process;
     final a = activity;
-    final since = p.isOpen ? 'с ${dayKey(p.startedAt)}' : '${dayKey(p.startedAt)} — ${dayKey(p.endedAt!)}';
+    final since = p.isOpen ? 'с ${fmtDate(p.startedAt)}' : '${fmtDate(p.startedAt)} — ${fmtDate(p.endedAt!)}';
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppRadii.small),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(12),
-        decoration: tileDecoration(radius: 20),
+        decoration: tileDecoration(radius: AppRadii.card),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -273,18 +273,18 @@ class ProcessCard extends StatelessWidget {
               children: [
                 for (final d in p.dimensions) Container(width: 6, height: 14, margin: const EdgeInsets.only(right: 3), color: dimensionColor(d)),
                 const SizedBox(width: 6),
-                Expanded(child: Text(p.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14))),
+                Expanded(child: Text(p.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13))),
                 Text(ProcessStatus.labels[p.status]!, style: TextStyle(color: processStatusColor(p.status), fontSize: 11, fontWeight: FontWeight.bold)),
               ],
             ),
             const SizedBox(height: 4),
             Text(
-              '$since · событий: ${a.resources.events}${a.lastAt == null ? '' : ' · последнее ${dayKey(a.lastAt!)}'}',
+              '$since · событий: ${a.resources.events}${a.lastAt == null ? '' : ' · последнее ${fmtDate(a.lastAt!)}'}',
               style: const TextStyle(color: AppColors.muted, fontSize: 11),
             ),
             if (a.resources.events > 0) ...[
               const SizedBox(height: 4),
-              for (final line in resourceLines(a.resources).take(2)) Text(line, style: const TextStyle(color: Colors.white70, fontSize: 11)),
+              for (final line in resourceLines(a.resources).take(2)) Text(line, style: const TextStyle(color: AppColors.muted, fontSize: 11)),
             ],
           ],
         ),
@@ -353,7 +353,7 @@ class ProcessHeader extends StatelessWidget {
     final goalTitles = {for (final g in controller.goals) g.id: g.title};
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: tileDecoration(radius: 20),
+      decoration: tileDecoration(radius: AppRadii.card),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -362,7 +362,7 @@ class ProcessHeader extends StatelessWidget {
               Expanded(
                 child: Text(
                   '${ProcessStatus.labels[p.status]} · ${p.dimensions.map((d) => LifeDimension.labels[d]).join(' + ')}',
-                  style: TextStyle(color: processStatusColor(p.status), fontSize: 12, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: processStatusColor(p.status), fontSize: 13, fontWeight: FontWeight.bold),
                 ),
               ),
               PopupMenuButton<String>(
@@ -382,7 +382,7 @@ class ProcessHeader extends StatelessWidget {
               ),
             ],
           ),
-          if (p.description.isNotEmpty) Text(p.description, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+          if (p.description.isNotEmpty) Text(p.description, style: const TextStyle(color: AppColors.text, fontSize: 13)),
           if (p.goalIds.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 4),
@@ -396,13 +396,13 @@ class ProcessHeader extends StatelessWidget {
           Text('ВЛОЖЕНО ЗА ВСЁ ВРЕМЯ: событий ${a.resources.events}',
               style: const TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold)),
           if (a.resources.events > 0)
-            for (final line in resourceLines(a.resources)) Text(line, style: const TextStyle(fontSize: 12)),
+            for (final line in resourceLines(a.resources)) Text(line, style: const TextStyle(fontSize: 13)),
           const SizedBox(height: 8),
-          const Text('ЖУРНАЛ СТАТУСОВ', style: TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold)),
+          const Text('ЖУРНАЛ СТАТУСОВ', style: AppText.caption),
           for (final c in p.statusLog.reversed)
             Text(
-              '${dayKey(c.at)} — ${ProcessStatus.labels[c.status]}${c.note.isEmpty ? '' : ': ${c.note}'}',
-              style: const TextStyle(color: Colors.white70, fontSize: 11),
+              '${fmtDate(c.at)} — ${ProcessStatus.labels[c.status]}${c.note.isEmpty ? '' : ': ${c.note}'}',
+              style: const TextStyle(color: AppColors.muted, fontSize: 11),
             ),
         ],
       ),
@@ -433,9 +433,9 @@ class RhythmStrip extends StatelessWidget {
       key: const ValueKey('rhythm_strip'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('РИТМ: ${rhythmLabel(r).toUpperCase()}', style: const TextStyle(color: AppColors.muted, fontSize: 11, fontWeight: FontWeight.bold)),
+        Text('РИТМ: ${rhythmLabel(r).toUpperCase()}', style: AppText.caption),
         const SizedBox(height: 2),
-        Text(rhythmNowLabel(r, spans.first), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+        Text(rhythmNowLabel(r, spans.first), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         Row(
           children: [
@@ -450,7 +450,7 @@ class RhythmStrip extends StatelessWidget {
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: s.reached && s.active ? AppColors.raised : Colors.transparent,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(AppRadii.small),
                           border: Border.all(color: s.current ? AppColors.muted : AppColors.border),
                         ),
                         child: FittedBox(
@@ -459,7 +459,7 @@ class RhythmStrip extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 3),
                             child: Text(
                               !s.active ? 'пауза' : (s.target == null ? '${s.done}' : '${s.done}/${s.target}'),
-                              style: TextStyle(fontSize: 12, color: s.active ? AppColors.text : AppColors.muted),
+                              style: TextStyle(fontSize: 13, color: s.active ? AppColors.text : AppColors.muted),
                             ),
                           ),
                         ),
@@ -467,7 +467,7 @@ class RhythmStrip extends StatelessWidget {
                       const SizedBox(height: 3),
                       FittedBox(
                         fit: BoxFit.scaleDown,
-                        child: Text(_periodLabel(s, r.period), style: const TextStyle(color: AppColors.muted, fontSize: 10)),
+                        child: Text(_periodLabel(s, r.period), style: const TextStyle(color: AppColors.muted, fontSize: 11)),
                       ),
                     ],
                   ),

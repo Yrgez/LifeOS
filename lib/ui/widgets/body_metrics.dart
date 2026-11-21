@@ -128,7 +128,7 @@ class BodyMetrics extends StatelessWidget {
                     index == null
                         ? (c.heightCm == null ? 'Укажите рост' : 'Нужен замер веса')
                         : '${bmiCategory(index)} · рост ${c.heightCm} см',
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                   ),
                   const Spacer(),
                   const Text('Не учитывает мышцы и жир — грубый ориентир', style: _sub),
@@ -156,7 +156,7 @@ class BodyMetrics extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Container(
-                decoration: BoxDecoration(color: AppColors.field, borderRadius: BorderRadius.circular(24), border: Border.all(color: AppColors.border)),
+                decoration: BoxDecoration(color: AppColors.field, borderRadius: BorderRadius.circular(AppRadii.pill), border: Border.all(color: AppColors.border)),
                 child: Row(
                   children: [
                     for (final g in BodyGoal.all)
@@ -179,7 +179,7 @@ class BodyMetrics extends StatelessWidget {
                               child: Container(
                                 height: 42,
                                 alignment: Alignment.center,
-                                decoration: BoxDecoration(color: c.bodyGoal == g ? AppColors.accent : Colors.transparent, borderRadius: BorderRadius.circular(21)),
+                                decoration: BoxDecoration(color: c.bodyGoal == g ? AppColors.accent : Colors.transparent, borderRadius: BorderRadius.circular(AppRadii.pill)),
                                 child: FittedBox(
                                   fit: BoxFit.scaleDown,
                                   child: Text(
@@ -212,7 +212,7 @@ class BodyMetrics extends StatelessWidget {
 }
 
 const _sub = TextStyle(color: AppColors.muted, fontSize: 13);
-const _big = TextStyle(fontSize: 30, fontWeight: FontWeight.w600, letterSpacing: -0.8);
+const _big = TextStyle(fontSize: 34, fontWeight: FontWeight.w600, letterSpacing: -0.8);
 
 class _Tile extends StatelessWidget {
   final Widget child;
@@ -253,7 +253,7 @@ class _WeightHistoryScreen extends StatelessWidget {
               final w = list[i];
               return Container(
                 padding: const EdgeInsets.fromLTRB(18, 8, 8, 8),
-                decoration: tileDecoration(radius: 20),
+                decoration: tileDecoration(radius: AppRadii.card),
                 child: Row(
                   children: [
                     Expanded(child: Text(fmtKg(w.kg), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600))),

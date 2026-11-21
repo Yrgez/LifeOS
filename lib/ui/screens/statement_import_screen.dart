@@ -178,14 +178,14 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
             if (_source != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: 6),
-                child: Text('Источник: $_source', key: const ValueKey('import_source'), style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                child: Text('Источник: $_source', key: const ValueKey('import_source'), style: const TextStyle(color: AppColors.muted, fontSize: 13)),
               ),
             TextField(
               key: const ValueKey('import_text'),
               controller: _text,
               minLines: 3,
               maxLines: 6,
-              style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+              style: const TextStyle(fontSize: 13, fontFamily: 'monospace'),
               decoration: const InputDecoration(hintText: 'Дата; Сумма; Описание\n18.11.2026; -450,00; Кофейня'),
               onChanged: (_) {
                 _source = null; // текст правят руками — источник уже не файл
@@ -224,8 +224,8 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
 
   List<Widget> _mappingSection() => [
         const SizedBox(height: 16),
-        const Text('КОЛОНКИ', style: _caption),
-        const Text('Распознаны по названиям — поправьте, если нужно.', style: TextStyle(color: AppColors.muted, fontSize: 12)),
+        const Text('КОЛОНКИ', style: AppText.caption),
+        const Text('Распознаны по названиям — поправьте, если нужно.', style: TextStyle(color: AppColors.muted, fontSize: 13)),
         _columnPicker('Дата', _mapping.date, (v) => setState(() => _mapping = ColumnMapping(date: v, amount: _mapping.amount, income: _mapping.income, expense: _mapping.expense, note: _mapping.note)),
             key: const ValueKey('map_date')),
         _columnPicker('Сумма (±)', _mapping.amount,
@@ -242,7 +242,7 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
         if (!_mapping.isComplete)
           const Padding(
             padding: EdgeInsets.only(top: 4),
-            child: Text('Выберите колонку даты и суммы.', style: TextStyle(color: AppColors.text, fontSize: 12)),
+            child: Text('Выберите колонку даты и суммы.', style: TextStyle(color: AppColors.text, fontSize: 13)),
           ),
       ];
 
@@ -259,12 +259,12 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
     final unmatched = c.statementUnmatched(p.fresh);
     return [
       const SizedBox(height: 16),
-      const Text('ПРЕДПРОСМОТР', style: _caption),
+      const Text('ПРЕДПРОСМОТР', style: AppText.caption),
       const SizedBox(height: 6),
       Container(
         key: const ValueKey('import_preview'),
         padding: const EdgeInsets.all(14),
-        decoration: tileDecoration(radius: 20),
+        decoration: tileDecoration(radius: AppRadii.card),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -277,15 +277,15 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
               const SizedBox(height: 6),
               Text('Не распознано строк: ${p.parsed.rejected.length}', style: const TextStyle(color: AppColors.text, fontSize: 13)),
               for (final r in p.parsed.rejected.take(5))
-                Text('строка ${r.line}: ${r.reason}', style: const TextStyle(color: AppColors.muted, fontSize: 12)),
-              if (p.parsed.rejected.length > 5) Text('…и ещё ${p.parsed.rejected.length - 5}', style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                Text('строка ${r.line}: ${r.reason}', style: const TextStyle(color: AppColors.muted, fontSize: 13)),
+              if (p.parsed.rejected.length > 5) Text('…и ещё ${p.parsed.rejected.length - 5}', style: const TextStyle(color: AppColors.muted, fontSize: 13)),
             ],
             if (p.fresh.isNotEmpty) ...[
               const SizedBox(height: 8),
               for (final r in p.fresh.take(5))
                 Text('${fmtDate(r.at)}  ${r.signed > 0 ? '+' : '−'}${fmtCur(r.signed.abs())}  ${r.note}',
-                    maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
-              if (p.fresh.length > 5) Text('…и ещё ${p.fresh.length - 5}', style: const TextStyle(color: AppColors.muted, fontSize: 12)),
+                    maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)),
+              if (p.fresh.length > 5) Text('…и ещё ${p.fresh.length - 5}', style: const TextStyle(color: AppColors.muted, fontSize: 13)),
             ],
           ],
         ),
@@ -319,11 +319,11 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
               ? 'По вашим правилам разберётся $ruleHits из ${p.fresh.length}; остальные — в выбранные выше категории.'
               : 'Категорию каждой операции можно поправить потом в журнале операций.',
           key: const ValueKey('import_rule_hits'),
-          style: const TextStyle(color: AppColors.muted, fontSize: 12),
+          style: const TextStyle(color: AppColors.muted, fontSize: 13),
         ),
         if (unmatched.isNotEmpty) ...[
           const SizedBox(height: 12),
-          const Text('ЧАСТЫЕ ОПИСАНИЯ БЕЗ ПРАВИЛА', style: _caption),
+          const Text('ЧАСТЫЕ ОПИСАНИЯ БЕЗ ПРАВИЛА', style: AppText.caption),
           for (final (pattern, n) in unmatched)
             Row(
               children: [
@@ -340,8 +340,8 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
           contentPadding: EdgeInsets.zero,
           value: _affectsNetWorth,
           onChanged: (v) => setState(() => _affectsNetWorth = v),
-          title: const Text('Менять капитал', style: TextStyle(fontSize: 14)),
-          subtitle: const Text('Обычно выключено: в указанном капитале прошлые траты уже учтены', style: TextStyle(color: AppColors.muted, fontSize: 12)),
+          title: const Text('Менять капитал', style: TextStyle(fontSize: 13)),
+          subtitle: const Text('Обычно выключено: в указанном капитале прошлые траты уже учтены', style: TextStyle(color: AppColors.muted, fontSize: 13)),
         ),
         TextField(
           key: const ValueKey('import_name'),
@@ -351,7 +351,7 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
           onChanged: (_) => setState(() {}),
         ),
         if (!fits)
-          Text('Не помещается в журнал: свободно ${c.transactionCapacityLeft}', style: const TextStyle(color: AppColors.text, fontSize: 12)),
+          Text('Не помещается в журнал: свободно ${c.transactionCapacityLeft}', style: const TextStyle(color: AppColors.text, fontSize: 13)),
         const SizedBox(height: 12),
         FilledButton(
           key: const ValueKey('import_run'),
@@ -370,13 +370,13 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
     if (list.isEmpty) return const [];
     return [
       const SizedBox(height: 24),
-      const Text('ПРЕЖНИЕ ИМПОРТЫ', style: _caption),
+      const Text('ПРЕЖНИЕ ИМПОРТЫ', style: AppText.caption),
       const SizedBox(height: 6),
       for (final x in list)
         Container(
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
-          decoration: tileDecoration(radius: 20),
+          decoration: tileDecoration(radius: AppRadii.card),
           child: Row(
             children: [
               Expanded(
@@ -391,7 +391,7 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
                         if (x.rejected > 0) 'не распознано ${x.rejected}',
                         if (x.undoneAt != null) 'отменён ${fmtDate(x.undoneAt!)}',
                       ].join(' · '),
-                      style: const TextStyle(color: AppColors.muted, fontSize: 12),
+                      style: const TextStyle(color: AppColors.muted, fontSize: 13),
                     ),
                   ],
                 ),
@@ -410,4 +410,3 @@ class _StatementImportScreenState extends State<StatementImportScreen> {
   }
 }
 
-const _caption = TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 0.8);

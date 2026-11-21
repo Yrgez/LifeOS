@@ -11,7 +11,8 @@ class CsvTable {
   final List<String> header;
   final List<List<String>> rows;
   final int headerLine; // номер строки заголовка в файле (с 1)
-  const CsvTable(this.header, this.rows, this.headerLine);
+  final List<int> rowLines; // номер строки файла для каждой из [rows]
+  const CsvTable(this.header, this.rows, this.headerLine, [this.rowLines = const []]);
 }
 
 /// Какая колонка что значит. Сумма — либо [amount] со знаком, либо пара [income] / [expense].
@@ -151,13 +152,8 @@ CsvTable parseCsvTable(String text) {
       break;
     }
   }
-  return CsvTable(records[h].$2.map((x) => x.trim()).toList(), [for (final r in records.skip(h + 1)) r.$2], records[h].$1);
-}
-
-/// Номера строк данных в файле — параллельно [CsvTable.rows].
-List<int> csvRowLines(String text, CsvTable t) {
-  final records = parseCsvRecords(text, detectDelimiter(text));
-  return [for (final r in records) if (r.$1 > t.headerLine) r.$1];
+  final data = records.skip(h + 1);
+  return CsvTable(records[h].$2.map((x) => x.trim()).toList(), [for (final r in data) r.$2], records[h].$1, [for (final r in data) r.$1]);
 }
 
 ColumnMapping detectMapping(List<String> header) {
@@ -206,8 +202,10 @@ int? parseStatementAmount(String raw) {
   } else if (lastComma >= 0) {
     final decimals = s.length - lastComma - 1;
     s = ','.allMatches(s).length == 1 && decimals <= 2 ? s.replaceAll(',', '.') : s.replaceAll(',', '');
-  } else if (lastDot >= 0 && '.'.allMatches(s).length > 1) {
-    s = s.replaceAll('.', '');
+  } else if (lastDot >= 0) {
+    // как с запятой: одна точка и до двух знаков после — копейки; три знака или несколько точек — разряды тысяч
+    final decimals = s.length - lastDot - 1;
+    if ('.'.allMatches(s).length > 1 || decimals == 3) s = s.replaceAll('.', '');
   }
   final v = double.tryParse(s);
   if (v == null || !v.isFinite) return null;
@@ -218,7 +216,7 @@ int? parseStatementAmount(String raw) {
 /// Строки выписки по [mapping]. Строки в будущем, без даты, без суммы или с нулевой суммой — в [ParsedStatement.rejected].
 ParsedStatement parseStatement(String text, ColumnMapping mapping, {required DateTime now}) {
   final t = parseCsvTable(text);
-  final lines = csvRowLines(text, t);
+  final lines = t.rowLines;
   final rows = <StatementRow>[];
   final rejected = <RejectedRow>[];
   if (!mapping.isComplete) return ParsedStatement(rows, rejected);

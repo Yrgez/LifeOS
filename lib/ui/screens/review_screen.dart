@@ -66,7 +66,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
               children: [
                 Text(
                   prevChange.isEmpty ? 'Решений о переменах не записано.' : 'Вы решили: $prevChange',
-                  style: const TextStyle(fontSize: 15),
+                  style: const TextStyle(fontSize: 16),
                 ),
               ],
             ),
@@ -77,7 +77,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
             children: [
               if (b.total.events == 0) const Text('За неделю событий не записано.', style: _sub),
               if (b.total.events > 0) ...[
-                for (final line in resourceLines(b.total)) Text(line, style: const TextStyle(fontSize: 14)),
+                for (final line in resourceLines(b.total)) Text(line, style: const TextStyle(fontSize: 13)),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
@@ -104,9 +104,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
               key: const ValueKey('review_checkins'),
               title: 'Отметки дня · ${checks.checked} из ${checks.days}',
               children: [
-                if (checks.rated > 0) Text('Оценки: ${ratingDistribution(checks.ratings)}', style: const TextStyle(fontSize: 14)),
+                if (checks.rated > 0) Text('Оценки: ${ratingDistribution(checks.ratings)}', style: const TextStyle(fontSize: 13)),
                 if (checks.tags.isNotEmpty)
-                  Text('Метки: ${[for (final t in checks.tags.take(6)) '${t.$1} (${t.$2})'].join(', ')}', style: const TextStyle(fontSize: 14)),
+                  Text('Метки: ${[for (final t in checks.tags.take(6)) '${t.$1} (${t.$2})'].join(', ')}', style: const TextStyle(fontSize: 13)),
               ],
             ),
           ],
@@ -117,7 +117,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
               children: [
                 for (final line in f.processes) ...[
                   const SizedBox(height: 6),
-                  Text(line.process.title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+                  Text(line.process.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
                   Text(
                     '${ProcessStatus.labels[line.process.status]}'
                     '${line.process.rhythm == null ? '' : ' · ${rhythmNowLabel(line.process.rhythm!, c.rhythmOf(line.process.id, count: 1).first)}'}'
@@ -215,7 +215,7 @@ class _Chip extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: tileDecoration(radius: 16, color: AppColors.field),
+        decoration: tileDecoration(radius: AppRadii.card, color: AppColors.field),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

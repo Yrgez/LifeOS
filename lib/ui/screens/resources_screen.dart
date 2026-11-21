@@ -52,7 +52,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
           ],
         ),
         const SizedBox(height: 4),
-        Text('${dayKey(b.from)} — ${dayKey(b.to.subtract(const Duration(days: 1)))}', style: const TextStyle(color: AppColors.muted, fontSize: 11)),
+        Text('${fmtDate(b.from)} — ${fmtDate(b.to.subtract(const Duration(days: 1)))}', style: const TextStyle(color: AppColors.muted, fontSize: 11)),
         const SizedBox(height: 12),
         if (b.total.events == 0)
           _Card(
@@ -60,7 +60,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
             children: [
               const Text(
                 'Ресурсы считаются по событиям: отмечайте в них время, деньги и энергию — и здесь будет видно, куда они уходят.',
-                style: TextStyle(color: AppColors.muted, fontSize: 12),
+                style: TextStyle(color: AppColors.muted, fontSize: 13),
               ),
               const SizedBox(height: 8),
               Align(
@@ -160,7 +160,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
             child: Text(
               '${LifeDimension.labels[d]}: событий ${b.byDimension[d]!.events}'
               '${b.byDimension[d]!.energyKnown == 0 ? '' : ' · энергия ${_energy(b.byDimension[d]!)}'}',
-              style: const TextStyle(fontSize: 12),
+              style: const TextStyle(fontSize: 13),
             ),
           ),
         if (multi)
@@ -187,7 +187,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
       title: 'ПО ПРОЦЕССАМ',
       children: [
         if (b.byProcess.isEmpty)
-          const Text('События периода не отнесены ни к одному процессу.', style: TextStyle(color: AppColors.muted, fontSize: 12)),
+          const Text('События периода не отнесены ни к одному процессу.', style: TextStyle(color: AppColors.muted, fontSize: 13)),
         for (final s in b.byProcess)
           InkWell(
             onTap: titles.containsKey(s.processId)
@@ -226,7 +226,7 @@ class _Card extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.all(12),
-        decoration: tileDecoration(radius: 20),
+        decoration: tileDecoration(radius: AppRadii.card),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -245,7 +245,7 @@ class _Sub extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.only(top: 6, bottom: 4),
-        child: Text(text, style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
+        child: Text(text, style: const TextStyle(color: AppColors.text, fontSize: 13, fontWeight: FontWeight.bold)),
       );
 }
 
@@ -268,9 +268,9 @@ class _Bar extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12))),
+              Expanded(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13))),
               const SizedBox(width: 8),
-              Flexible(child: Text(text, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white70, fontSize: 11))),
+              Flexible(child: Text(text, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted, fontSize: 11))),
             ],
           ),
           const SizedBox(height: 3),
@@ -278,13 +278,13 @@ class _Bar extends StatelessWidget {
             builder: (context, box) => Container(
               height: 8,
               width: box.maxWidth,
-              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(4)),
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(AppRadii.bar)),
               alignment: Alignment.centerLeft,
               child: value <= 0
                   ? null
                   : Container(
                       width: (box.maxWidth * f).clamp(4.0, box.maxWidth),
-                      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
+                      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(AppRadii.bar)),
                     ),
             ),
           ),

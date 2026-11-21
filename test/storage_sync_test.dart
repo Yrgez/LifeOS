@@ -126,20 +126,24 @@ void main() {
     expect(await count('money_tx'), 4);
   });
 
-  test('вытеснение старых записей по пределу доходит до базы', () async {
+  test('предел журналов: сверх него новые записи не принимаются, старые не вытесняются', () async {
     final c = make(sqlite(), maxSets: 5, maxTx: 4);
     await c.load();
+    final setsOk = <bool>[], txOk = <bool>[];
     for (int i = 0; i < 8; i++) {
       tick();
-      c.logWorkout('chest', 50.0 + i, 5);
+      setsOk.add(c.logWorkout('chest', 50.0 + i, 5).ok);
     }
     for (int i = 0; i < 7; i++) {
       tick();
-      c.addTransaction(categoryId: 'food', amount: 100 + i);
+      txOk.add(c.addTransaction(categoryId: 'food', amount: 100 + i));
     }
     await c.flush();
-    expect(c.sets.length, 5);
-    expect(c.transactions.length, 4);
+    expect(setsOk, [true, true, true, true, true, false, false, false]);
+    expect(txOk, [true, true, true, true, false, false, false]);
+    expect(c.setsFull && c.transactionsFull, isTrue);
+    expect(c.sets.map((s) => s.weight), [50, 51, 52, 53, 54]); // первые записи на месте
+    expect(c.transactions.map((t) => t.amount), [100, 101, 102, 103]);
     expect(await count('workout_sets'), 5);
     expect(await count('money_tx'), 4);
     expect(await reloaded(), c.exportBackup());

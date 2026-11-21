@@ -54,7 +54,7 @@ class DbEncryptionManager {
   /// Только для тестов: вызывается после каждого шага; [MigrationInterrupted] имитирует мгновенный сбой.
   final FutureOr<void> Function(MigrationStep step)? debugHook;
 
-  /// Optional close override; a close failure must invalidate verification.
+  /// Своё закрытие базы (для тестов); сбой закрытия считается провалом проверки.
   final Future<void> Function(Database db)? closeDatabase;
 
   static const keyName = 'db_key';
@@ -112,8 +112,8 @@ class DbEncryptionManager {
           }
           _shred(_old);
         } else {
-          // Restore the pre-migration key state before moving the old file.
-          // If KeyStore fails, keep .premigrate and the marker for a retry.
+          // сначала вернуть ключ к состоянию до миграции, потом файл; если хранилище ключей откажет —
+          // .premigrate и метка остаются для повторной попытки
           if (marker == 'to_encrypted') {
             await keys.delete(keyName);
           }
@@ -154,8 +154,8 @@ class DbEncryptionManager {
       final counts = await _copy(path, key, _tmp, newKey);
       await debugHook?.call(MigrationStep.afterCopy);
 
-      // Both databases are closed and checkpointed by _copy(). Remove sidecars
-      // before either main file is renamed; failure leaves the original in place.
+      // обе базы закрыты, WAL перенесён в _copy(); служебные файлы убираем до переименований —
+      // при сбое исходная база остаётся на месте
       _deleteSidecars(path);
       _deleteSidecars(_tmp);
       File(path).renameSync(_old);
@@ -196,8 +196,7 @@ class DbEncryptionManager {
 
   Future<void> _rollback({required String? previousKey}) async {
     try {
-      // Restore the key before restoring the old file. If the process stops between these
-      // operations, recover() can still identify and finish the valid new database from the marker.
+      // ключ — раньше файла: если процесс оборвётся между шагами, recover() по метке найдёт верную пару
       if (previousKey == null) {
         await keys.delete(keyName);
       } else {
@@ -208,8 +207,7 @@ class DbEncryptionManager {
         _shred(path);
         File(_old).renameSync(path);
       }
-      // Keep the marker and pending key if any rollback step fails. recover() needs them
-      // to decide which database/key pair is valid on the next launch.
+      // при сбое отката метка и ожидающий ключ остаются: по ним recover() выберет верную пару при запуске
       await _clearMarkers();
     } catch (e, st) {
       AppLog.e('Шифрование: откат не завершён; метки восстановления сохранены', e, st);
@@ -287,14 +285,12 @@ class DbEncryptionManager {
         }
         counts[t] = copied;
       }
-      // A database may be using WAL mode. Do not rename either database until every
-      // committed WAL frame has been checkpointed into its main file.
+      // база может быть в режиме WAL: до переименования всё записанное переносится в основной файл
       await _checkpoint(src);
       await _checkpoint(dst);
       return counts;
     } finally {
-      // Close failures must abort migration: silently continuing could leave committed
-      // data in a sidecar that is later deleted or detached by a rename.
+      // сбой закрытия прерывает миграцию: иначе записанное могло остаться в служебном файле и потеряться
       try {
         await src.close();
       } finally {
@@ -367,8 +363,7 @@ class DbEncryptionManager {
   /// Затирает файл нулями и удаляет (вместе с WAL/SHM/journal). Это best-effort: на флеш-памяти с журналируемой
   /// файловой системой гарантии физического стирания нет — поэтому исходная база не должна жить дольше необходимого.
   void _shred(String file) {
-    // Remove sidecars first. If any sidecar cannot be removed, keep the main
-    // database in place so recover() can still identify and retry this backup.
+    // сначала служебные файлы: если их не удалить, основной файл остаётся — recover() повторит попытку
     final files = ['$file-wal', '$file-shm', '$file-journal', file];
     for (final f in files) {
       final fl = File(f);
@@ -396,8 +391,7 @@ class DbEncryptionManager {
         AppLog.e('Не удалось затереть файл $f; будет предпринята попытка удаления', e);
       }
 
-      // Deletion is the fallback when overwrite is unsupported (e.g. flash or
-      // filesystem semantics). Never report success while an artifact remains.
+      // если затереть не вышло (флеш-память, файловая система) — хотя бы удалить; успех — только когда файла нет
       try {
         fl.deleteSync();
       } catch (e) {

@@ -54,6 +54,19 @@ void main() {
       expect(c.openTasksFor(processId: p).single.id, a);
     });
 
+    test('правка задачи: поля меняются, пустое название и несуществующий процесс отвергаются', () {
+      final c = make();
+      final p = c.addProcess(title: 'Английский', dimensions: [LifeDimension.mind])!;
+      final id = c.addTask(title: 'Урок', dimensions: ['mind'])!;
+      expect(c.updateTask(id, title: '  ', dimensions: ['mind']), isFalse);
+      expect(c.updateTask(id, title: 'Урок', dimensions: ['mind'], processId: 'нет такого'), isFalse);
+      expect(c.updateTask('нет такой', title: 'x', dimensions: ['mind']), isFalse);
+      expect(c.updateTask(id, title: ' Урок с репетитором ', dimensions: ['mind', 'material'], note: 'среда', processId: p, minutes: 60), isTrue);
+      final t = c.taskById(id)!;
+      expect([t.title, t.note, t.processId, t.minutes], ['Урок с репетитором', 'среда', p, 60]);
+      expect(t.dimensions, containsAll(['mind', 'material']));
+    });
+
     test('перенос дописывается в историю; тот же день — без записи', () {
       final c = make();
       final id = c.addTask(title: 'Отчёт', dimensions: ['material'], day: now)!;

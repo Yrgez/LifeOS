@@ -42,7 +42,7 @@ class TasksScreen extends StatelessWidget {
             children: [
               const Text(
                 'Задача — намерение. «Сделано» записывает событие в журнал: с него считаются время, процессы и цели.',
-                style: TextStyle(color: AppColors.muted, fontSize: 12),
+                style: TextStyle(color: AppColors.muted, fontSize: 13),
               ),
               _Group(title: 'СЕГОДНЯ', empty: 'На сегодня задач нет', children: [for (final t in today) TaskRow(controller: c, task: t)]),
               for (final e in byDay.entries)
@@ -59,7 +59,7 @@ class TasksScreen extends StatelessWidget {
                           const Padding(padding: EdgeInsets.all(12), child: Icon(Icons.check_circle_outline, color: AppColors.muted)),
                           Expanded(
                             child: Text('${t.title} · ${shortDate(t.doneChange!.at)}',
-                                maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted, fontSize: 14)),
+                                maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: AppColors.muted, fontSize: 13)),
                           ),
                           TextButton(onPressed: () => c.reopenTask(t.id), child: const Text('Вернуть')),
                         ],
@@ -86,11 +86,11 @@ class _Group extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(title, style: const TextStyle(color: AppColors.muted, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 0.8)),
+            Text(title, style: const TextStyle(color: AppColors.muted, fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 0.8)),
             const SizedBox(height: 4),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-              decoration: tileDecoration(radius: 20),
+              decoration: tileDecoration(radius: AppRadii.card),
               child: children.isEmpty && empty != null
                   ? Padding(padding: const EdgeInsets.all(14), child: Text(empty!, style: const TextStyle(color: AppColors.muted, fontSize: 13)))
                   : Column(children: children),
