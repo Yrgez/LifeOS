@@ -33,8 +33,7 @@ jobs:
           flutter-version: 3.50.0
           cache: true
 
-      # Resolve the exact dependency graph used by this CI run. The generated
-      # pubspec.lock is temporary until the project intentionally commits one.
+      # pubspec.lock лежит в репозитории — его и проверяет сканер; pub get только подтверждает, что граф разрешается
       - name: Resolve Dart dependencies
         run: flutter pub get
 
@@ -42,6 +41,8 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version: "1.26.x"
+          # Go нужен только для установки сканера: go.mod в проекте нет, кэшировать нечего (иначе предупреждение)
+          cache: false
 
       - name: Install pinned OSV-Scanner
         # сеть до proxy.golang.org иногда обрывается — повторяем, прежде чем считать проверку проваленной
