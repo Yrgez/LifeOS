@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:ui' show Offset;
@@ -156,7 +157,7 @@ class AppController extends ChangeNotifier {
   List<DaySnapshot> get snapshots => List.unmodifiable(_d.snapshots.values);
   DaySnapshot? snapshotFor(DateTime day) => _d.snapshots[dayKey(day)];
 
-  Map<String, DaySnapshot> get snapshotsByDay => Map.unmodifiable(_d.snapshots);
+  Map<String, DaySnapshot> get snapshotsByDay => UnmodifiableMapView(_d.snapshots); // без копии: экраны читают её на каждой перерисовке
 
   /// Хроника: события, смены статусов процессов и достижения — новые сверху.
   List<ChronicleEntry> get chronicle => _memo(
