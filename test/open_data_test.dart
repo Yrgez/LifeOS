@@ -54,6 +54,11 @@ void main() {
       expect(csvField('просто'), 'просто');
       expect(csvField('a,b'), '"a,b"');
       expect(csvField('сказал "да"'), '"сказал ""да"""');
+      // CSV-инъекция: текст, похожий на формулу, не выполнится в таблице; числа не трогаются
+      expect(csvField('=HYPERLINK("http://x")'), '"\'=HYPERLINK(""http://x"")"');
+      expect(csvField('+7 900'), "'+7 900");
+      expect(csvField('@сумма'), "'@сумма");
+      expect(csvField(-500), '-500');
       expect(csvField('две\nстроки'), '"две\nстроки"');
       expect(csvField(null), '');
     });

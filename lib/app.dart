@@ -16,7 +16,7 @@ class LifeOSApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Life OS Ultimate Engine',
+      title: 'LIFE OS',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
       // русский — и для системных текстов: календари, «Назад», «Показать меню»; их же читает TalkBack

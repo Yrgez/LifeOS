@@ -52,7 +52,7 @@ class _ResourcesScreenState extends State<ResourcesScreen> {
           ],
         ),
         const SizedBox(height: 4),
-        Text('${dayKey(b.from)} — ${dayKey(b.to.subtract(const Duration(days: 1)))}', style: const TextStyle(color: AppColors.muted, fontSize: 11)),
+        Text('${fmtDate(b.from)} — ${fmtDate(b.to.subtract(const Duration(days: 1)))}', style: const TextStyle(color: AppColors.muted, fontSize: 11)),
         const SizedBox(height: 12),
         if (b.total.events == 0)
           _Card(

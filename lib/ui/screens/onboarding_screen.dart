@@ -154,7 +154,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _welcome() => _shell(
         Icons.auto_awesome,
-        'Добро пожаловать в Life OS',
+        'Добро пожаловать в LIFE OS',
         'Одно место для тела, денег, целей и связей между ними. Все данные хранятся на вашем устройстве. '
             'Знакомство займёт минуту — всё можно изменить позже в настройках.',
         [_field(_name, 'Как к вам обращаться?', maxLength: 40)],

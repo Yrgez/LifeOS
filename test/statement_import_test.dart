@@ -32,6 +32,9 @@ void main() {
       expect(parseStatementAmount('1.234,40'), 1234);
       expect(parseStatementAmount('−500 ₽'), -500);
       expect(parseStatementAmount('(300.00)'), -300);
+      expect(parseStatementAmount('1.234'), 1234); // одна точка и три знака — разряды, как с запятой
+      expect(parseStatementAmount('12.5'), 13);
+      expect(parseStatementAmount('1,234'), 1234);
       expect(parseStatementAmount('1,5'), 2);
       expect(parseStatementAmount('12,345'), 12345); // запятая — разряды
       expect(parseStatementAmount('1.234.567'), 1234567);

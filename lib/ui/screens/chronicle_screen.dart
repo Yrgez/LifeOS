@@ -198,7 +198,7 @@ class _DayTile extends StatelessWidget {
 
   static String _dayTitle(String key) {
     final d = dayFromKey(key);
-    return '${d.day} ${monthNames[d.month - 1].toLowerCase()}, ${dayNames[d.weekday - 1]}';
+    return '${dayMonth(d)}, ${dayNames[d.weekday - 1]}';
   }
 
   /// Состояние дня: только известные значения.

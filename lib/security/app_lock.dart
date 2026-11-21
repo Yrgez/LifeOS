@@ -100,7 +100,7 @@ class AppLock extends ChangeNotifier with WidgetsBindingObserver {
   Future<AuthOutcome> unlock() async {
     if (!locked) return AuthOutcome.success;
     if (_authenticating) return AuthOutcome.cancelled;
-    final out = await _authenticate('Разблокируйте Life OS');
+    final out = await _authenticate('Разблокируйте LIFE OS');
     switch (out) {
       case AuthOutcome.success:
         _locked = false;

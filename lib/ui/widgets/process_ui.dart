@@ -152,7 +152,7 @@ class _ProcessDialogState extends State<_ProcessDialog> {
                     if (d != null && mounted) setState(() => _start = d);
                   },
                   icon: const Icon(Icons.event, size: 16),
-                  label: Text(dayKey(_start)),
+                  label: Text(fmtDate(_start)),
                 ),
               ],
               if (widget.goals.isNotEmpty) ...[
@@ -171,7 +171,7 @@ class _ProcessDialogState extends State<_ProcessDialog> {
                 ),
               ],
               fieldLabel('ОПИСАНИЕ'),
-              TextField(controller: _desc, maxLines: 3, maxLength: LifeProcess.maxDescription, decoration: _dec('Зачем, что считается результатом')),
+              TextField(controller: _desc, maxLines: 3, maxLength: LifeProcess.maxDescription, decoration: _dec('Описание').copyWith(helperText: 'Зачем этот процесс и что считается результатом', helperMaxLines: 3)),
               const SizedBox(height: 4),
               TextField(
                 key: const ValueKey('process_minutes'),
@@ -181,7 +181,7 @@ class _ProcessDialogState extends State<_ProcessDialog> {
                 decoration: _dec('Обычно длится, мин').copyWith(
                   helperText: 'Необязательно. Подставится в запись события — время можно изменить. '
                       'Учитывается только то, что записано.',
-                  helperMaxLines: 3,
+                  helperMaxLines: 4,
                 ),
                 onChanged: (_) => setState(() {}),
               ),
@@ -258,7 +258,7 @@ class ProcessCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = process;
     final a = activity;
-    final since = p.isOpen ? 'с ${dayKey(p.startedAt)}' : '${dayKey(p.startedAt)} — ${dayKey(p.endedAt!)}';
+    final since = p.isOpen ? 'с ${fmtDate(p.startedAt)}' : '${fmtDate(p.startedAt)} — ${fmtDate(p.endedAt!)}';
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppRadii.small),
@@ -279,7 +279,7 @@ class ProcessCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              '$since · событий: ${a.resources.events}${a.lastAt == null ? '' : ' · последнее ${dayKey(a.lastAt!)}'}',
+              '$since · событий: ${a.resources.events}${a.lastAt == null ? '' : ' · последнее ${fmtDate(a.lastAt!)}'}',
               style: const TextStyle(color: AppColors.muted, fontSize: 11),
             ),
             if (a.resources.events > 0) ...[
@@ -401,7 +401,7 @@ class ProcessHeader extends StatelessWidget {
           const Text('ЖУРНАЛ СТАТУСОВ', style: AppText.caption),
           for (final c in p.statusLog.reversed)
             Text(
-              '${dayKey(c.at)} — ${ProcessStatus.labels[c.status]}${c.note.isEmpty ? '' : ': ${c.note}'}',
+              '${fmtDate(c.at)} — ${ProcessStatus.labels[c.status]}${c.note.isEmpty ? '' : ': ${c.note}'}',
               style: const TextStyle(color: AppColors.muted, fontSize: 11),
             ),
         ],

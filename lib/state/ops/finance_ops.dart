@@ -178,10 +178,14 @@ extension FinanceOps on AppController {
 
   /// Предпросмотр: что будет добавлено, что уже загружалось раньше, какие строки не распознаны.
   ({ParsedStatement parsed, List<StatementRow> fresh, List<StatementRow> duplicates}) previewStatement(String text, ColumnMapping mapping) {
-    final parsed = parseStatement(text, mapping, now: _clock());
-    final existing = [for (final t in _d.transactions) if (t.importId != null) statementFingerprint(t.at, t.signed, t.note)];
-    final split = splitDuplicates(parsed.rows, existing);
-    return (parsed: parsed, fresh: split.fresh, duplicates: split.duplicates);
+    // экран предпросмотра перерисовывается часто — разбор и сверка с журналом только при новом тексте или колонках
+    final m = mapping;
+    return _memo(('statementPreview', text, m.date, m.amount, m.income, m.expense, m.note), () {
+      final parsed = parseStatement(text, mapping, now: _clock());
+      final existing = [for (final t in _d.transactions) if (t.importId != null) statementFingerprint(t.at, t.signed, t.note)];
+      final split = splitDuplicates(parsed.rows, existing);
+      return (parsed: parsed, fresh: split.fresh, duplicates: split.duplicates);
+    });
   }
 
   /// Импортирует новые строки выписки как операции со ссылкой на импорт. Категории — общие для всех

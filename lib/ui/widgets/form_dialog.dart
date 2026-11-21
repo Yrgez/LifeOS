@@ -112,7 +112,7 @@ class _FormDialogState extends State<_FormDialog> {
                         obscureText: f.obscure,
                         minLines: f.obscure ? 1 : f.lines,
                         maxLines: f.obscure ? 1 : f.lines,
-                        decoration: InputDecoration(labelText: f.label),
+                        decoration: fieldDecoration(f.label),
                       ),
               ),
           ],
@@ -134,6 +134,14 @@ class _FormDialogState extends State<_FormDialog> {
       ],
     );
   }
+}
+
+/// Подпись поля узкого диалога. Длинная «Лимит (₽ в месяц, пусто — без лимита)» обрезалась бы многоточием —
+/// главное остаётся подписью, пояснение из скобок — строкой под полем (переносится, читается TalkBack).
+InputDecoration fieldDecoration(String label) {
+  final i = label.indexOf(' (');
+  if (label.length <= 20 || i <= 0 || !label.endsWith(')')) return InputDecoration(labelText: label);
+  return InputDecoration(labelText: label.substring(0, i), helperText: label.substring(i + 2, label.length - 1), helperMaxLines: 3);
 }
 
 /// Выпадающий список без устаревшего DropdownButtonFormField.value.

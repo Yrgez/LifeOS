@@ -257,7 +257,7 @@ class _EventDialogState extends State<_EventDialog> {
             OutlinedButton.icon(
               onPressed: _pickDate,
               icon: const Icon(Icons.event, size: 16),
-              label: Text('${dayKey(_at)} ${_at.hour.toString().padLeft(2, '0')}:${_at.minute.toString().padLeft(2, '0')}'),
+              label: Text('${fmtDate(_at)} ${fmtTime(_at)}'),
             ),
             fieldLabel('РЕСУРСЫ (НЕОБЯЗАТЕЛЬНО)'),
             Row(

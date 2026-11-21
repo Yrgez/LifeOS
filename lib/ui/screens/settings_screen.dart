@@ -69,10 +69,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showToast(context, 'Обозначение сменилось на $cur. Суммы не пересчитываются — курс приложению неизвестен.');
   }
 
-  Future<void> _copyExport(String what, String text) async {
-    await Clipboard.setData(ClipboardData(text: text));
-    if (!mounted) return;
-    showToast(context, '$what — в буфере обмена. Вставьте в файл или таблицу');
+  /// Буфер обмена Android не принимает больше ~1 МБ за раз: большой экспорт сохраняется файлом в папку копий.
+  static const _clipboardLimit = 200000;
+
+  Future<void> _copyExport(String what, String text, String fileName) async {
+    String message;
+    if (text.length > _clipboardLimit) {
+      final b = security.backup;
+      String? saved;
+      try {
+        final dot = fileName.lastIndexOf('.');
+        saved = b == null ? null : await b.saveExport('lifeos-${fileName.substring(0, dot)}-${dayKey(c.now)}${fileName.substring(dot)}', text);
+      } catch (_) {
+        saved = null;
+      }
+      message = saved != null
+          ? '$what — файл «$saved» в папке копий'
+          : '$what не помещается в буфер обмена. Выберите папку в разделе «Автокопия» — файл сохранится туда';
+    } else {
+      try {
+        await Clipboard.setData(ClipboardData(text: text));
+        message = '$what — в буфере обмена. Вставьте в файл или таблицу';
+      } catch (_) {
+        message = 'Не удалось скопировать $what в буфер обмена';
+      }
+    }
+    if (mounted) showToast(context, message);
   }
 
   Future<void> _editStepsGoal() async {
@@ -495,7 +517,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ]),
         _section('ОТКРЫТЫЙ ЭКСПОРТ', [
           // читается без LIFE OS: Excel, LibreOffice, любой текстовый редактор; это не резервная копия
-          _tile(Icons.article_outlined, 'Хроника (Markdown)', 'Текст: месяцы, дни, события и заметки', onTap: () => _copyExport('Хроника', c.exportChronicleMarkdown())),
+          _tile(Icons.article_outlined, 'Хроника (Markdown)', 'Текст: месяцы, дни, события и заметки', onTap: () => _copyExport('Хроника', c.exportChronicleMarkdown(), 'chronicle.md')),
           for (final e in const {
             'events': ('События (CSV)', 'Все версии и отменённые — с пометками'),
             'checkins': ('Отметки дня (CSV)', 'Оценка, метки, заметка; все версии'),
@@ -504,7 +526,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             'weights': ('Вес (CSV)', 'Замеры с источником'),
             'sets': ('Подходы (CSV)', 'Журнал тренировок с расчётным 1RM'),
           }.entries)
-            _tile(Icons.table_chart_outlined, e.value.$1, e.value.$2, onTap: () => _copyExport(e.value.$1, c.exportCsv(e.key)!)),
+            _tile(Icons.table_chart_outlined, e.value.$1, e.value.$2, onTap: () => _copyExport(e.value.$1, c.exportCsv(e.key)!, '${e.key}.csv')),
         ]),
         if (security.reminders != null && security.reminders!.supported) _section('НАПОМИНАНИЯ', _reminderTiles(security.reminders!)),
         _section('РЕЗЕРВНАЯ КОПИЯ', _backupTiles(security.backup)),

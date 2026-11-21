@@ -106,7 +106,7 @@ void main() {
   group('экран блокировки', () {
     testWidgets('биометрия подтверждена — приложение открывается само', (tester) async {
       final e = await boot(tester, lockEnabled: true);
-      expect(find.text('Life OS заблокирован'), findsNothing);
+      expect(find.text('LIFE OS заблокирован'), findsNothing);
       expect(hubVisible(), findsOneWidget);
       expect(e.auth.calls, 1);
       await shutdown(tester, e);
@@ -114,13 +114,13 @@ void main() {
 
     testWidgets('запрос отменён — содержимое закрыто, кнопка разблокирует', (tester) async {
       final e = await boot(tester, lockEnabled: true, firstAuth: AuthOutcome.cancelled);
-      expect(find.text('Life OS заблокирован'), findsOneWidget);
+      expect(find.text('LIFE OS заблокирован'), findsOneWidget);
       expect(hubVisible(), findsNothing); // под слоем блокировки содержимое недоступно
 
       e.auth.nextOutcome = AuthOutcome.success;
       await tester.tap(find.text('Разблокировать'));
       await tester.pumpAndSettle();
-      expect(find.text('Life OS заблокирован'), findsNothing);
+      expect(find.text('LIFE OS заблокирован'), findsNothing);
       expect(hubVisible(), findsOneWidget);
       await shutdown(tester, e);
     });
@@ -136,7 +136,7 @@ void main() {
       e.auth.nextOutcome = AuthOutcome.cancelled;
       e.lock.onLifecycle(AppLifecycleState.paused);
       await tester.pumpAndSettle();
-      expect(find.text('Life OS заблокирован'), findsOneWidget);
+      expect(find.text('LIFE OS заблокирован'), findsOneWidget);
       expect(hubVisible(), findsNothing);
       await shutdown(tester, e);
     });
@@ -148,7 +148,7 @@ void main() {
       e.auth.nextOutcome = AuthOutcome.cancelled;
       e.lock.onLifecycle(AppLifecycleState.paused);
       await tester.pumpAndSettle();
-      expect(find.text('Life OS заблокирован'), findsOneWidget);
+      expect(find.text('LIFE OS заблокирован'), findsOneWidget);
       expect(find.text('Настройки').hitTestable(), findsNothing);
       await shutdown(tester, e);
     });
@@ -238,7 +238,7 @@ void main() {
       e.auth.nextOutcome = AuthOutcome.cancelled;
       await tester.tap(find.text('Заблокировать сейчас'));
       await tester.pumpAndSettle();
-      expect(find.text('Life OS заблокирован'), findsOneWidget);
+      expect(find.text('LIFE OS заблокирован'), findsOneWidget);
       await shutdown(tester, e);
     });
 

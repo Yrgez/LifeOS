@@ -23,7 +23,7 @@ import '../widgets/toast.dart';
 Map<String, String> _allCategoryOptions({String? keep}) =>
     {for (final k in pickableFinCategories(keep: keep)) k.id: '${k.isIncome ? 'Доход' : 'Расход'} • ${k.name}'};
 
-const _capitalOptions = {'1': 'Да — изменит чистый капитал', '0': 'Нет — только учёт'};
+const _capitalOptions = {'1': 'Да', '0': 'Нет, только учёт'};
 
 /// Диалог добавления (или правки, если задан [existing]) операции. Тип определяется категорией.
 Future<void> showTransactionDialog(BuildContext context, AppController c, {MoneyTx? existing}) async {
@@ -243,8 +243,8 @@ class _FinanceScreenState extends State<FinanceScreen> {
         AdaptivePair(
           spacing: 8,
           children: [
-            StatTile('ДОХОД', '+${fmtCur(totals.income)}', valueColor: AppColors.green),
-            StatTile('РАСХОД', '−${fmtCur(totals.expense)}', valueColor: AppColors.red),
+            StatTile('ДОХОД', '${totals.income > 0 ? '+' : ''}${fmtCur(totals.income)}', valueColor: AppColors.green),
+            StatTile('РАСХОД', '${totals.expense > 0 ? '−' : ''}${fmtCur(totals.expense)}', valueColor: AppColors.red),
           ],
         ),
         const SizedBox(height: 8),

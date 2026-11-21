@@ -81,9 +81,9 @@ Future<void> showAddCheckpointDialog(BuildContext context, AppController c, Glob
     actionTextColor: Colors.black,
     fields: [
       const FieldSpec('k', 'Тип', initial: 'manual', options: {
-        'manual': 'Ручной — отмечаю сам',
-        MetricLink.oneRM: 'Авто: рекорд 1RM мышцы ≥',
-        MetricLink.netWorth: 'Авто: чистый капитал ≥',
+        'manual': 'Вручную',
+        MetricLink.oneRM: 'Авто: рекорд 1RM ≥',
+        MetricLink.netWorth: 'Авто: капитал ≥',
         MetricLink.income: 'Авто: доход в месяц ≥',
       }),
       const FieldSpec('t', 'Название (для авто можно пусто)'),

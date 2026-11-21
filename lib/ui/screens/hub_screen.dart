@@ -76,7 +76,7 @@ class HubScreen extends StatelessWidget {
         children: [
           // дата — над заголовком во всю ширину: кнопки справа её не обрезают
           Text(
-            '${c.userName.isEmpty ? '' : '${c.userName} · '}${_weekday(now)}, ${now.day} ${_monthGen(now)}',
+            '${c.userName.isEmpty ? '' : '${c.userName} · '}${_weekday(now)}, ${dayMonth(now)}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             key: const ValueKey('today_date'),
@@ -228,20 +228,6 @@ class HubScreen extends StatelessWidget {
   }
 
   static String _weekday(DateTime d) => const ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'][d.weekday - 1];
-  static String _monthGen(DateTime d) => const [
-        'января',
-        'февраля',
-        'марта',
-        'апреля',
-        'мая',
-        'июня',
-        'июля',
-        'августа',
-        'сентября',
-        'октября',
-        'ноября',
-        'декабря',
-      ][d.month - 1];
 }
 
 class _RoundButton extends StatelessWidget {
@@ -792,7 +778,7 @@ class _MemoryTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${memory.daysAgo >= 365 ? 'Год назад' : 'Месяц назад'} · ${memory.day.day} ${HubScreen._monthGen(memory.day)} ${memory.day.year}',
+              '${memory.daysAgo >= 365 ? 'Год назад' : 'Месяц назад'} · ${dayMonth(memory.day)} ${memory.day.year}',
               style: _label,
             ),
             const SizedBox(height: 6),

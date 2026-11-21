@@ -133,7 +133,7 @@ class _EventsScreenState extends State<EventsScreen> {
     );
   }
 
-  static String _fmt(DateTime d) => '${dayKey(d)} ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+  static String _fmt(DateTime d) => '${fmtDate(d)} ${fmtTime(d)}';
 
   @override
   Widget build(BuildContext context) {
@@ -289,7 +289,7 @@ class _EventTile extends StatelessWidget {
                 Text(e.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 const SizedBox(height: 2),
                 Text(
-                  '${LifeEventKind.labels[e.kind]} · ${e.dimensions.map((d) => LifeDimension.labels[d]).join(' + ')} · ${dayKey(e.at)}'
+                  '${LifeEventKind.labels[e.kind]} · ${e.dimensions.map((d) => LifeDimension.labels[d]).join(' + ')} · ${fmtDate(e.at)}'
                   '${versions > 1 ? ' · версий: $versions' : ''}',
                   style: const TextStyle(color: AppColors.muted, fontSize: 11),
                 ),
